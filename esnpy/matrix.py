@@ -3,7 +3,9 @@ from scipy import stats
 
 try:
     import cupy as xp
-    from cupy.scipy import sparse, linalg
+    from cupy import linalg
+    from cupyx.scipy import sparse
+    import cupyx.scipy.sparse.linalg # gives access to sparse.linalg
 
 except ImportError:
     import numpy as xp
@@ -71,7 +73,7 @@ class RandomMatrix():
 
         denominator = 1.0
         if self.normalization == "svd":
-            s = linalg.svdvals(A)
+            s = linalg.svd(A, compute_uv=False, full_matrices=False)
             denominator = xp.max(xp.abs(s))
 
         elif self.normalization == "eig":
@@ -96,19 +98,18 @@ class SparseRandomMatrix(RandomMatrix):
     def create_matrix(self):
 
         if "distribution" == "uniform":
-            distribution = stats.uniform(-1.0, 2.0)
+            distribution = self.random_state.rand
 
         else:
-            distribution = stats.norm(loc=0.0, scale=1.0)
+            distribution = self.random_state.randn
 
-        distribution.random_state = self.random_state
         A = sparse.random(
             self.n_rows,
             self.n_cols,
             density=self.density,
             format=self.format,
-            data_rvs=distribution.rvs,
-            random_state=self.random_state)
+            random_state=self.random_state,
+            data_rvs=distribution)
 
         return A
 
@@ -117,7 +118,7 @@ class SparseRandomMatrix(RandomMatrix):
 
         denominator = 1.0
         if self.normalization == "svd":
-            s = sparse.linalg.svds(A, k=1, which="LM", return_eigenvectors=False)
+            s = sparse.linalg.svds(A, k=1, which="LM", return_singular_vectors=False)
             denominator = xp.max(xp.abs(s))
 
         elif self.normalization == "eig":

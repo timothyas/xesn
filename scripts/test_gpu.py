@@ -43,6 +43,9 @@ if __name__ == "__main__":
         input_kwargs={
             "normalization": "svd",
         },
+        adjacency_kwargs={
+            "normalization": "svd",
+        },
         random_seed=0,
     )
 
@@ -59,7 +62,7 @@ if __name__ == "__main__":
     nrows = system_dimension
     fig, axs = plt.subplots(nrows, 1, figsize=(8, nrows*1), constrained_layout=True, sharex=True, sharey=True)
 
-    for ui, yi, ax in zip(u, y, axs):
+    for ui, yi, ax in zip(u.get(), y.get(), axs):
         ax.plot(time, ui, color='k')
         ax.plot(time, yi, color="C2")
         for key in ["top", "right"]:

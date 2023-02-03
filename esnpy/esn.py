@@ -5,10 +5,12 @@ import xarray as xr
 try:
     import cupy as xp
     from cupy.linalg import solve
+    _use_cupy = True
 
 except ImportError:
     import numpy as xp
     from scipy.linalg import solve
+    _use_cupy = False
 
 from .matrix import RandomMatrix, SparseRandomMatrix
 
@@ -97,6 +99,9 @@ class ESN():
         if not self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
             warnings.warn(f"ESN.__init__: sparsity is below 80% but sparse_adj_matrix = {self.sparse_adj_matrix}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
+        if _use_cupy and adjaceny_kwargs["normalization"] == "eig":
+            raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+
 
     def __str__(self):
         rstr = 'ESN\n'+\
@@ -171,7 +176,7 @@ class ESN():
         n_state, n_time = u.shape
 
         batch_size = n_time if batch_size is None else batch_size
-        n_batches = xp.ceil( (n_time - n_spinup) / batch_size ).astype(int)
+        n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
 
         # Make containers
         rT = xp.zeros(
@@ -207,7 +212,9 @@ class ESN():
 
         # Linear solve
         rbar += self.tikhonov_parameter * xp.eye(self.n_reservoir)
-        Wout = solve(rbar.T, ybar.T, assume_a="sym")
+
+        kw = {} if _use_cupy else {"assume_a": "sym"}
+        Wout = solve(rbar.T, ybar.T, **kw)
         self.Wout = Wout.T
 
 
