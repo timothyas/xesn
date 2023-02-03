@@ -99,7 +99,7 @@ class ESN():
         if not self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
             warnings.warn(f"ESN.__init__: sparsity is below 80% but sparse_adj_matrix = {self.sparse_adj_matrix}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
-        if _use_cupy and adjaceny_kwargs["normalization"] == "eig":
+        if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
 
 
@@ -257,15 +257,15 @@ class ESN():
         import xarray as xr
 
         ds = xr.Dataset()
-        ir = xp.arange(self.n_reservoir)
+        ir = xp.arange(self.n_reservoir).get()
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = xp.arange(self.n_output)
+        iy = xp.arange(self.n_output).get()
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
         # the main stuff
         dims = ("iy", "ir")
-        ds["Wout"] = xr.DataArray(self.Wout, coords={k: ds[k] for k in dims}, dims=dims)
+        ds["Wout"] = xr.DataArray(self.Wout.get(), coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
         kw, *_ = inspect.getfullargspec(self.__init__)
