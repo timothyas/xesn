@@ -1,8 +1,13 @@
-import numpy as np
 
-from scipy import sparse
 from scipy import stats
-from scipy import linalg
+
+try:
+    import cupy as xp
+    from cupy.scipy import sparse, linalg
+
+except ImportError:
+    import numpy as xp
+    from scipy import sparse, linalg
 
 class RandomMatrix():
 
@@ -67,11 +72,11 @@ class RandomMatrix():
         denominator = 1.0
         if self.normalization == "svd":
             s = linalg.svdvals(A)
-            denominator = np.max(np.abs(s))
+            denominator = xp.max(xp.abs(s))
 
         elif self.normalization == "eig":
             s = linalg.eigvals(A)
-            denominator = np.max(np.abs(s))
+            denominator = xp.max(xp.abs(s))
 
 
         return self.factor / denominator * A
@@ -113,11 +118,11 @@ class SparseRandomMatrix(RandomMatrix):
         denominator = 1.0
         if self.normalization == "svd":
             s = sparse.linalg.svds(A, k=1, which="LM", return_eigenvectors=False)
-            denominator = np.max(np.abs(s))
+            denominator = xp.max(xp.abs(s))
 
         elif self.normalization == "eig":
             s = sparse.linalg.eigs(A, k=1, which="LM", return_eigenvectors=False)
-            denominator = np.max(np.abs(s))
+            denominator = xp.max(xp.abs(s))
 
         A.data = self.factor / denominator * A.data
         return A

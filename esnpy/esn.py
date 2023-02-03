@@ -1,6 +1,14 @@
 import warnings
-import numpy as np
-from scipy import linalg
+import inspect
+import xarray as xr
+
+try:
+    import cupy as xp
+    from cupy.linalg import solve
+
+except ImportError:
+    import numpy as xp
+    from scipy.linalg import solve
 
 from .matrix import RandomMatrix, SparseRandomMatrix
 
@@ -18,6 +26,14 @@ class ESN():
     @property
     def sparsity(self):
         return 1. - self.density
+
+    @property
+    def input_factor(self):
+        return self.input_kwargs["factor"]
+
+    @property
+    def adjacency_factor(self):
+        return self.adjacency_kwargs["factor"]
 
     def __init__(self,
             n_input,
@@ -42,7 +58,7 @@ class ESN():
         self.leak_rate          = leak_rate
         self.tikhonov_parameter = tikhonov_parameter
         self.random_seed        = random_seed
-        self.random_state       = np.random.RandomState(self.random_seed)
+        self.random_state       = xp.random.RandomState(self.random_seed)
 
         # Handle input and adjacency matrices
         self.input_kwargs = {
@@ -113,7 +129,7 @@ class ESN():
         return self.__str__()
 
 
-    def weights_init(self):
+    def build(self):
         """Generate the random adjacency and input weight matrices
         with sparsity determined by :attr:`sparsity` attribute,
         scaled by :attr:`spectral_radius` and :attr:`sigma` parameters, respectively.
@@ -155,14 +171,14 @@ class ESN():
         n_state, n_time = u.shape
 
         batch_size = n_time if batch_size is None else batch_size
-        n_batches = np.ceil( (n_time - n_spinup) / batch_size ).astype(int)
+        n_batches = xp.ceil( (n_time - n_spinup) / batch_size ).astype(int)
 
         # Make containers
-        rT = np.zeros(
+        rT = xp.zeros(
                 shape=(batch_size+1, self.n_reservoir))
-        ybar = np.zeros(
+        ybar = xp.zeros(
                 shape=(self.n_output, self.n_reservoir))
-        rbar = np.zeros(
+        rbar = xp.zeros(
                 shape=(self.n_reservoir, self.n_reservoir))
 
         kw = {
@@ -190,8 +206,8 @@ class ESN():
             rT[0] = rT[n+1].copy()
 
         # Linear solve
-        rbar += self.tikhonov_parameter * np.eye(self.n_reservoir)
-        Wout = linalg.solve(rbar.T, ybar.T, assume_a="sym")
+        rbar += self.tikhonov_parameter * xp.eye(self.n_reservoir)
+        Wout = solve(rbar.T, ybar.T, assume_a="sym")
         self.Wout = Wout.T
 
 
@@ -203,8 +219,8 @@ class ESN():
 
 
         # Make containers
-        r = np.zeros(shape=(self.n_reservoir,))
-        yT = np.zeros(
+        r = xp.zeros(shape=(self.n_reservoir,))
+        yT = xp.zeros(
                 shape=(n_steps+1, self.n_output))
         kw = {
                 "W"     : self.W,
@@ -229,15 +245,15 @@ class ESN():
         """Return object as :obj:`xarray.Dataset`
 
         Note:
-            For now, not storing :attr:`A` or :attr:`Win`. Instead, store :attr:`random_state`.
+            For now, not storing :attr:`W` or :attr:`Win`. Instead, store :attr:`random_seed`.
         """
         import xarray as xr
 
         ds = xr.Dataset()
-        ir = np.arange(self.n_reservoir)
+        ir = xp.arange(self.n_reservoir)
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = np.arange(self.n_output)
+        iy = xp.arange(self.n_output)
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
         # the main stuff
@@ -245,12 +261,12 @@ class ESN():
         ds["Wout"] = xr.DataArray(self.Wout, coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
-        raise NotImplementedError
-        for key in ["n_input", "n_output", "n_reservoir",
-                    "spectral_radius", "sigma", "bias", "leak_rate", "tikhonov_parameter",
-                    sparsity, "readout_method", "random_state", "sparse_adj_matrix", "input_method", "training_method"]:
+        kw, *_ = inspect.getfullargspec(self.__init__)
+        kw.remove("self")
+
+        for key in kw:
             val = getattr(self, key)
-            if isinstance(val, (bool, dict, type)) or val is None:
+            if isinstance(val, bool) or val is None:
                 ds.attrs[key] = str(val)
             else:
                 ds.attrs[key] = val
@@ -258,6 +274,31 @@ class ESN():
         return ds
 
 
+def from_zarr(store, **kwargs):
+    import xarray as xr
+
+    xds = xr.open_zarr(store, **kwargs)
+
+    # Use dataset attributes to get __init__ arguments
+    args = {}
+    for key, val in xds.attrs.items():
+
+        v = val
+        if isinstance(val, str):
+            if val.lower() == "none":
+                v = None
+            elif val.lower() in ("true", "false"):
+                v = val.lower()[0] == "t"
+
+        args[key] = v
+
+    # Create ESN
+    esn = ESN(**args)
+    esn.build()
+    esn.Wout = xds["Wout"].values
+    return esn
+
+
 def _update(r, u, W, Win, b, leak):
      p = W @ r + Win @ u + b
-     return leak * np.tanh(p) + (1-leak) * r
+     return leak * xp.tanh(p) + (1-leak) * r
