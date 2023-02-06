@@ -4,11 +4,14 @@ import xarray as xr
 
 try:
     import cupy as xp
+    xp.cuda.runtime.getDeviceCount()
     from cupy.linalg import solve
+    _use_cupy = True
 
-except ImportError:
+except xp.cuda.runtime.CUDARuntimeError:
     import numpy as xp
     from scipy.linalg import solve
+    _use_cupy = False
 
 from .matrix import RandomMatrix, SparseRandomMatrix
 
@@ -97,6 +100,9 @@ class ESN():
         if not self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
             warnings.warn(f"ESN.__init__: sparsity is below 80% but sparse_adj_matrix = {self.sparse_adj_matrix}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
+        if _use_cupy and adjacency_kwargs["normalization"] == "eig":
+            raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+
 
     def __str__(self):
         rstr = 'ESN\n'+\
@@ -171,7 +177,7 @@ class ESN():
         n_state, n_time = u.shape
 
         batch_size = n_time if batch_size is None else batch_size
-        n_batches = xp.ceil( (n_time - n_spinup) / batch_size ).astype(int)
+        n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
 
         # Make containers
         rT = xp.zeros(
@@ -207,7 +213,9 @@ class ESN():
 
         # Linear solve
         rbar += self.tikhonov_parameter * xp.eye(self.n_reservoir)
-        Wout = solve(rbar.T, ybar.T, assume_a="sym")
+
+        kw = {} if _use_cupy else {"assume_a": "sym"}
+        Wout = solve(rbar.T, ybar.T, **kw)
         self.Wout = Wout.T
 
 
@@ -251,14 +259,17 @@ class ESN():
 
         ds = xr.Dataset()
         ir = xp.arange(self.n_reservoir)
+        ir = ir.get() if _use_cupy else ir
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
         iy = xp.arange(self.n_output)
+        iy = iy.get() if _use_cupy else iy
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
         # the main stuff
         dims = ("iy", "ir")
-        ds["Wout"] = xr.DataArray(self.Wout, coords={k: ds[k] for k in dims}, dims=dims)
+        Wout = self.Wout.get() if _use_cupy else self.Wout
+        ds["Wout"] = xr.DataArray(Wout, coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
         kw, *_ = inspect.getfullargspec(self.__init__)

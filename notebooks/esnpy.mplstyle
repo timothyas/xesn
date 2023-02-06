@@ -1,0 +1,69 @@
+# default seaborn aesthetic
+# darkgrid + deep palette + notebook context
+
+# all font sizes
+axes.titlesize          : 20
+axes.labelsize          : 16
+font.size               : 16
+legend.fontsize         : 16
+xtick.labelsize         : 16
+ytick.labelsize         : 16
+legend.title_fontsize   : 16
+
+axes.axisbelow: True
+#axes.edgecolor: white
+axes.facecolor: white
+
+axes.labelcolor: .15
+axes.linewidth: 0.8
+#axes.prop_cycle: cycler('color', ['4C72B0', '55A868', 'C44E52', '8172B2', 'CCB974', '64B5CD'])
+axes.prop_cycle: cycler('color', [ '55A868', 'd95f02', '4C72B0', 'C44E52', '8172B2', 'CCB974', '64B5CD'])
+#axes.prop_cycle: cycler('color', ['2ca02c', 'ff7f0e'])
+
+axes.spines.left    : True
+axes.spines.bottom  : True
+axes.spines.right   : False
+axes.spines.top     : False
+
+figure.facecolor: white
+figure.figsize: 8.0, 6.0
+
+font.family: sans-serif
+font.sans-serif: Arial, Liberation Sans, DejaVu Sans, Bitstream Vera Sans, sans-serif
+
+axes.grid: False
+#grid.color: b0b0b0
+#grid.linestyle: -
+#grid.linewidth: 1
+
+image.cmap: inferno
+
+legend.frameon: False
+legend.numpoints: 1
+legend.scatterpoints: 1
+
+lines.linewidth: 2
+lines.markeredgewidth: 0
+lines.markersize: 7
+lines.solid_capstyle: round
+
+patch.facecolor: 4C72B0
+patch.linewidth: .3
+
+text.color: .15
+
+xtick.color: .15
+xtick.direction: out
+xtick.major.pad: 7
+xtick.major.size: 4
+xtick.major.width: 1
+xtick.minor.size: 0
+xtick.minor.width: .5
+
+ytick.color: .15
+ytick.direction: out
+ytick.major.pad: 7
+ytick.major.size: 4
+ytick.major.width: 1
+ytick.minor.size: 0
+ytick.minor.width: .5
