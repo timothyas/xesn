@@ -1,5 +1,12 @@
 import os
-import cupy as cp
+try:
+    import cupy as cp
+    cp.cuda.runtime.getDeviceCount()
+    _use_cupy = True
+except cp.cuda.runtime.CUDARuntimeError:
+    cp = None
+    _use_cupy = False
+
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
@@ -83,7 +90,11 @@ class ScalingTest():
         data.generate(n_steps=1_000)
         data.generate(n_steps=self.n_test+self.n_spinup+1)
         tester = data.values.copy()
-        return cp.asarray(trainer), cp.asarray(tester)
+        if _use_cupy:
+            returns = cp.asarray(trainer), cp.asarray(tester)
+        else:
+            returns = trainer, tester
+        return returns
 
 
     def get_esn(self):
