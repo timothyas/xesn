@@ -1,0 +1,18 @@
+ ---  --- 
+ --- Generate Data --- 
+Elapsed time: 2.7072 seconds
+
+ --- Create ESN --- 
+Elapsed time: 0.0351 seconds
+
+ --- Training --- 
+Training time: 4.9608 seconds
+
+ --- Prediction --- 
+Prediction time: 0.1324 seconds
+
+ --- Store model --- 
+IO time: 0.1195 seconds
+
+Total Walltime: 7.9791 seconds
+
