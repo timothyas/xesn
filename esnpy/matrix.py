@@ -3,11 +3,12 @@ from scipy import stats
 
 try:
     import cupy as xp
+    xp.cuda.runtime.getDeviceCount()
     from cupy import linalg
     from cupyx.scipy import sparse
     import cupyx.scipy.sparse.linalg # gives access to sparse.linalg
 
-except ImportError:
+except xp.cuda.runtime.CUDARuntimeError:
     import numpy as xp
     from scipy import sparse, linalg
 

@@ -4,10 +4,11 @@ import xarray as xr
 
 try:
     import cupy as xp
+    xp.cuda.runtime.getDeviceCount()
     from cupy.linalg import solve
     _use_cupy = True
 
-except ImportError:
+except xp.cuda.runtime.CUDARuntimeError:
     import numpy as xp
     from scipy.linalg import solve
     _use_cupy = False
@@ -257,15 +258,18 @@ class ESN():
         import xarray as xr
 
         ds = xr.Dataset()
-        ir = xp.arange(self.n_reservoir).get()
+        ir = xp.arange(self.n_reservoir)
+        ir = ir.get() if _use_cupy else ir
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = xp.arange(self.n_output).get()
+        iy = xp.arange(self.n_output)
+        iy = iy.get() if _use_cupy else iy
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
         # the main stuff
         dims = ("iy", "ir")
-        ds["Wout"] = xr.DataArray(self.Wout.get(), coords={k: ds[k] for k in dims}, dims=dims)
+        Wout = self.Wout.get() if _use_cupy else self.Wout
+        ds["Wout"] = xr.DataArray(Wout, coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
         kw, *_ = inspect.getfullargspec(self.__init__)
