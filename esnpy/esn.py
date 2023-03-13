@@ -8,6 +8,11 @@ try:
     from cupy.linalg import solve
     _use_cupy = True
 
+except ImportError:
+    import numpy as xp
+    from scipy.linalg import solve
+    _use_cupy = False
+
 except xp.cuda.runtime.CUDARuntimeError:
     import numpy as xp
     from scipy.linalg import solve

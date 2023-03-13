@@ -8,6 +8,10 @@ try:
     from cupyx.scipy import sparse
     import cupyx.scipy.sparse.linalg # gives access to sparse.linalg
 
+except ImportError:
+    import numpy as xp
+    from scipy import sparse, linalg
+
 except xp.cuda.runtime.CUDARuntimeError:
     import numpy as xp
     from scipy import sparse, linalg
