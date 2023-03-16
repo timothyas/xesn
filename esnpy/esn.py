@@ -2,21 +2,14 @@ import warnings
 import inspect
 import xarray as xr
 
-try:
+from . import _use_cupy
+if _use_cupy:
     import cupy as xp
-    xp.cuda.runtime.getDeviceCount()
     from cupy.linalg import solve
-    _use_cupy = True
 
-except ImportError:
+else:
     import numpy as xp
     from scipy.linalg import solve
-    _use_cupy = False
-
-except xp.cuda.runtime.CUDARuntimeError:
-    import numpy as xp
-    from scipy.linalg import solve
-    _use_cupy = False
 
 from .matrix import RandomMatrix, SparseRandomMatrix
 
