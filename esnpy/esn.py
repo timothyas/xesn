@@ -186,10 +186,10 @@ class ESN():
                 shape=(self.n_reservoir, self.n_reservoir))
 
         kw = {
-                "W"     : self.W,
-                "Win"   : self.Win,
-                "b"     : self.bias_vector,
-                "leak"  : self.leak_rate}
+                "W"             : self.W,
+                "Win"           : self.Win,
+                "bias_vector"   : self.bias_vector,
+                "leak_rate"     : self.leak_rate}
 
         # Spinup
         for n in range(n_spinup):
@@ -229,10 +229,10 @@ class ESN():
         yT = xp.zeros(
                 shape=(n_steps+1, self.n_output))
         kw = {
-                "W"     : self.W,
-                "Win"   : self.Win,
-                "b"     : self.bias_vector,
-                "leak"  : self.leak_rate}
+                "W"             : self.W,
+                "Win"           : self.Win,
+                "bias_vector"   : self.bias_vector,
+                "leak_rate"     : self.leak_rate}
 
         # Spinup
         for n in range(n_spinup):
@@ -308,6 +308,6 @@ def from_zarr(store, **kwargs):
     return esn
 
 
-def _update(r, u, W, Win, b, leak):
-     p = W @ r + Win @ u + b
-     return leak * xp.tanh(p) + (1-leak) * r
+def _update(r, u, W, Win, bias_vector, leak_rate):
+     p = W @ r + Win @ u + bias_vector
+     return leak_rate * xp.tanh(p) + (1-leak_rate) * r
