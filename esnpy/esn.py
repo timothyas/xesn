@@ -169,10 +169,13 @@ class ESN():
                                                      size=(self.n_reservoir,))
 
 
-    def train(self, u, n_spinup=0, batch_size=None):
+    def train(self, u, y=None, n_spinup=0, batch_size=None):
 
+        # Check if training labels are different from input data
+        y = u if y is None else y
         uT = u.T
-        n_state, n_time = u.shape
+        n_input, _ = u.shape
+        n_output, n_time = y.shape
 
         batch_size = n_time if batch_size is None else batch_size
         n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
@@ -203,7 +206,7 @@ class ESN():
             for n, n_in in enumerate(range(i0, i1)):
                 rT[n+1] = _update(rT[n], uT[n_in], **kw)
 
-            ybar += u[:, i0:i1] @ rT[:n+1, :]
+            ybar += y[:, i0:i1] @ rT[:n+1, :]
             rbar += rT[:n+1, :].T @ rT[:n+1, :]
 
             # Start over for next batch
@@ -220,7 +223,7 @@ class ESN():
     def predict(self, u, n_steps, n_spinup):
 
         uT = u.T
-        n_state, n_time = u.shape
+        _, n_time = u.shape
         assert n_time >= n_spinup
 
 
