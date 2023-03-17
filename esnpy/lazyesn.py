@@ -11,7 +11,7 @@ else:
     import numpy as xp
     from scipy.linalg import solve
 
-from .esn import ESN, _update
+from .esn import ESN, _train_1d
 
 class LazyESN(ESN):
 
@@ -59,17 +59,17 @@ class LazyESN(ESN):
         self.persist    = persist
 
 
-    def train(self, u, n_spinup=0, batch_size=None):
+    def train(self, y, n_spinup=0, batch_size=None):
         """
         Args:
-            u (dask.array): n_state1, n_state2, ..., n_time
+            y (dask.array): n_state1, n_state2, ..., n_time
         """
 
-        halo_data = overlap(u, depth=self.overlap, boundary=self.boundary)
+        halo_data = overlap(y, depth=self.overlap, boundary=self.boundary)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
-                _train,
+                _train_nd,
                 halo_data,
                 overlap=self.overlap,
                 n_spinup=n_spinup,
@@ -87,7 +87,7 @@ class LazyESN(ESN):
         self.Wout = self.Wout.persist() if self.persist else self.Wout
 
 
-def _train(halo_data,
+def _train_nd(halo_data,
         overlap=None,
         n_spinup=0,
         batch_size=None,
@@ -106,60 +106,14 @@ def _train(halo_data,
         halo_data (dask.array): n_state1, n_state2, ..., n_time
     """
 
-
-
     # Deal with masking
     u = _flatten_space( halo_data )
     mask_nd = _get_active_mask(halo_data.shape, overlap)
     mask_1d = mask_nd.flatten()
     y = u[mask_1d, :]
 
-    # Important Integers
-    n_reservoir, n_input = Win.shape
-    n_output, n_time = y.shape
-
-    batch_size = n_time if batch_size is None else batch_size
-    n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
-
-    # Make containers
-    uT = u.T
-    rT = xp.zeros(
-            shape=(batch_size+1, n_reservoir))
-    ybar = xp.zeros(
-            shape=(n_output, n_reservoir))
-    rbar = xp.zeros(
-            shape=(n_reservoir, n_reservoir))
-
-    kw = {
-            "W"             : W,
-            "Win"           : Win,
-            "bias_vector"   : bias_vector,
-            "leak_rate"     : leak_rate}
-
-    # Spinup
-    for n in range(n_spinup):
-        rT[0] = _update(rT[0], uT[n], **kw)
-
-    # Accumulate matrices
-    for i in range( n_batches ):
-        i0 = i*batch_size + n_spinup
-        i1 = min((i+1)*batch_size + n_spinup, n_time)
-
-        for n, n_in in enumerate(range(i0, i1)):
-            rT[n+1] = _update(rT[n], uT[n_in], **kw)
-
-        ybar += y[:, i0:i1] @ rT[:n+1, :]
-        rbar += rT[:n+1, :].T @ rT[:n+1, :]
-
-        # Start over for next batch
-        rT[0] = rT[n+1].copy()
-
-    # Linear solve
-    rbar += tikhonov_parameter * xp.eye(n_reservoir)
-
-    kw = {} if _use_cupy else {"assume_a": "sym"}
-    Wout = solve(rbar.T, ybar.T, **kw)
-    return Wout.T
+    Wout = _train_1d(u, y, n_spinup, batch_size, W, Win, bias_vector, leak_rate, tikhonov_parameter)
+    return Wout
 
 
 def _get_active_mask(shape, overlap):
