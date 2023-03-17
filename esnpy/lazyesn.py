@@ -106,17 +106,31 @@ def _train_nd(halo_data,
         halo_data (dask.array): n_state1, n_state2, ..., n_time
     """
 
-    # Deal with masking
+    # Deal with overlap related masking
     u = _flatten_space( halo_data )
-    mask_nd = _get_active_mask(halo_data.shape, overlap)
-    mask_1d = mask_nd.flatten()
-    y = u[mask_1d, :]
+    inner_mask = _get_inner_mask(halo_data.shape, overlap)
+    y = u[inner_mask.flatten(), :]
 
-    Wout = _train_1d(u, y, n_spinup, batch_size, W, Win, bias_vector, leak_rate, tikhonov_parameter)
+    # Get sizes before masking
+    n_output, _ = y.shape
+    n_reservoir, _ = Win.shape
+
+    # Deal with domain boundaries (i.e., NaNs outside bounds of non-periodic global domain)
+    bdy_mask = xp.isnan(u[:,0])
+    u   = u[~bdy_mask, :]
+    Win = Win[:, ~bdy_mask]
+
+    # Deal with internal boundaries (i.e., NaNs inside domain, like continental boundaries for ocean)
+    bdy_mask = xp.isnan(y[:,0])
+    y   = y[~bdy_mask, :]
+
+    # Make and fill container
+    Wout = xp.full( (n_output, n_reservoir), xp.nan, dtype=xp.float64 )
+    Wout[~bdy_mask, :] = _train_1d(u, y, n_spinup, batch_size, W, Win, bias_vector, leak_rate, tikhonov_parameter)
     return Wout
 
 
-def _get_active_mask(shape, overlap):
+def _get_inner_mask(shape, overlap):
     """operate on each chunk/block to show False if in overlap, True if not"""
 
     inner_mask = [
