@@ -186,7 +186,6 @@ class ESN():
         _, n_time = u.shape
         assert n_time >= n_spinup
 
-
         # Make containers
         r = xp.zeros(shape=(self.n_reservoir,))
         yT = xp.zeros(
@@ -219,11 +218,11 @@ class ESN():
         import xarray as xr
 
         ds = xr.Dataset()
-        ir = xp.arange(self.n_reservoir)
+        ir = xp.arange(self.Wout.squeeze().shape[-1])
         ir = ir.get() if _use_cupy else ir
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = xp.arange(self.n_output)
+        iy = xp.arange(self.Wout.squeeze().shape[0])
         iy = iy.get() if _use_cupy else iy
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
@@ -244,31 +243,6 @@ class ESN():
                 ds.attrs[key] = val
 
         return ds
-
-
-def from_zarr(store, **kwargs):
-    import xarray as xr
-
-    xds = xr.open_zarr(store, **kwargs)
-
-    # Use dataset attributes to get __init__ arguments
-    args = {}
-    for key, val in xds.attrs.items():
-
-        v = val
-        if isinstance(val, str):
-            if val.lower() == "none":
-                v = None
-            elif val.lower() in ("true", "false"):
-                v = val.lower()[0] == "t"
-
-        args[key] = v
-
-    # Create ESN
-    esn = ESN(**args)
-    esn.build()
-    esn.Wout = xds["Wout"].values
-    return esn
 
 
 def _update(r, u, W, Win, bias_vector, leak_rate):

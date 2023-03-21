@@ -10,5 +10,6 @@ except ImportError:
 except xp.cuda.runtime.CUDARuntimeError:
     _use_cupy = False
 
-from .esn import ESN, from_zarr
+from .esn import ESN
 from .lazyesn import LazyESN
+from .io import from_zarr
