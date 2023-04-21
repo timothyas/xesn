@@ -169,60 +169,22 @@ class ESN():
                                                      size=(self.n_reservoir,))
 
 
-    def train(self, u, n_spinup=0, batch_size=None):
+    def train(self, u, y=None, n_spinup=0, batch_size=None):
 
-        uT = u.T
-        n_state, n_time = u.shape
+        # Check if training labels are different from input data
+        y = u if y is None else y
 
-        batch_size = n_time if batch_size is None else batch_size
-        n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
-
-        # Make containers
-        rT = xp.zeros(
-                shape=(batch_size+1, self.n_reservoir))
-        ybar = xp.zeros(
-                shape=(self.n_output, self.n_reservoir))
-        rbar = xp.zeros(
-                shape=(self.n_reservoir, self.n_reservoir))
-
-        kw = {
-                "W"             : self.W,
-                "Win"           : self.Win,
-                "bias_vector"   : self.bias_vector,
-                "leak_rate"     : self.leak_rate}
-
-        # Spinup
-        for n in range(n_spinup):
-            rT[0] = _update(rT[0], uT[n], **kw)
-
-        # Accumulate matrices
-        for i in range( n_batches ):
-            i0 = i*batch_size + n_spinup
-            i1 = min((i+1)*batch_size + n_spinup, n_time)
-
-            for n, n_in in enumerate(range(i0, i1)):
-                rT[n+1] = _update(rT[n], uT[n_in], **kw)
-
-            ybar += u[:, i0:i1] @ rT[:n+1, :]
-            rbar += rT[:n+1, :].T @ rT[:n+1, :]
-
-            # Start over for next batch
-            rT[0] = rT[n+1].copy()
-
-        # Linear solve
-        rbar += self.tikhonov_parameter * xp.eye(self.n_reservoir)
-
-        kw = {} if _use_cupy else {"assume_a": "sym"}
-        Wout = solve(rbar.T, ybar.T, **kw)
-        self.Wout = Wout.T
+        self.Wout = _train_1d(
+                u, y, n_spinup, batch_size,
+                self.W, self.Win, self.bias_vector, self.leak_rate,
+                self.tikhonov_parameter)
 
 
     def predict(self, u, n_steps, n_spinup):
 
         uT = u.T
-        n_state, n_time = u.shape
+        _, n_time = u.shape
         assert n_time >= n_spinup
-
 
         # Make containers
         r = xp.zeros(shape=(self.n_reservoir,))
@@ -256,11 +218,11 @@ class ESN():
         import xarray as xr
 
         ds = xr.Dataset()
-        ir = xp.arange(self.n_reservoir)
+        ir = xp.arange(self.Wout.squeeze().shape[-1])
         ir = ir.get() if _use_cupy else ir
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = xp.arange(self.n_output)
+        iy = xp.arange(self.Wout.squeeze().shape[0])
         iy = iy.get() if _use_cupy else iy
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
@@ -283,31 +245,66 @@ class ESN():
         return ds
 
 
-def from_zarr(store, **kwargs):
-    import xarray as xr
-
-    xds = xr.open_zarr(store, **kwargs)
-
-    # Use dataset attributes to get __init__ arguments
-    args = {}
-    for key, val in xds.attrs.items():
-
-        v = val
-        if isinstance(val, str):
-            if val.lower() == "none":
-                v = None
-            elif val.lower() in ("true", "false"):
-                v = val.lower()[0] == "t"
-
-        args[key] = v
-
-    # Create ESN
-    esn = ESN(**args)
-    esn.build()
-    esn.Wout = xds["Wout"].values
-    return esn
-
-
 def _update(r, u, W, Win, bias_vector, leak_rate):
-     p = W @ r + Win @ u + bias_vector
-     return leak_rate * xp.tanh(p) + (1-leak_rate) * r
+    p = W @ r + Win @ u + bias_vector
+    return leak_rate * xp.tanh(p) + (1-leak_rate) * r
+
+
+def _train_1d(
+        u,
+        y,
+        n_spinup,
+        batch_size,
+        W,
+        Win,
+        bias_vector,
+        leak_rate,
+        tikhonov_parameter,
+        ):
+
+    # Important Integers
+    n_reservoir, n_input = Win.shape
+    n_output, n_time = y.shape
+
+    batch_size = n_time if batch_size is None else batch_size
+    n_batches = int(xp.ceil( (n_time - n_spinup) / batch_size ))
+
+    # Make containers
+    uT = u.T
+    rT = xp.zeros(
+            shape=(batch_size+1, n_reservoir))
+    ybar = xp.zeros(
+            shape=(n_output, n_reservoir))
+    rbar = xp.zeros(
+            shape=(n_reservoir, n_reservoir))
+
+    kw = {
+            "W"             : W,
+            "Win"           : Win,
+            "bias_vector"   : bias_vector,
+            "leak_rate"     : leak_rate}
+
+    # Spinup
+    for n in range(n_spinup):
+        rT[0] = _update(rT[0], uT[n], **kw)
+
+    # Accumulate matrices
+    for i in range( n_batches ):
+        i0 = i*batch_size + n_spinup
+        i1 = min((i+1)*batch_size + n_spinup, n_time)
+
+        for n, n_in in enumerate(range(i0, i1)):
+            rT[n+1] = _update(rT[n], uT[n_in], **kw)
+
+        ybar += y[:, i0:i1] @ rT[:n+1, :]
+        rbar += rT[:n+1, :].T @ rT[:n+1, :]
+
+        # Start over for next batch
+        rT[0] = rT[n+1].copy()
+
+    # Linear solve
+    rbar += tikhonov_parameter * xp.eye(n_reservoir)
+
+    kw = {} if _use_cupy else {"assume_a": "sym"}
+    Wout = solve(rbar.T, ybar.T, **kw)
+    return Wout.T
