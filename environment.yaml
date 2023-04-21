@@ -21,6 +21,9 @@ dependencies:
     - jupyter
     - ipython
     - ipykernel
+# Testing
+    - pytest
+    - coverage
 # nice things
     - colordiff
 # Specify blas to use mkl

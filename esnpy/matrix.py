@@ -15,24 +15,25 @@ else:
 class RandomMatrix():
 
     # Set by user
-    is_symmetric    = False
-    is_antisymmetric= False
-
     n_rows          = None
     n_cols          = None
 
     distribution    = None
-    normalization   = None
+    normalization   = "multiply"
     factor          = 1.0
 
-    random_state    = None
+    random_seed     = None
 
     # Set automatically
     dist_kw         = None
 
-    def __init__(self, **kw):
+    def __init__(self, n_rows, n_cols, distribution, **kw):
 
-        # fill those attributes
+        self.n_rows         = n_rows
+        self.n_cols         = n_cols
+        self.distribution   = distribution
+
+        # fill in optional attributes
         for key, val in kw.items():
             try:
                 getattr(self, key)
@@ -44,9 +45,8 @@ class RandomMatrix():
         assert self.distribution in ("uniform", "gaussian", "normal")
         assert self.normalization in ("svd", "eig", "multiply")
 
-        # Implement these in the future
-        if self.is_symmetric or self.is_antisymmetric:
-            raise NotImplementedError(f"RandomMatrix.__init__: symmetry and antisymmetry not implemented")
+        # Create random state
+        self.random_state = xp.random.RandomState(self.random_seed)
 
 
     def __call__(self):

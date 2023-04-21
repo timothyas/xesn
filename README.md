@@ -43,6 +43,7 @@ A clean echo state network implementation
 
 - [ ] Make sure environment yaml is good to go
 - [ ] Unit tests
+- [ ] Formatting... black?
 - [ ] Integration tests
 - [ ] Regression tests
 - [ ] Docstrings, demo notebooks
