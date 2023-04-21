@@ -1,0 +1,48 @@
+# This uses actios:
+#  checkout: https://github.com/actions/checkout
+#  cache: https://github.com/actions/cache
+#  codecov-action: https://github.com/codecov/codecov-action
+
+name: CI
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    name: Build (${{ matrix.python-version }} | ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if ci/environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yaml') }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: ddc # Defined in ci/environment*.yml
+          auto-update-conda: false
+          python-version: ${{ matrix.python-version }}
+          environment-file: ci/environment-py${{ matrix.python-version }}.yml
+          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+      - name: Run Unit Tests
+        shell: bash -l {0}
+        run: |
+          coverage run -m pytest --verbose esnpy/test/*.py
+      - name: Show coverage report
+        shell: bash -l {0}
+        run: |
+          coverage report -m
