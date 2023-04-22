@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy import linalg
 
-from esnpy.matrix import RandomMatrix
+from esnpy.matrix import RandomMatrix, SparseRandomMatrix
 
 
 
@@ -17,8 +17,14 @@ Test for...
 """
 
 class TestMatrix:
-    n_rows = 50
-    n_cols = 50
+    n_rows = 10
+    n_cols = 10
+
+
+class TestInit(TestMatrix):
+    def test_init(self):
+        with pytest.raises(AttributeError):
+            RandomMatrix(n_rows=self.n_rows, n_cols=self.n_cols, distribution="uniform", blah="nope")
 
 @pytest.mark.parametrize(
         "distribution, error",
@@ -46,37 +52,38 @@ class TestDist(TestMatrix):
                 RandomMatrix(**kw)
 
 @pytest.mark.parametrize(
-        "normalization, function, error",
+        "distribution",
+        [ "normal", "uniform" ]
+)
+@pytest.mark.parametrize(
+        "normalization, function, rtol, error",
         [
-            ("svd", linalg.svdvals, None),
-            ("eig", linalg.eigvals, None),
-            ("multiply", None, None),
-            ("spectral_radius", None, AssertionError),
+            ("svd", linalg.svdvals, 1e-7, None),
+            ("eig", linalg.eigvals, 1e-7, None),
+            ("multiply", np.std, 1e-2, None),
+            ("spectral_radius", None, None, AssertionError),
         ]
 )
 class TestNorm(TestMatrix):
 
-    distribution    = "uniform"
     factor          = 10
+    random_seed     = 0
 
-    def test_norm(self, normalization, function, error):
+    def test_norm(self, distribution, normalization, function, rtol, error):
 
         kw = {"n_rows"          : self.n_rows,
               "n_cols"          : self.n_cols,
-              "distribution"    : self.distribution,
+              "distribution"    : distribution,
               "normalization"   : normalization,
-              "factor"          : self.factor}
+              "factor"          : self.factor,
+              "random_seed"     : self.random_seed}
 
         if error is None:
             rm = RandomMatrix(**kw)
             A = rm()
-            denom = 1
-            if function is not None:
-                expected = np.max(np.abs(function(A)))
-
-                assert_allclose( self.factor, expected )
+            expected = np.max(np.abs(function(A)))
+            assert_allclose( self.factor, expected, rtol=rtol )
 
         else:
             with pytest.raises(error):
                 RandomMatrix(**kw)
-
