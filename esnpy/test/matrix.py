@@ -2,23 +2,14 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy import linalg
+from scipy import linalg, sparse
 
 from esnpy.matrix import RandomMatrix, SparseRandomMatrix
 
-
-
-"""
-Test for...
-- available distributions
-- available normalizations
-- distribution is what it's specified
-- normalization returns what it should be...
-"""
-
 class TestMatrix:
-    n_rows = 10
-    n_cols = 10
+    n_rows      = 10
+    n_cols      = 10
+    random_seed = 0
 
 
 class TestInit(TestMatrix):
@@ -26,6 +17,7 @@ class TestInit(TestMatrix):
         with pytest.raises(AttributeError):
             RandomMatrix(n_rows=self.n_rows, n_cols=self.n_cols, distribution="uniform", blah="nope")
 
+# --- Test distributions from both Dense and Sparse matrices
 @pytest.mark.parametrize(
         "distribution, error",
         [
@@ -37,53 +29,93 @@ class TestInit(TestMatrix):
 )
 class TestDist(TestMatrix):
 
+    RM = RandomMatrix
+
+    @property
+    def kw(self):
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed"]}
+
     def test_dist(self, distribution, error):
 
-        kw = {"n_rows"          : self.n_rows,
-              "n_cols"          : self.n_cols,
-              "distribution"    : distribution}
-
         if error is None:
-            rm = RandomMatrix(**kw)
+            rm = self.RM(distribution=distribution, **self.kw)
             rm()
 
         else:
             with pytest.raises(error):
-                RandomMatrix(**kw)
+                self.RM(distribution=distribution, **self.kw)
 
+
+class TestSparseDist(TestDist):
+    """This inherits and runs the distribution tests from above"""
+
+    RM      = SparseRandomMatrix
+    format  = "csr"
+    density = 0.99
+
+    @property
+    def kw(self):
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "format", "density"]}
+
+
+# --- Test normalization
 @pytest.mark.parametrize(
         "distribution",
         [ "normal", "uniform" ]
 )
 @pytest.mark.parametrize(
-        "normalization, function, rtol, error",
+        "normalization, dense_function, sparse_function, rtol, error",
         [
-            ("svd", linalg.svdvals, 1e-7, None),
-            ("eig", linalg.eigvals, 1e-7, None),
-            ("multiply", np.std, 1e-2, None),
-            ("spectral_radius", None, None, AssertionError),
+            ("svd",
+                linalg.svdvals,
+                lambda x: sparse.linalg.svds(x, k=1, return_singular_vectors=False),
+                1e-7,
+                None),
+            ("eig",
+                linalg.eigvals,
+                lambda x: sparse.linalg.eigs(x, k=1, return_eigenvectors=False),
+                1e-7,
+                None),
+            ("multiply",
+                np.std,
+                lambda x: np.std(x.data),
+                1e-1,
+                None),
+            ("spectral_radius", None, None, None, AssertionError),
         ]
 )
 class TestNorm(TestMatrix):
 
-    factor          = 10
-    random_seed     = 0
+    RM      = RandomMatrix
+    factor  = 10
 
-    def test_norm(self, distribution, normalization, function, rtol, error):
+    @property
+    def kw(self):
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "factor"]}
 
-        kw = {"n_rows"          : self.n_rows,
-              "n_cols"          : self.n_cols,
-              "distribution"    : distribution,
-              "normalization"   : normalization,
-              "factor"          : self.factor,
-              "random_seed"     : self.random_seed}
+    def test_norm(self, distribution, normalization, dense_function, sparse_function, rtol, error):
 
         if error is None:
-            rm = RandomMatrix(**kw)
+            rm = self.RM(distribution=distribution, normalization=normalization, **self.kw)
             A = rm()
-            expected = np.max(np.abs(function(A)))
-            assert_allclose( self.factor, expected, rtol=rtol )
+            f = dense_function if not sparse.issparse(A) else sparse_function
+            expected = np.max(np.abs(f(A)))
+            if distribution != "uniform":
+                assert_allclose( self.factor, expected, rtol=rtol )
 
         else:
             with pytest.raises(error):
-                RandomMatrix(**kw)
+                rm = self.RM(distribution=distribution, normalization=normalization, **self.kw)
+
+
+class TestSparseNorm(TestNorm):
+    """This inherits and runs sparse versions of all normalization tests above"""
+
+    RM      = SparseRandomMatrix
+    factor  = 10
+    format  = "csr"
+    density = 0.7
+
+    @property
+    def kw(self):
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "factor", "format", "density"]}

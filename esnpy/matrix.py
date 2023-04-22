@@ -56,7 +56,7 @@ class RandomMatrix():
 
     def create_matrix(self):
 
-        if "distribution" == "uniform":
+        if self.distribution == "uniform":
             A = self.random_state.uniform(
                     low=-1.0,
                     high=1.0,
@@ -90,15 +90,21 @@ class SparseRandomMatrix(RandomMatrix):
     density         = None
     format          = None
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        assert self.density is not None
-        assert self.format is not None
+    def __init__(self, n_rows, n_cols, distribution, density, format, **kw):
+
+        super().__init__(
+                n_rows=n_rows,
+                n_cols=n_cols,
+                distribution=distribution,
+                **kw)
+
+        self.density    = density
+        self.format     = format
 
 
     def create_matrix(self):
 
-        if "distribution" == "uniform":
+        if self.distribution == "uniform":
             distribution = self.random_state.rand
 
         else:
