@@ -36,7 +36,7 @@ jobs:
           activate-environment: ddc # Defined in ci/environment*.yml
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
-          environment-file: ci/environment-py${{ matrix.python-version }}.yaml
+          environment-file: environment.yaml
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
       - name: Run Unit Tests
         shell: bash -l {0}
