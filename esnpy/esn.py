@@ -95,8 +95,8 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: connectedness must be < n_reservoir, got {self.connectedness}")
 
-        if not self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
-            warnings.warn(f"ESN.__init__: sparsity is below 80% but sparse_adj_matrix = {self.sparse_adj_matrix}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
+        if self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
+            warnings.warn(f"ESN.__init__: sparsity is below 80% but adjacency_kwargs['is_sparse'] = {self.adjacency_kwargs['is_sparse']}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
         if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
