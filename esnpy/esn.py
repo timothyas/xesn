@@ -36,6 +36,10 @@ class ESN():
     def adjacency_factor(self):
         return self.adjacency_kwargs["factor"]
 
+    @property
+    def bias(self):
+        return self.bias_kwargs["factor"]
+
     def __init__(self,
             n_input,
             n_output,
@@ -48,29 +52,31 @@ class ESN():
             tikhonov_parameter,
             input_kwargs=None,
             adjacency_kwargs=None,
-            random_seed=None):
+            bias_kwargs=None):
 
         # Required inputs
         self.n_input            = n_input
         self.n_output           = n_output
         self.n_reservoir        = n_reservoir
         self.connectedness      = connectedness
-        self.bias               = bias
         self.leak_rate          = leak_rate
         self.tikhonov_parameter = tikhonov_parameter
-        self.random_seed        = random_seed
-        self.random_state       = xp.random.RandomState(self.random_seed)
 
-        # Handle input and adjacency matrices
+        # Handle input matrix options
         self.input_kwargs = {
             "factor"        : input_factor,
             "distribution"  : "uniform",
             "normalization" : "multiply",
             "is_sparse"     : False,
+            "random_seed"   : None,
             }
         if input_kwargs is not None:
             self.input_kwargs.update(input_kwargs)
 
+        if self.input_kwargs["factor"] != input_factor:
+            raise ValueError(f"ESN.__init__: conflicting input factor given with options 'input_factor' and 'input_kwargs[''factor'']'")
+
+        # Handle adjacency matrix options
         self.adjacency_kwargs = {
             "factor"        : adjacency_factor,
             "density"       : self.density,
@@ -78,11 +84,30 @@ class ESN():
             "normalization" : "eig",
             "is_sparse"     : True,
             "format"        : "csr",
+            "random_seed"   : None,
             }
         if adjacency_kwargs is not None:
             self.adjacency_kwargs.update(adjacency_kwargs)
-            if not self.adjacency_kwargs["is_sparse"]:
-                raise NotImplementedError
+
+        # If we are making dense, remove default stuff
+        for key in ["density", "format"]:
+            if not self.adjacency_kwargs["is_sparse"] and key in self.adjacency_kwargs:
+                self.adjacency_kwargs.pop(key)
+
+        if self.adjacency_kwargs["factor"] != adjacency_factor:
+            raise ValueError(f"ESN.__init__: conflicting adjacency factor given with options 'adjacency_factor' and 'adjacency_kwargs[''factor'']'")
+
+        # Handle bias vector options
+        self.bias_kwargs = {
+            "distribution"  : "uniform",
+            "factor"        : bias,
+            "random_seed"   : None
+            }
+        if bias_kwargs is not None:
+            self.bias_kwargs.update(bias_kwargs)
+
+        if self.bias_kwargs["factor"] != bias:
+            raise ValueError(f"ESN.__init__: conflicting bias factor given with options 'bias' and 'bias_kwargs[''factor'']'")
 
         # Check inputs
         try:
@@ -113,9 +138,6 @@ class ESN():
                 f'    {"leak_rate:":<24s}{self.leak_rate}\n'+\
                 f'    {"tikhonov_parameter:":<24s}{self.tikhonov_parameter}\n'+\
                  '--- \n'+\
-                f'    {"random_seed:":<24s}{self.random_seed}\n'+\
-                f'    {"random_state:":<24s}{self.random_state}\n'+\
-                 '--- \n'+\
                 f'    Input Matrix:\n'
         for key, val in self.input_kwargs.items():
             rstr += f'        {key:<20s}{val}\n'
@@ -138,7 +160,7 @@ class ESN():
         with sparsity determined by :attr:`sparsity` attribute,
         scaled by :attr:`spectral_radius` and :attr:`sigma` parameters, respectively.
 
-        Returns and Sets Attributes:
+        Sets Attributes:
             A (array_like): (:attr:`n_reservoir`, :attr:`n_reservoir`),
                 reservoir adjacency matrix
             Win (array_like): (:attr:`n_reservoir`, :attr:`n_input`),
@@ -150,23 +172,22 @@ class ESN():
         WMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_reservoir,
-                random_state=self.random_state,
                 **self.adjacency_kwargs)
         self.W = WMaker()
-
 
         is_sparse = self.input_kwargs.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
         WinMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_input,
-                random_state=self.random_state,
                 **self.input_kwargs)
         self.Win = WinMaker()
 
-        self.bias_vector = self.random_state.uniform(low=-self.bias,
-                                                     high=self.bias,
-                                                     size=(self.n_reservoir,))
+        BiasMaker = RandomMatrix(
+                n_rows=1,
+                n_cols=self.n_reservoir,
+                **self.bias_kwargs)
+        self.bias_vector = BiasMaker().squeeze()
 
 
     def train(self, u, y=None, n_spinup=0, batch_size=None):
@@ -213,7 +234,7 @@ class ESN():
         """Return object as :obj:`xarray.Dataset`
 
         Note:
-            For now, not storing :attr:`W` or :attr:`Win`. Instead, store :attr:`random_seed`.
+            For now, not storing :attr:`W` or :attr:`Win`. Instead, store the random seed for each within kwargs.
         """
         import xarray as xr
 

@@ -88,9 +88,9 @@ class RandomMatrix():
 class SparseRandomMatrix(RandomMatrix):
 
     density         = None
-    format          = None
+    format          = "coo" # scipy's default
 
-    def __init__(self, n_rows, n_cols, distribution, density, format, **kw):
+    def __init__(self, n_rows, n_cols, distribution, density, **kw):
 
         super().__init__(
                 n_rows=n_rows,
@@ -99,7 +99,6 @@ class SparseRandomMatrix(RandomMatrix):
                 **kw)
 
         self.density    = density
-        self.format     = format
 
 
     def create_matrix(self):
