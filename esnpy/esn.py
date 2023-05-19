@@ -194,6 +194,8 @@ class ESN():
 
         # Check if training labels are different from input data
         y = u if y is None else y
+        n_time = y.shape[1]
+        assert n_time >= n_spinup
 
         self.Wout = _train_1d(
                 u, y, n_spinup, batch_size,
@@ -236,7 +238,6 @@ class ESN():
         Note:
             For now, not storing :attr:`W` or :attr:`Win`. Instead, store the random seed for each within kwargs.
         """
-        import xarray as xr
 
         ds = xr.Dataset()
         ir = xp.arange(self.Wout.squeeze().shape[-1])

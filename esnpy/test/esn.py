@@ -130,3 +130,55 @@ class TestMatrices(TestESN):
         else:
             with pytest.raises(error):
                 esn = ESN(**self.kw, adjacency_kwargs=akw)
+
+
+# Test training
+# all with or without spinup
+# all with or without batch_size
+# check for spinup <= time assertion
+# check that we can use batch size bigger than data length
+
+class TestTraining(TestESN):
+    n_train = 500
+
+    def test_simple(self):
+        """where input = output, no other options"""
+        kw = self.kw.copy()
+        kw["n_output"] = self.n_input
+        u = np.random.normal(size=(self.n_input, self.n_train))
+        esn = ESN(**kw)
+        esn.build()
+        esn.train(u)
+
+
+    @pytest.mark.parametrize(
+            "n_input, n_output",  [(3, 7), (3, 3)],
+    )
+    @pytest.mark.parametrize(
+            "n_spinup", [0, 10],
+    )
+    @pytest.mark.parametrize(
+            "batch_size", [None, 33],
+    )
+    def test_all_options(self, n_input, n_output, n_spinup, batch_size):
+        u = np.random.normal(size=(n_input, self.n_train))
+        y = np.random.normal(size=(n_output, self.n_train))
+
+        kwargs = self.kw.copy()
+        kwargs["n_input"] = n_input
+        kwargs["n_output"] = n_input
+        esn = ESN(**kwargs)
+        esn.build()
+        esn.train(u, y=y, n_spinup=n_spinup, batch_size=batch_size)
+
+        assert tuple(esn.Wout.shape) == (n_output, self.n_reservoir)
+
+    def test_spinup_assert(self):
+        kw = self.kw.copy()
+        kw["n_output"] = self.n_input
+        u = np.random.normal(size=(self.n_input, self.n_train))
+        esn = ESN(**kw)
+        esn.build()
+        with pytest.raises(AssertionError):
+            esn.train(u, n_spinup=self.n_train+1)
+
