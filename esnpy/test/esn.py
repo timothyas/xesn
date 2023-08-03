@@ -1,12 +1,16 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+import xarray as xr
+from shutil import rmtree
+
 from esnpy.esn import ESN
+from esnpy.io import from_zarr
 
 class TestESN:
     n_input             = 3
-    n_output            = 1
+    n_output            = 3
     n_reservoir         = 100
     connectedness       = 5
     bias                = 0.1
@@ -132,21 +136,14 @@ class TestMatrices(TestESN):
                 esn = ESN(**self.kw, adjacency_kwargs=akw)
 
 
-# Test training
-# all with or without spinup
-# all with or without batch_size
-# check for spinup <= time assertion
-# check that we can use batch size bigger than data length
-
 class TestTraining(TestESN):
     n_train = 500
+    rs      = np.random.RandomState(0)
 
     def test_simple(self):
         """where input = output, no other options"""
-        kw = self.kw.copy()
-        kw["n_output"] = self.n_input
-        u = np.random.normal(size=(self.n_input, self.n_train))
-        esn = ESN(**kw)
+        u = self.rs.normal(size=(self.n_input, self.n_train))
+        esn = ESN(**self.kw)
         esn.build()
         esn.train(u)
 
@@ -158,11 +155,11 @@ class TestTraining(TestESN):
             "n_spinup", [0, 10],
     )
     @pytest.mark.parametrize(
-            "batch_size", [None, 33],
+            "batch_size", [None, 33, 10_000],
     )
     def test_all_options(self, n_input, n_output, n_spinup, batch_size):
-        u = np.random.normal(size=(n_input, self.n_train))
-        y = np.random.normal(size=(n_output, self.n_train))
+        u = self.rs.normal(size=(n_input, self.n_train))
+        y = self.rs.normal(size=(n_output, self.n_train))
 
         kwargs = self.kw.copy()
         kwargs["n_input"] = n_input
@@ -174,11 +171,66 @@ class TestTraining(TestESN):
         assert tuple(esn.Wout.shape) == (n_output, self.n_reservoir)
 
     def test_spinup_assert(self):
-        kw = self.kw.copy()
-        kw["n_output"] = self.n_input
-        u = np.random.normal(size=(self.n_input, self.n_train))
-        esn = ESN(**kw)
+        u = self.rs.normal(size=(self.n_input, self.n_train))
+        esn = ESN(**self.kw)
         esn.build()
         with pytest.raises(AssertionError):
             esn.train(u, n_spinup=self.n_train+1)
 
+
+class TestPrediction(TestESN):
+    n_train = 500
+    n_steps = 10
+    rs      = np.random.RandomState(0)
+    path    = "test-store.zarr"
+
+    def setup_method(self):
+        u = self.rs.normal(size=(self.n_input, self.n_train))
+        esn = ESN(**self.kw)
+        esn.build()
+        esn.train(u)
+        return esn, u
+
+    def test_simple(self):
+        """where input = output, no other options"""
+        esn, u = self.setup_method()
+
+        v = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
+
+        # With zero spinup, these arrays actually should be equal
+        assert_array_equal(v[:, 0], u[:, 0])
+        assert v.shape == (esn.n_output, self.n_steps+1)
+
+    @pytest.mark.parametrize(
+            "n_spinup", (0, 10, 100_000)
+    )
+    def test_all_options(self, n_spinup):
+        esn, u = self.setup_method()
+
+        if n_spinup > u.shape[-1]:
+            with pytest.raises(AssertionError):
+                v = esn.predict(u, n_steps=self.n_steps, n_spinup=n_spinup)
+        else:
+            v = esn.predict(u, n_steps=self.n_steps, n_spinup=n_spinup)
+
+            assert v.shape == (esn.n_output, self.n_steps+1)
+
+
+    def test_storage(self):
+        esn, u = self.setup_method()
+        ds = esn.to_xds()
+
+        # Make sure dataset matches
+        for key, expected in self.kw.items():
+            assert_allclose(ds.attrs[key], expected)
+
+        ds.to_zarr(self.path, mode="w")
+        esn2 = from_zarr(self.path)
+        for key in self.kw.keys():
+            assert_allclose(getattr(esn, key), getattr(esn2, key))
+
+        v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
+        v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=0)
+        assert_allclose(v1, v2)
+
+        rmtree(self.path)

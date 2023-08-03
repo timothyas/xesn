@@ -211,7 +211,7 @@ class ESN():
 
         # Make containers
         r = xp.zeros(shape=(self.n_reservoir,))
-        yT = xp.zeros(
+        vT = xp.zeros(
                 shape=(n_steps+1, self.n_output))
         kw = {
                 "W"             : self.W,
@@ -224,12 +224,12 @@ class ESN():
             r = _update(r, uT[n], **kw)
 
         # Prediction
-        yT[0] = uT[n_spinup]
+        vT[0] = uT[n_spinup]
         for n in range(1, n_steps+1):
-            r = _update(r, yT[n-1], **kw)
-            yT[n] = self.Wout @ r
+            r = _update(r, vT[n-1], **kw)
+            vT[n] = self.Wout @ r
 
-        return yT.T
+        return vT.T
 
 
     def to_xds(self):
@@ -238,6 +238,9 @@ class ESN():
         Note:
             For now, not storing :attr:`W` or :attr:`Win`. Instead, store the random seed for each within kwargs.
         """
+
+        if self.Wout is None:
+            raise Exception("ESN.to_xds: Wout has not been computed yet, so it's not worth storing this model")
 
         ds = xr.Dataset()
         ir = xp.arange(self.Wout.squeeze().shape[-1])
