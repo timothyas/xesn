@@ -186,7 +186,7 @@ class TestPrediction(TestESN):
 
     def setup_method(self):
         u = self.rs.normal(size=(self.n_input, self.n_train))
-        esn = ESN(**self.kw)
+        esn = ESN(input_kwargs={"random_seed": 10}, adjacency_kwargs={"random_seed": 11}, bias_kwargs={"random_seed": 12}, **self.kw)
         esn.build()
         esn.train(u)
         return esn, u
@@ -229,8 +229,13 @@ class TestPrediction(TestESN):
         for key in self.kw.keys():
             assert_allclose(getattr(esn, key), getattr(esn2, key))
 
-        v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
-        v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=0)
+        for key in ["Win", "bias_vector", "Wout"]:
+            assert_allclose(getattr(esn, key), getattr(esn2, key))
+
+        assert_allclose(esn.W.data, esn2.W.data)
+
+        v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=1)
+        v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=1)
         assert_allclose(v1, v2)
 
         rmtree(self.path)
