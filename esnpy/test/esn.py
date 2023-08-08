@@ -239,3 +239,8 @@ class TestPrediction(TestESN):
         assert_allclose(v1, v2)
 
         rmtree(self.path)
+
+    def test_no_Wout(self):
+        esn = ESN(**self.kw)
+        with pytest.raises(Exception):
+            esn.to_xds()

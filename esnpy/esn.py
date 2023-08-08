@@ -262,10 +262,7 @@ class ESN():
 
         for key in kw:
             val = getattr(self, key)
-            if isinstance(val, bool) or val is None:
-                ds.attrs[key] = str(val)
-            else:
-                ds.attrs[key] = val
+            ds.attrs[key] = val
 
         return ds
 
