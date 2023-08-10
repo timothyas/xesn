@@ -58,7 +58,7 @@ class LazyESN(ESN):
             boundary=xp.nan,
             input_kwargs=None,
             adjacency_kwargs=None,
-            random_seed=None):
+            bias_kwargs=None):
 
         # Figure out input/output from data chunk sizes
         self.overlap        = overlap
@@ -81,7 +81,7 @@ class LazyESN(ESN):
                 tikhonov_parameter=tikhonov_parameter,
                 input_kwargs=input_kwargs,
                 adjacency_kwargs=adjacency_kwargs,
-                random_seed=random_seed)
+                bias_kwargs=bias_kwargs)
 
         try:
             assert len([axis for axis, depth in self.overlap.items() if depth > 0]) <= 2
