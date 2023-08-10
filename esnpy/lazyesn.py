@@ -14,6 +14,13 @@ else:
 from .esn import ESN, _train_1d, _update
 
 class LazyESN(ESN):
+    """
+    Assumptions:
+        1. Time axis is last
+        2. Non-global axes, i.e., axes which is chunked up or made up of patches, are first
+        3. Can handle multi-dimensional data, but only 2D chunking
+
+    """
 
     @property
     def output_chunks(self):
@@ -65,6 +72,11 @@ class LazyESN(ESN):
         self.boundary       = boundary
         self.persist        = persist
         self.data_chunks    = data_chunks
+
+        # We can't have -1's in the spatial data_chunks,
+        # because we're taking products to compute sizes
+        if any(x < 0 for x in data_chunks[:-1]):
+            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of data_chunks. Provide the actual value please.")
 
         n_output = _prod(self.output_chunks[:-1])
         n_input = _prod(self.input_chunks[:-1])
