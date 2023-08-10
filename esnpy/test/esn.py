@@ -19,6 +19,7 @@ class TestESN:
 
     input_factor        = 0.1
     adjacency_factor    = 0.1
+
     @property
     def kw(self):
         return {key: getattr(self, key) for key in [
@@ -31,8 +32,16 @@ class TestInit(TestESN):
         esn = ESN(**self.kw)
         str(esn)
         assert esn.__repr__() == str(esn)
-        for key, expected in self.kw.items():
-            assert_allclose(getattr(esn, key), expected)
+
+        for key in ["n_input", "n_output", "n_reservoir"]:
+            expected = self.kw[key]
+            test = getattr(esn, key)
+            assert test == expected
+
+        for key in ["input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter"]:
+            expected = self.kw[key]
+            test = getattr(esn, key)
+            assert_allclose(test, expected)
 
 
     @pytest.mark.parametrize(
