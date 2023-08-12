@@ -111,8 +111,6 @@ class LazyESN(ESN):
         halo_data = overlap(y, depth=self.overlap, boundary=self.boundary)
         halo_data = halo_data.persist() if self.persist else halo_data
 
-
-
         self.Wout = map_blocks(
                 _train_nd,
                 halo_data,

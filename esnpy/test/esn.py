@@ -177,7 +177,7 @@ class TestTraining(TestESN):
         esn.build()
         esn.train(u, y=y, n_spinup=n_spinup, batch_size=batch_size)
 
-        assert tuple(esn.Wout.shape) == (n_output, self.n_reservoir)
+        assert esn.Wout.shape == (n_output, self.n_reservoir)
 
     def test_spinup_assert(self):
         u = self.rs.normal(size=(self.n_input, self.n_train))
