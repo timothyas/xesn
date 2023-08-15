@@ -71,7 +71,7 @@ class LazyESN(ESN):
         self.overlap        = overlap
         self.boundary       = boundary
         self.persist        = persist
-        self.data_chunks    = data_chunks
+        self.data_chunks    = tuple(data_chunks)
 
         # We can't have -1's in the spatial data_chunks,
         # because we're taking products to compute sizes

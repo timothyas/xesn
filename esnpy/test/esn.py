@@ -25,6 +25,9 @@ class TestESN:
         return {key: getattr(self, key) for key in [
             "n_input", "n_output", "n_reservoir", "connectedness", "bias", "leak_rate", "tikhonov_parameter", "input_factor", "adjacency_factor"]}
 
+    equal_list  = ("n_input", "n_output", "n_reservoir")
+    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter")
+
 
 class TestInit(TestESN):
 
@@ -33,16 +36,15 @@ class TestInit(TestESN):
         str(esn)
         assert esn.__repr__() == str(esn)
 
-        for key in ["n_input", "n_output", "n_reservoir"]:
+        for key in self.kw.keys():
+
             expected = self.kw[key]
             test = getattr(esn, key)
-            assert test == expected
 
-        for key in ["input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter"]:
-            expected = self.kw[key]
-            test = getattr(esn, key)
-            assert_allclose(test, expected)
-
+            if key in self.equal_list:
+                assert test == expected
+            elif key in self.close_list:
+                assert_allclose(test, expected)
 
     @pytest.mark.parametrize(
             "key, val, raises, error",
@@ -230,13 +232,27 @@ class TestPrediction(TestESN):
         ds = esn.to_xds()
 
         # Make sure dataset matches
-        for key, expected in self.kw.items():
-            assert_allclose(ds.attrs[key], expected)
+        for key in self.kw.keys():
+
+            expected = getattr(esn, key)
+            test = ds.attrs[key]
+
+            if key in self.equal_list:
+                assert test == expected
+            elif key in self.close_list:
+                assert_allclose(test, expected)
 
         ds.to_zarr(self.path, mode="w")
         esn2 = from_zarr(self.path)
         for key in self.kw.keys():
-            assert_allclose(getattr(esn, key), getattr(esn2, key))
+
+            expected = getattr(esn, key)
+            test = getattr(esn2, key)
+
+            if key in self.equal_list:
+                assert test == expected
+            elif key in self.close_list:
+                assert_allclose(test, expected)
 
         for key in ["Win", "bias_vector", "Wout"]:
             assert_allclose(getattr(esn, key), getattr(esn2, key))
