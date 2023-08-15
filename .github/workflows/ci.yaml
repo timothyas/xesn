@@ -41,7 +41,7 @@ jobs:
       - name: Run Unit Tests
         shell: bash -l {0}
         run: |
-          coverage run -m pytest --verbose esnpy/test/matrix.py esnpy/test/esn.py
+          coverage run --rcfile=coverage.toml -m pytest --verbose esnpy/test/matrix.py esnpy/test/esn.py esnpy/test/lazy.py
       - name: Show coverage report
         shell: bash -l {0}
         run: |
