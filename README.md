@@ -43,6 +43,9 @@ A clean echo state network implementation
 
 - [ ] Make sure environment yaml is good to go
 - [ ] Unit tests
+    * Right now, the simple ESN can have different size inputs and outputs for
+      training but not prediction... worth implementing? If not, probably
+      provide some errors.
 - [ ] Formatting... black?
 - [ ] Integration tests
 - [ ] Regression tests
