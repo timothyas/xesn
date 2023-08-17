@@ -46,7 +46,3 @@ jobs:
         shell: bash -l {0}
         run: |
           coverage report -m
-
-      - name: Python Coverage Comment
-        uses: py-cov-action/python-coverage-comment-action@v2.2.0
- 
