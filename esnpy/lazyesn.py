@@ -14,6 +14,13 @@ else:
 from .esn import ESN, _train_1d, _update
 
 class LazyESN(ESN):
+    """
+    Assumptions:
+        1. Time axis is last
+        2. Non-global axes, i.e., axes which is chunked up or made up of patches, are first
+        3. Can handle multi-dimensional data, but only 2D chunking
+
+    """
 
     @property
     def output_chunks(self):
@@ -58,13 +65,18 @@ class LazyESN(ESN):
             boundary=xp.nan,
             input_kwargs=None,
             adjacency_kwargs=None,
-            random_seed=None):
+            bias_kwargs=None):
 
         # Figure out input/output from data chunk sizes
         self.overlap        = overlap
         self.boundary       = boundary
         self.persist        = persist
-        self.data_chunks    = data_chunks
+        self.data_chunks    = tuple(data_chunks)
+
+        # We can't have -1's in the spatial data_chunks,
+        # because we're taking products to compute sizes
+        if any(x < 0 for x in data_chunks[:-1]):
+            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of data_chunks. Provide the actual value please.")
 
         n_output = _prod(self.output_chunks[:-1])
         n_input = _prod(self.input_chunks[:-1])
@@ -81,7 +93,7 @@ class LazyESN(ESN):
                 tikhonov_parameter=tikhonov_parameter,
                 input_kwargs=input_kwargs,
                 adjacency_kwargs=adjacency_kwargs,
-                random_seed=random_seed)
+                bias_kwargs=bias_kwargs)
 
         try:
             assert len([axis for axis, depth in self.overlap.items() if depth > 0]) <= 2
@@ -98,8 +110,6 @@ class LazyESN(ESN):
 
         halo_data = overlap(y, depth=self.overlap, boundary=self.boundary)
         halo_data = halo_data.persist() if self.persist else halo_data
-
-
 
         self.Wout = map_blocks(
                 _train_nd,

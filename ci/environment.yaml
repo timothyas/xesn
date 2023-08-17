@@ -2,7 +2,6 @@ name: esn
 channels:
     - conda-forge
 dependencies:
-    - python=3.10
 # Basics
     - numpy
     - scipy

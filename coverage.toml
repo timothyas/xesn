@@ -1,0 +1,5 @@
+[tool.coverage.run]
+omit = [
+    "esnpy/test/*.py",
+    "**/__init__.py",
+]
