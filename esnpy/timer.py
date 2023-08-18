@@ -1,5 +1,10 @@
+"""A simple timer class, only slightly modified from RealPython:
+https://realpython.com/python-timer/#a-python-timer-class
+"""
+
 import sys
 import time
+
 class Timer:
     """Simple timer class
     """
