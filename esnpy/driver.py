@@ -55,7 +55,7 @@ class Driver():
             i=0
             out_dir = f"output-{self.name}-{i:02d}"
             while os.path.isdir(out_dir):
-                if i>100:
+                if i>99:
                     raise ValueError("Hit max number of default out directories...")
                 out_dir = f"output-{self.name}-{i:02d}"
                 i = i+1
