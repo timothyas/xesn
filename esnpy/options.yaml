@@ -1,0 +1,50 @@
+data:
+    - dimensions
+    - delta_t
+    - time_units
+    - zstore_path
+    - field_name
+    - indices
+    - normalization
+    - subsampling
+
+lazyesn:
+    - boundary
+    - n_reservoir
+    - connectedness
+    - leak_rate
+    - tikhonov_parameter
+    - persist
+    - esn_chunks
+    - overlap
+    - input_factor
+    - input_kwargs
+    - adjacency_factor
+    - adjacency_kwargs
+    - bias
+    - bias_kwargs
+
+training:
+    - n_spinup
+    - batch_size
+
+validation:
+    - n_spinup
+    - n_steps
+    - n_samples
+    - n_doe
+    - n_iter
+    - n_parallel
+    - macro_index_seed
+    - initial_sample_seed
+    - optimization_seed
+    - persist_cost
+    - parameters
+
+testing:
+    - n_spinup
+    - n_steps
+    - n_samples
+    - random_seed
+    - save_trajectories
+    - keep_spinup
