@@ -3,7 +3,7 @@
 import numpy as np
 import xarray as xr
 
-class Data():
+class XData():
 
     def __init__(self,
                  field_name,
@@ -63,17 +63,17 @@ class Data():
                 assert type(myslice.start) == type(myslice.stop) or \
                        (myslice.start is None or myslice.stop is None)
             except:
-                raise TypeError(f"Data.subsample: slice elements must be all ints or all floats. Got {myslice} for dim={dim}")
+                raise TypeError(f"XData.subsample: slice elements must be all ints or all floats. Got {myslice} for dim={dim}")
 
             # do the slicing
-            self.print_log(f"Data.subsample: Original {dim}: {xda[dim]}")
+            self.print_log(f"XData.subsample: Original {dim}: {xda[dim]}")
             if isinstance(myslice.start, int) or isinstance(myslice.stop, int):
                 xda = xda.isel({dim: myslice})
 
             elif isinstance(myslice.start, float) or isinstance(myslice.stop, float):
                 xda = xda.sel({dim: myslice})
 
-            self.print_log(f"Data.subsample: Subsampled/sliced {dim}: {xds[dim]}")
+            self.print_log(f"XData.subsample: Subsampled/sliced {dim}: {xds[dim]}")
 
         # Squeeze out any singular dimensions after slicing
         xda = xda.squeeze()

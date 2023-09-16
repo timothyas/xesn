@@ -4,7 +4,7 @@ import yaml
 import logging
 from contextlib import redirect_stdout
 
-from .data import Data
+from .xdata import XData
 from .lazyesn import LazyESN
 from .timer import Timer
 
@@ -51,7 +51,7 @@ class Driver():
 
         # setup the data
         self.localtime.start("Setting up Data")
-        data = Data(**self.params["data"])
+        data = XData(**self.params["xdata"])
         xda = data.setup()
         self.localtime.stop()
 
@@ -79,7 +79,7 @@ class Driver():
         self.walltime.start("Starting Macro Calibration")
 
         # setup the data
-        data = Data(**self.params["data"])
+        data = XData(**self.params["xdata"])
         xda = data.setup()
 
         # define the loss function
