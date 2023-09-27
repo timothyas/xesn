@@ -254,7 +254,7 @@ class ESN():
         # the main stuff
         dims = ("iy", "ir")
         Wout = self.Wout.get() if _use_cupy else self.Wout
-        ds["Wout"] = xr.DataArray(Wout, coords={k: ds[k] for k in dims}, dims=dims)
+        ds["Wout"] = xr.DataArray(Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
         kw, *_ = inspect.getfullargspec(self.__init__)
