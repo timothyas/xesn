@@ -12,6 +12,7 @@ class TestESN:
     n_input             = 3
     n_output            = 3
     n_reservoir         = 100
+    n_train             = 500
     connectedness       = 5
     bias                = 0.1
     leak_rate           = 0.5
@@ -147,20 +148,31 @@ class TestMatrices(TestESN):
                 esn = ESN(**self.kw, adjacency_kwargs=akw)
 
 
-class TestTraining(TestESN):
-    n_train = 500
-    rs      = np.random.RandomState(0)
 
-    def test_simple(self):
+@pytest.fixture(scope="module")
+def test_data():
+    rs = np.random.RandomState(0)
+    tester = TestESN()
+
+    datasets = {}
+    for n_input in [3, 7]:
+        datasets[n_input] = {
+                "u": rs.normal(size=(n_input, tester.n_train)),
+                "y": rs.normal(size=(tester.n_output, tester.n_train))
+                }
+    yield datasets
+
+class TestTraining(TestESN):
+
+    def test_simple(self, test_data):
         """where input = output, no other options"""
-        u = self.rs.normal(size=(self.n_input, self.n_train))
         esn = ESN(**self.kw)
         esn.build()
-        esn.train(u)
+        esn.train(test_data[3]["u"])
 
 
     @pytest.mark.parametrize(
-            "n_input, n_output",  [(3, 7), (3, 3)],
+            "n_input",  (3, 7),
     )
     @pytest.mark.parametrize(
             "n_spinup", [0, 10],
@@ -168,43 +180,39 @@ class TestTraining(TestESN):
     @pytest.mark.parametrize(
             "batch_size", [None, 33, 10_000],
     )
-    def test_all_options(self, n_input, n_output, n_spinup, batch_size):
-        u = self.rs.normal(size=(n_input, self.n_train))
-        y = self.rs.normal(size=(n_output, self.n_train))
+    def test_all_options(self, test_data, n_input, n_spinup, batch_size):
+        expected = test_data[n_input]
 
         kwargs = self.kw.copy()
         kwargs["n_input"] = n_input
         kwargs["n_output"] = n_input
         esn = ESN(**kwargs)
         esn.build()
-        esn.train(u, y=y, n_spinup=n_spinup, batch_size=batch_size)
+        esn.train(expected["u"], y=expected["y"], n_spinup=n_spinup, batch_size=batch_size)
 
-        assert esn.Wout.shape == (n_output, self.n_reservoir)
+        assert esn.Wout.shape == (self.n_output, self.n_reservoir)
 
-    def test_spinup_assert(self):
-        u = self.rs.normal(size=(self.n_input, self.n_train))
+    def test_spinup_assert(self, test_data):
         esn = ESN(**self.kw)
         esn.build()
         with pytest.raises(AssertionError):
-            esn.train(u, n_spinup=self.n_train+1)
+            esn.train(test_data[self.n_input]["u"], n_spinup=self.n_train+1)
 
 
 class TestPrediction(TestESN):
-    n_train = 500
     n_steps = 10
-    rs      = np.random.RandomState(0)
     path    = "test-store.zarr"
 
-    def setup_method(self):
-        u = self.rs.normal(size=(self.n_input, self.n_train))
+    def custom_setup_method(self, test_data):
+        u = test_data[self.n_input]["u"]
         esn = ESN(input_kwargs={"random_seed": 10}, adjacency_kwargs={"random_seed": 11}, bias_kwargs={"random_seed": 12}, **self.kw)
         esn.build()
         esn.train(u)
         return esn, u
 
-    def test_simple(self):
+    def test_simple(self, test_data):
         """where input = output, no other options"""
-        esn, u = self.setup_method()
+        esn, u = self.custom_setup_method(test_data)
 
         v = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
 
@@ -215,8 +223,8 @@ class TestPrediction(TestESN):
     @pytest.mark.parametrize(
             "n_spinup", (0, 10, 100_000)
     )
-    def test_all_options(self, n_spinup):
-        esn, u = self.setup_method()
+    def test_all_options(self, test_data, n_spinup):
+        esn, u = self.custom_setup_method(test_data)
 
         if n_spinup > u.shape[-1]:
             with pytest.raises(AssertionError):
@@ -227,8 +235,8 @@ class TestPrediction(TestESN):
             assert v.shape == (esn.n_output, self.n_steps+1)
 
 
-    def test_storage(self):
-        esn, u = self.setup_method()
+    def test_storage(self, test_data):
+        esn, u = self.custom_setup_method(test_data)
         ds = esn.to_xds()
 
         # Make sure dataset matches
