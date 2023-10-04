@@ -2,16 +2,12 @@
 import os
 import yaml
 import logging
+import inspect
 from contextlib import redirect_stdout
 
 from .xdata import XData
 from .lazyesn import LazyESN
 from .timer import Timer
-
-# TODO:
-# - create client / dask stuff
-# - how to choose between different models. is it enough to have the title of a section be different? have to look for recognized names
-# - make consistent validation vs macro training and training vs micro training
 
 class Driver():
     name                    = "driver"
@@ -174,9 +170,7 @@ class Driver():
         else:
             raise TypeError(f"Driver.set_params: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
 
-        # TODO: determine if we really want a check like this,
-        # or if it's enough to just have each section get passed to class initialization
-        #self._check_config_options(params)
+        self._check_config_options(params)
 
         outname = os.path.join(self.output_directory, "config.yaml")
         with open(outname, "w") as f:
@@ -217,22 +211,39 @@ class Driver():
                 print(*args, **kwargs)
 
 
-# TODO: decide on this, probably going to delete it b/c it's extraneous code.
-#    def _check_config_options(self, params):
-#        """A really simple test, make sure we recognize each option name, that's it.
-#
-#        Args:
-#            params (dict): the big nested options dictionary
-#        """
-#
-#        this_dir = os.path.dirname(os.path.abspath(__file__))
-#        fname = os.path.join(this_dir, "options.yaml")
-#        with open(fname, "r") as f:
-#            options = yaml.safe_load(f)
-#
-#        for section in params.keys():
-#            for key in params[section].keys():
-#                try:
-#                    assert key in options[section]
-#                except:
-#                    raise KeyError(f"Driver.check_config_options: unrecognized parameter option {key} found in config section {section}")
+    def _check_config_options(self, params):
+        """Make sure we recognize each configuration section name, and each option name.
+        No type or value checking
+
+        Args:
+            params (dict): the big nested options dictionary
+        """
+
+        # Check sections
+        expected = {
+                "xdata": XData,
+                "LazyESN": LazyESN,
+                "training": LazyESN.train,
+                "validation": None,
+                "testing": None,
+                "compute": None}
+        bad_sections = []
+        for key in params.keys():
+            try:
+                assert key in expected.keys()
+            except:
+                bad_sections.append(key)
+
+        if len(bad_sections)>0:
+            raise KeyError(f"Driver._check_config_options: unrecognized config section(s): {bad_sections}")
+
+
+        # Check options in each section
+        for section in params.keys():
+            Func = expected[section]
+            kw, *_ = inspect.getfullargspec(Func)
+            for key in params[section].keys():
+                try:
+                    assert key in kw
+                except:
+                    raise KeyError(f"Driver._check_config_options: unrecognized option {key} in section {section}")

@@ -20,7 +20,7 @@ def config_dict():
                 "zstore_path": "blah.zarr",
                 "field_name": "blah",
             },
-            "esn": {
+            "LazyESN": {
                 "n_reservoir": 500,
             },
         }
@@ -94,13 +94,13 @@ class TestDriver():
 
         driver = test_driver
         assert driver.params["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
-        assert driver.params["esn"]["n_reservoir"] == config_dict["esn"]["n_reservoir"]
+        assert driver.params["LazyESN"]["n_reservoir"] == config_dict["LazyESN"]["n_reservoir"]
 
         expected = {
                 "xdata": {
                     "zstore_path": "new.zarr",
                 },
-                "esn": {
+                "LazyESN": {
                     "n_reservoir": 100,
                 },
             }
@@ -109,7 +109,7 @@ class TestDriver():
 
         # make sure these changed
         assert driver.params["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
-        assert driver.params["esn"]["n_reservoir"] == expected["esn"]["n_reservoir"]
+        assert driver.params["LazyESN"]["n_reservoir"] == expected["LazyESN"]["n_reservoir"]
 
         # but make sure this one didn't
         assert driver.params["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
@@ -118,6 +118,22 @@ class TestDriver():
         driver = test_driver
         with pytest.raises(TypeError):
             driver.set_params(["blah", "blah", "blah"])
+
+
+    def test_bad_section(self, test_driver, config_dict):
+        c = config_dict.copy()
+        c["blah"] = {"a": 1}
+        driver = test_driver
+        with pytest.raises(KeyError):
+            driver.set_params(c)
+
+
+    def test_bad_option(self, test_driver, config_dict):
+        c = config_dict.copy()
+        c["xdata"]["blah"] = None
+        driver = test_driver
+        with pytest.raises(KeyError):
+            driver.set_params(c)
 
 
 @pytest.fixture(scope="function")
