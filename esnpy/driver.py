@@ -14,7 +14,12 @@ from .timer import Timer
 # - make consistent validation vs macro training and training vs micro training
 
 class Driver():
-    name = "driver"
+    name                    = "driver"
+    output_directory        = None
+    output_datset_filename  = None
+    walltime                = None
+    localtime               = None
+
     def __init__(self,
                  config,
                  output_directory=None,
@@ -25,6 +30,8 @@ class Driver():
 
         self.output_dataset_filename = os.path.join(self.output_directory, output_dataset_filename) \
                 if output_dataset_filename is not None else None
+
+        self.set_params(config)
 
         self.walltime = Timer(filename=self.logfile)
         self.localtime = Timer(filename=self.logfile)
@@ -74,21 +81,21 @@ class Driver():
         self.walltime.stop("Total Walltime")
 
 
-    def run_macro_calibration(self):
-
-        self.walltime.start("Starting Macro Calibration")
-
-        # setup the data
-        data = XData(**self.params["xdata"])
-        xda = data.setup()
-
-        # define the loss function
-
-        # optimize
-
-        # Retrain (for now... need to dig into this)
-
-        self.walltime.stop("Total Walltime")
+#    def run_macro_calibration(self):
+#
+#        self.walltime.start("Starting Macro Calibration")
+#
+#        # setup the data
+#        data = XData(**self.params["xdata"])
+#        xda = data.setup()
+#
+#        # define the loss function
+#
+#        # optimize
+#
+#        # Retrain (for now... need to dig into this)
+#
+#        self.walltime.stop("Total Walltime")
 
 
     def make_output_directory(self, out_dir):
@@ -109,7 +116,7 @@ class Driver():
             out_dir = f"output-{self.name}-{i:02d}"
             while os.path.isdir(out_dir):
                 if i>99:
-                    raise ValueError("Hit max number of default out directories...")
+                    raise ValueError("Hit max number of default output directories...")
                 out_dir = f"output-{self.name}-{i:02d}"
                 i = i+1
             os.makedirs(out_dir)
@@ -163,7 +170,7 @@ class Driver():
             params = config
 
         else:
-            raise TypeError(f"Driver.get_params: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
+            raise TypeError(f"Driver.set_params: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
 
         # TODO: determine if we really want a check like this,
         # or if it's enough to just have each section get passed to class initialization
@@ -208,21 +215,22 @@ class Driver():
                 print(*args, **kwargs)
 
 
-    def _check_config_options(self, params):
-        """A really simple test, make sure we recognize each option name, that's it.
-
-        Args:
-            params (dict): the big nested options dictionary
-        """
-
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        fname = os.path.join(this_dir, "options.yaml")
-        with open(fname, "r") as f:
-            options = yaml.safe_load(f)
-
-        for section in params.keys():
-            for key in params[section].keys():
-                try:
-                    assert key in options[section]
-                except:
-                    raise KeyError(f"Driver.check_config_options: unrecognized parameter option {key} found in config section {section}")
+# TODO: decide on this, probably going to delete it b/c it's extraneous code.
+#    def _check_config_options(self, params):
+#        """A really simple test, make sure we recognize each option name, that's it.
+#
+#        Args:
+#            params (dict): the big nested options dictionary
+#        """
+#
+#        this_dir = os.path.dirname(os.path.abspath(__file__))
+#        fname = os.path.join(this_dir, "options.yaml")
+#        with open(fname, "r") as f:
+#            options = yaml.safe_load(f)
+#
+#        for section in params.keys():
+#            for key in params[section].keys():
+#                try:
+#                    assert key in options[section]
+#                except:
+#                    raise KeyError(f"Driver.check_config_options: unrecognized parameter option {key} found in config section {section}")
