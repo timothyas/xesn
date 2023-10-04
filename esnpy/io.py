@@ -12,9 +12,17 @@ def from_zarr(store, **kwargs):
     args = {key: val for key, val in xds.attrs.items()}
 
     # Create ESN
-    esn = ESN(**args) if "overlap" not in args else LazyESN(**args)
+    is_lazy = "overlap" in args
+    esn = LazyESN(**args) if is_lazy else ESN(**args)
     esn.build()
-    esn.Wout = xds["Wout"].data
+    Wout = xds["Wout"].data
+
+    # Need to re-append singleton dimension
+    if is_lazy:
+        for _ in range(esn.ndim_state - 2):
+            Wout = Wout[...,None]
+
+    esn.Wout = Wout
 
     # Overlap dictionary is interpreted with string keys
     if "overlap" in args:

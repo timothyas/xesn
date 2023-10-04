@@ -16,6 +16,7 @@ class TestLazy(TestESN):
 
     n_input     = 5
     n_output    = 3
+    n_train     = 500
     data_chunks = (3, 1_000)
     overlap     = {0: 1, 1: 0}
     persist     = True
@@ -31,6 +32,39 @@ class TestLazy(TestESN):
         for key in ["n_input", "n_output"]:
             kw.pop(key)
         return kw
+
+
+@pytest.fixture(scope="module")
+def test_data():
+
+    tester = TestLazy()
+    rs = darray.random.RandomState(0)
+    datasets = {}
+    for shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+            ( ( 4 ,),     ( 4 ,  6 ),   ( 4 ,  6 ,  5 ) ),
+            ( ( 2 ,),     ( 2 ,  3 ),   ( 2 ,  3 ,  5 ) ),
+            ( ( 1 ,),     ( 1 ,  1 ),   ( 1 ,  1 ,  0 ) ),
+            ( [2, None], [  6, None], [   30, None, 1]),
+            ( [2, None], [2*6, None], [2*6*5, None, 1]),
+            ):
+        shape += (tester.n_train,)
+        nd = len(shape)
+        chunks += (-1,)
+        overlap += (0,)
+
+        Wout_chunks[1] = tester.n_reservoir
+        Wout_shape[1]  = tester.n_reservoir*2
+
+        datasets[nd] = {
+                "data": rs.normal(size=shape, chunks=chunks),
+                "shape": shape,
+                "chunks": chunks,
+                "overlap": overlap,
+                "Wout_chunks": Wout_chunks,
+                "Wout_shape": Wout_shape,
+                "overlap": {i:o for i, o in enumerate(overlap)},
+                }
+    yield datasets
 
 
 class TestInit(TestLazy):
@@ -75,66 +109,49 @@ class TestInit(TestLazy):
             esn = LazyESN(**kw)
 
 
-#class TestTraining(TestLazy):
-#    n_train = 500
-#    rs      = darray.random.RandomState(0)
-#    boundary= "periodic"
-#
-#    @property
-#    def kw(self):
-#        kw = super().kw.copy()
-#        kw.update({key:getattr(self, key) for key in ["boundary"]})
-#        return kw
-#
-#
-#    @pytest.mark.parametrize(
-#            "shape, chunks, overlap, Wout_chunks, Wout_shape", [
-#                ( (4,     ), (2,     ), (1,     ), [ 2, None   ], [  2,   None   ] ),
-#                ( (4, 6   ), (2, 3   ), (1, 1   ), [ 6, None   ], [2*6,   None   ] ),
-#                ( (4, 6, 5), (2, 3, 5), (1, 1, 0), [30, None, 1], [2*6*5, None, 1] ),
-#            ]
-#    )
-#    @pytest.mark.parametrize(
-#            "n_spinup", [0, 10],
-#    )
-#    @pytest.mark.parametrize(
-#            "batch_size", [None, 33, 10_000],
-#    )
-#    # Maybe better to separate the "options" testing from all the different sizes
-#    def test_many_sizes(self, shape, chunks, overlap, Wout_chunks, Wout_shape, n_spinup, batch_size):
-#        """where input = output, no other options"""
-#        shape += (self.n_train,)
-#        chunks += (-1,)
-#        overlap += (0,)
-#
-#        Wout_chunks[1] = self.n_reservoir
-#        Wout_shape[1]  = self.n_reservoir*2
-#
-#        kw = self.kw.copy()
-#        kw["data_chunks"] = chunks
-#        kw["overlap"] = {i:o for i, o in enumerate(overlap)}
-#
-#        u = self.rs.normal(size=shape, chunks=chunks)
-#        esn = LazyESN(**kw)
-#        esn.build()
-#        esn.train(u, n_spinup=n_spinup, batch_size=batch_size)
-#
-#        assert esn.Wout.chunksize == tuple(Wout_chunks)
-#        assert esn.Wout.shape == tuple(Wout_shape)
+class TestTraining(TestLazy):
+    rs      = darray.random.RandomState(0)
+    boundary= "periodic"
+
+    @property
+    def kw(self):
+        kw = super().kw.copy()
+        kw.update({key:getattr(self, key) for key in ["boundary"]})
+        return kw
+
+
+    @pytest.mark.parametrize(
+            "n_dim", (2, 3, 4)
+    )
+    @pytest.mark.parametrize(
+            "n_spinup", [0, 10],
+    )
+    @pytest.mark.parametrize(
+            "batch_size", [None, 33, 10_000],
+    )
+    def test_many_sizes(self, test_data, n_dim, n_spinup, batch_size):
+
+        expected = test_data[n_dim]
+
+        u = expected["data"]
+        kw = self.kw.copy()
+        kw["data_chunks"] = expected["chunks"]
+        kw["overlap"] = expected["overlap"]
+
+        esn = LazyESN(**kw)
+        esn.build()
+        esn.train(u, n_spinup=n_spinup, batch_size=batch_size)
+
+        assert esn.Wout.chunksize == tuple(expected["Wout_chunks"])
+        assert esn.Wout.shape == tuple(expected["Wout_shape"])
 
 
 # TODO: Data with NaNs...
 @pytest.mark.parametrize(
-        "shape, chunks, overlap", [
-            ( (4,     ), (2,     ), (1,     ) ),
-#            ( (4, 6   ), (2, 3   ), (1, 1   ) ),
-#            ( (4, 6, 5), (2, 3, 5), (1, 1, 0) ),
-        ]
+        "n_dim", (2, 3, 4)
 )
 class TestPrediction(TestLazy):
-    n_train = 500
     n_steps = 10
-    rs      = darray.random.RandomState(0)
     boundary= "periodic"
     path    = "test-store.zarr"
 
@@ -146,15 +163,10 @@ class TestPrediction(TestLazy):
         return kw
 
 
-    def custom_setup_method(self, shape, chunks, overlap):
-        shape += (self.n_train,)
-        chunks += (-1,)
-        overlap += (0,)
-        u = self.rs.normal(size=shape, chunks=chunks)
-
+    def custom_setup_method(self, chunks, overlap):
         kw = self.kw.copy()
         kw["data_chunks"] = chunks
-        kw["overlap"] = {i:o for i, o in enumerate(overlap)}
+        kw["overlap"] = overlap
 
         esn = LazyESN(
                 input_kwargs={"random_seed": 10},
@@ -162,25 +174,34 @@ class TestPrediction(TestLazy):
                 bias_kwargs={"random_seed": 12},
                 **kw)
         esn.build()
-        esn.train(u)
-        return esn, u
+        return esn
 
 
-    def test_simple(self, shape, chunks, overlap):
+    def test_simple(self, test_data, n_dim):
         """where input = output, no other options"""
-        esn, u = self.custom_setup_method(shape, chunks, overlap)
 
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
         v = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
 
         # With zero spinup, these arrays actually should be equal
         assert_array_equal(v[..., 0], u[..., 0])
-        assert v.shape == shape + (self.n_steps+1,)
+        assert v.shape == expected["shape"][:-1] + (self.n_steps+1,)
+
 
     @pytest.mark.parametrize(
             "n_spinup", (0, 10, 100_000)
     )
-    def test_all_options(self, shape, chunks, overlap, n_spinup):
-        esn, u = self.custom_setup_method(shape, chunks, overlap)
+    def test_all_options(self, test_data, n_dim, n_spinup):
+
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
 
         if n_spinup > u.shape[-1]:
             with pytest.raises(AssertionError):
@@ -188,11 +209,15 @@ class TestPrediction(TestLazy):
         else:
             v = esn.predict(u, n_steps=self.n_steps, n_spinup=n_spinup)
 
-            assert v.shape == shape + (self.n_steps+1,)
+            assert v.shape == expected["shape"][:-1] + (self.n_steps+1,)
 
 
-    def test_storage(self, shape, chunks, overlap):
-        esn, u = self.custom_setup_method(shape, chunks, overlap)
+    def test_storage(self, test_data, n_dim):
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
         ds = esn.to_xds()
 
         # Make sure dataset matches
@@ -206,6 +231,7 @@ class TestPrediction(TestLazy):
             elif key in self.close_list:
                 assert_allclose(test, expected)
 
+        # Now store & read to make a second ESN
         ds.to_zarr(self.path, mode="w")
         esn2 = from_zarr(self.path)
         for key in self.kw.keys():

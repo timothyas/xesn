@@ -75,7 +75,7 @@ class LazyESN(ESN):
 
         # We can't have -1's in the spatial data_chunks,
         # because we're taking products to compute sizes
-        if any(x < 0 for x in data_chunks[:-1]):
+        if any(x < 0 for x in self.data_chunks[:-1]):
             raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of data_chunks. Provide the actual value please.")
 
         n_output = _prod(self.output_chunks[:-1])
@@ -102,13 +102,32 @@ class LazyESN(ESN):
             raise NotImplementedError(f"LazyESN.__init__: cannot overlap more than 2 axes")
 
 
+    def __str__(self):
+        rstr = 'Lazy'+super().__str__()
+        rstr +=  '--- \n'+\
+                f'    {"overlap:"}\n'
+        for key, val in self.overlap.items():
+            rstr += f'        {key}{val}\n'
+        rstr +=  '--- \n'+\
+                f'    {"ndim_state:":<24s}{self.ndim_state}\n'+\
+                f'    {"input_chunks:":<24s}{self.input_chunks}\n'+\
+                f'    {"output_chunks:":<24s}{self.output_chunks}\n'+\
+                f'    {"r_chunks:":<24s}{self.r_chunks}\n'+\
+                f'    {"Wout_chunks:":<24s}{self.Wout_chunks}\n'+\
+                 '--- \n'+\
+                f'    {"boundary:":<24s}{self.boundary}\n'+\
+                f'    {"persist:":<24s}{self.persist}\n'
+
+        return rstr
+
+
     def train(self, y, n_spinup=0, batch_size=None):
         """
         Args:
             y (dask.array): n_state1, n_state2, ..., n_time
         """
 
-        halo_data = overlap(y, depth=self.overlap, boundary=self.boundary)
+        halo_data = overlap(y, depth=self.overlap, boundary=self.boundary, allow_rechunk=False)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
