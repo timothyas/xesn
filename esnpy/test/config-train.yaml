@@ -1,0 +1,102 @@
+xdata:
+    dimensions            : ['x', 'y', 'z', 'time']
+        #    delta_t               : 300
+        #    time_units            : s
+#
+    zstore_path           : test-xdata.zarr
+    field_name            : 'theta'
+    subsampling:
+        time:
+            training    : [ null, 100, null]
+            validation  : [1_000, 1_500, null]
+            testing     : [1_500,  null, null]
+
+    normalization:
+        bias            : 0.
+        scale           : 2.
+
+LazyESN:
+    boundary            : periodic
+    n_reservoir         : 500
+    connectedness       : 5
+    leak_rate           : 0.5
+    tikhonov_parameter  : 1.e-6
+    persist             : True
+#
+    data_chunks: [5, 5, 5, 1] 
+        #    x               : 5
+        #    y               : 5
+        #    z               : 5
+    overlap:
+        0               : 1
+        1               : 1
+        2               : 0
+        3               : 0
+#
+# TODO: it is awkward to specify input_factor and kwargs separately...
+    input_factor        : 1.0
+    input_kwargs:
+        distribution    : uniform
+        normalization   : svd
+        is_sparse       : False
+        random_seed     : 0
+#
+    adjacency_factor    : 1.0
+    adjacency_kwargs:
+        distribution    : uniform
+        normalization   : svd
+        is_sparse       : True
+        random_seed     : 1
+# TODO: bias should be bias_factor
+    bias                : 0.5
+    bias_kwargs:
+        distribution    : uniform
+        normalization   : svd
+        random_seed     : 2
+
+training:
+    n_spinup            : 0
+    batch_size          : null
+
+# TODO: Should this be called validation or optim?
+validation:
+    n_spinup            : 2_880
+    n_steps             : 145
+    n_samples           : 10
+# 
+    n_doe               : 20
+    n_iter              : 10
+    n_parallel          : 4
+#
+    macro_index_seed    : 1
+    initial_sample_seed : 2
+    optimization_seed   : 3
+    persist_cost        : True
+    parameters:
+        input_factor        : [1.2e-2, 2.]
+        adjacency_factor    : [1.e-2, 2.]
+        bias                : [0.0, 3.0]
+        log10_leak_rate           : [1.e-6, 1.0]
+        log10_tikhonov_parameter  : [1.e-8, 1.e-2]
+
+
+testing:
+    n_spinup            : 2_880
+    n_steps             : 145
+    n_samples           : 50
+#
+    random_seed           : 4
+    save_trajectories     : True
+    keep_spinup           : False
+#    vpt_threshold         : 0.2
+#    vpt_hist_bins         : 1
+#    calc_vpt              : False
+#    print_vpt_stats       : False
+#    plot_vpt_hist         : False
+
+#compute:
+#    - use_mp_pool           : False
+#    - use_dask_distributed  : True
+#    - n_nodes               : 2
+#    - n_workers             : 10
+#    - threads_per_worker    : 6

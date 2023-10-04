@@ -23,14 +23,16 @@ class Driver():
     def __init__(self,
                  config,
                  output_directory=None,
-                 output_dataset_filename=None):
+                 output_dataset_filename="results.zarr"):
+
+        try:
+            assert isinstance(output_dataset_filename, str)
+        except:
+            raise TypeError("Driver.__init__: output_dataset_filename must be a string, denoting zarr store path")
 
         self.make_output_directory(output_directory)
         self.create_logger()
-
-        self.output_dataset_filename = os.path.join(self.output_directory, output_dataset_filename) \
-                if output_dataset_filename is not None else None
-
+        self.output_dataset_filename = os.path.join(self.output_directory, output_dataset_filename)
         self.set_params(config)
 
         self.walltime = Timer(filename=self.logfile)
@@ -59,7 +61,7 @@ class Driver():
         # setup the data
         self.localtime.start("Setting up Data")
         data = XData(**self.params["xdata"])
-        xda = data.setup()
+        xda = data.setup(mode="training")
         self.localtime.stop()
 
         # setup ESN

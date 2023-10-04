@@ -11,6 +11,7 @@ from shutil import rmtree
 import dask.array as darray
 
 from esnpy.driver import Driver
+from xdata import test_data
 
 @pytest.fixture(scope="module")
 def config_dict():
@@ -63,6 +64,10 @@ class TestDriver():
         print(str(driver))
         print(driver.__repr__)
 
+    def test_output_dataset(self, config_dict):
+        with pytest.raises(TypeError):
+            driver = Driver(config_dict, output_dataset_filename=None)
+
     def test_default_output_directory(self, config_dict):
 
         for i in range(100):
@@ -113,3 +118,19 @@ class TestDriver():
         driver = test_driver
         with pytest.raises(TypeError):
             driver.set_params(["blah", "blah", "blah"])
+
+
+@pytest.fixture(scope="function")
+def train_driver(test_data):
+
+    driver = Driver("config-train.yaml")
+    yield driver, test_data
+    rmtree(driver.output_directory)
+
+
+class TestDriverTraining():
+    def test_micro_training(self, train_driver):
+
+        driver, test_data = train_driver
+        driver.run_micro_calibration()
+        assert os.path.basename(driver.output_dataset_filename) in os.listdir(driver.output_directory)

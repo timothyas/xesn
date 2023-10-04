@@ -60,7 +60,7 @@ def test_data():
     rs = darray.random.RandomState(0)
     tester = TestXData()
     u = xr.DataArray(
-            rs.normal(size=(10,10,5,200)),
+            rs.normal(size=(10,10,5,200), chunks=(5,5,5,200)),
             coords={
                 "x": np.linspace(-10, 10, 10),
                 "y": np.linspace(-10, 10, 10),
