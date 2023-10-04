@@ -11,7 +11,7 @@ from shutil import rmtree
 import dask.array as darray
 
 from esnpy.driver import Driver
-from xdata import test_data
+from esnpy.test.xdata import test_data
 
 @pytest.fixture(scope="module")
 def config_dict():
@@ -29,6 +29,7 @@ def config_dict():
 @pytest.fixture(scope="module")
 def config_yaml(config_dict):
     c = config_dict
+
     cname = "config.yaml"
     with open(cname, "w") as f:
         yaml.dump(c, stream=f)
@@ -139,7 +140,7 @@ class TestDriver():
 @pytest.fixture(scope="function")
 def train_driver(test_data):
 
-    driver = Driver("config-train.yaml")
+    driver = Driver(join(os.path.dirname(__file__), "config-train.yaml"))
     yield driver, test_data
     rmtree(driver.output_directory)
 
