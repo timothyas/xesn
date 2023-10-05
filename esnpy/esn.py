@@ -1,6 +1,7 @@
 import warnings
 import inspect
 import xarray as xr
+import dask.array as darray
 
 from . import _use_cupy
 if _use_cupy:
@@ -197,6 +198,16 @@ class ESN():
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
+        if isinstance(u, darray.Array):
+            u = u.compute()
+        elif isinstance(u, xr.DataArray):
+            u = u.values
+
+        if isinstance(y, darray.Array):
+            y = y.compute()
+        elif isinstance(y, xr.DataArray):
+            y = y.values
+
         self.Wout = _train_1d(
                 u, y, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
@@ -204,6 +215,11 @@ class ESN():
 
 
     def predict(self, u, n_steps, n_spinup):
+
+        if isinstance(u, darray.Array):
+            u = u.compute()
+        elif isinstance(u, xr.DataArray):
+            u = u.values
 
         uT = u.T
         _, n_time = u.shape
@@ -230,6 +246,38 @@ class ESN():
             vT[n] = self.Wout @ r
 
         return vT.T
+
+
+    def test(self, y, n_steps, n_spinup):
+
+        assert isinstance(y, xr.DataArray)
+
+        # make prediction
+        prediction = self.predict(y.data, n_steps, n_spinup)
+
+        # package it up with truth (no spinup)
+        coords = {key: y[key] for key in y.dims if key != "time"}
+        coords["time"] = y["time"].isel(time=slice(n_spinup, None))
+
+        xds = xr.Dataset()
+        xds["prediction"] = xr.DataArray(
+                prediction,
+                coords=coords,
+                dims=y.dims)
+        xds["truth"] = xr.DataArray(
+                y.isel(time=slice(n_spinup, None)).data,
+                coords=coords,
+                dims=y.dims)
+
+        # add forecast time and make swap it with time
+        xds["ftime"] = xr.DataArray(
+                xp.arange(n_steps+1),
+                coords={"time": coords["time"]},
+                dims="time")
+        xds = xds.swap_dims({"time": "ftime"})
+        return xds
+
+
 
 
     def to_xds(self):

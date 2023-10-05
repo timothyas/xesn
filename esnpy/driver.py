@@ -6,9 +6,7 @@ import logging
 import inspect
 from contextlib import redirect_stdout
 
-#TODO remove these if test is added to esn methods
 import numpy as np
-import xarray as xr
 
 from .esn import ESN
 from .io import from_zarr
@@ -73,8 +71,7 @@ class Driver():
         self.localtime.stop()
 
         self.localtime.start(f"Training {self.esn_name}")
-        array = xda.data if "lazy" in self.esn_name else xda.values
-        esn.train(array, **self.params["training"])
+        esn.train(xda, **self.params["training"])
         self.localtime.stop()
 
         self.localtime.start(f"Storing {self.esn_name} Weights")
@@ -107,19 +104,12 @@ class Driver():
 
         # make predictions
         self.localtime.start("Make Test Predictions")
-        coords = {key: test_data[0][key] for key in test_data[0].dims if key != "time"}
-        coords["time"] = test_data[0].time.isel(time=slice(self.params["testing"]["n_spinup"], None))
-        dims = test_data[0].dims
         for i, tester in enumerate(test_data):
-            xds = xr.Dataset()
-            array = tester.data if "lazy" in self.esn_name else tester.values
-            prediction = esn.predict(
-                    array,
+            xds = esn.test(
+                    tester,
                     n_steps=self.params["testing"]["n_steps"],
                     n_spinup=self.params["testing"]["n_spinup"]
                     )
-            xds["truth"] = xr.DataArray(tester.isel(time=slice(self.params["testing"]["n_spinup"], None)), coords=coords, dims=dims)
-            xds["prediction"] = xr.DataArray(prediction, coords=xds.truth.coords, dims=xds.truth.dims)
             xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"))
 
         self.localtime.stop()
