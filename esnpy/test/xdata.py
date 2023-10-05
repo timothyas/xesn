@@ -68,7 +68,8 @@ def test_data():
                 "time": np.linspace(0, 2000, 200),
                 },
             dims=tester.dimensions)
-    u.to_dataset(name=tester.field_name).to_zarr(tester.zstore_path, mode="w")
+    u.name = tester.field_name
+    u.to_dataset().to_zarr(tester.zstore_path, mode="w")
     yield u
     rmtree(tester.zstore_path)
 

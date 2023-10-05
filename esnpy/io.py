@@ -15,7 +15,7 @@ def from_zarr(store, **kwargs):
     is_lazy = "overlap" in args
     esn = LazyESN(**args) if is_lazy else ESN(**args)
     esn.build()
-    Wout = xds["Wout"].data
+    Wout = xds["Wout"].data if is_lazy else xds["Wout"].values
 
     # Need to re-append singleton dimension
     if is_lazy:
