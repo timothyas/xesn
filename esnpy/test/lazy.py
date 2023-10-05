@@ -249,6 +249,9 @@ class TestPrediction(TestLazy):
 
         assert_allclose(esn.W.data, esn2.W.data)
 
+        # make sure Wout is a dask array
+        assert isinstance(esn2.Wout, darray.core.Array)
+
         v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=1)
         v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=1)
         assert_allclose(v1, v2)

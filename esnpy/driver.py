@@ -1,35 +1,37 @@
 
 import os
+from os.path import join
 import yaml
 import logging
 import inspect
 from contextlib import redirect_stdout
 
 from .xdata import XData
+from .esn import ESN
 from .lazyesn import LazyESN
 from .timer import Timer
 
 class Driver():
     name                    = "driver"
     output_directory        = None
-    output_datset_filename  = None
     walltime                = None
     localtime               = None
 
     def __init__(self,
                  config,
-                 output_directory=None,
-                 output_dataset_filename="results.zarr"):
-
-        try:
-            assert isinstance(output_dataset_filename, str)
-        except:
-            raise TypeError("Driver.__init__: output_dataset_filename must be a string, denoting zarr store path")
+                 output_directory=None):
 
         self.make_output_directory(output_directory)
         self.create_logger()
-        self.output_dataset_filename = os.path.join(self.output_directory, output_dataset_filename)
         self.set_params(config)
+
+        # Look for ESN or LazyESN
+        if "esn" in self.params.keys():
+            self.ESN = ESN
+        elif "lazyesn" in self.params.keys():
+            self.ESN = LazyESN
+
+        self.rc_name = self.ESN.__name__.lower()
 
         self.walltime = Timer(filename=self.logfile)
         self.localtime = Timer(filename=self.logfile)
@@ -41,8 +43,7 @@ class Driver():
     def __str__(self):
         mystr = "Driver\n"+\
                 f"    {'output_directory:':<28s}{self.output_directory}\n"+\
-                f"    {'logfile:':<28s}{self.logfile}\n"+\
-                f"    {'output_dataset_filename:':<28s}{self.output_dataset_filename}"
+                f"    {'logfile:':<28s}{self.logfile}\n"
         return mystr
 
 
@@ -61,19 +62,19 @@ class Driver():
         self.localtime.stop()
 
         # setup ESN
-        # TODO: how to choose between lazy or not
-        self.localtime.start("Building ESN")
-        esn = LazyESN(**self.params["LazyESN"])
+        self.localtime.start(f"Building {self.rc_name}")
+        esn = self.ESN(**self.params[self.rc_name])
         esn.build()
         self.localtime.stop()
 
-        self.localtime.start("Training ESN")
-        esn.train(xda.data, **self.params["training"])
+        self.localtime.start(f"Training {self.rc_name}")
+        array = xda.data if "lazy" in self.rc_name else xda.values
+        esn.train(array, **self.params["training"])
         self.localtime.stop()
 
-        self.localtime.start("Storing ESN Weights")
+        self.localtime.start(f"Storing {self.rc_name} Weights")
         ds = esn.to_xds()
-        ds.to_zarr(self.output_dataset_filename)
+        ds.to_zarr(join(self.output_directory, f"{self.rc_name}-weights.zarr"))
         self.localtime.stop()
 
         self.walltime.stop("Total Walltime")
@@ -170,13 +171,17 @@ class Driver():
         else:
             raise TypeError(f"Driver.set_params: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
 
-        self._check_config_options(params)
+        # make the section names lower case
+        lparams = {}
+        for key in params.keys():
+            lparams[key.lower()] = params[key]
+
+        self._check_config_options(lparams)
+        self.params = lparams
 
         outname = os.path.join(self.output_directory, "config.yaml")
         with open(outname, "w") as f:
-            yaml.dump(params, stream=f)
-
-        self.params = params
+            yaml.dump(self.params, stream=f)
 
 
     def overwrite_params(self, new_params):
@@ -197,8 +202,9 @@ class Driver():
         params = self.params.copy()
         for section, this_dict in new_params.items():
             for key, val in this_dict.items():
-                self.print_log(f"Driver.overwrite_params: Overwriting driver.params['{section}']['{key}'] with {val}")
-                params[section][key] = val
+                s = section.lower()
+                self.print_log(f"Driver.overwrite_params: Overwriting driver.params['{s}']['{key}'] with {val}")
+                params[s][key] = val
 
         # Overwrite our copy of config.yaml in output_dir and reset attr
         self.set_params(params)
@@ -222,7 +228,8 @@ class Driver():
         # Check sections
         expected = {
                 "xdata": XData,
-                "LazyESN": LazyESN,
+                "esn": ESN,
+                "lazyesn": LazyESN,
                 "training": LazyESN.train,
                 "validation": None,
                 "testing": None,

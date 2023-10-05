@@ -2,6 +2,7 @@ import pytest
 
 import os
 from os.path import join
+from glob import glob
 import yaml
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
@@ -12,21 +13,22 @@ import dask.array as darray
 
 from esnpy.driver import Driver
 from esnpy.test.xdata import test_data
+from esnpy.test.esn import test_data as eager_data
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def config_dict():
     c = {
             "xdata": {
                 "zstore_path": "blah.zarr",
                 "field_name": "blah",
             },
-            "LazyESN": {
+            "lazyesn": {
                 "n_reservoir": 500,
             },
         }
     yield c
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def config_yaml(config_dict):
     c = config_dict
 
@@ -65,10 +67,6 @@ class TestDriver():
         print(str(driver))
         print(driver.__repr__)
 
-    def test_output_dataset(self, config_dict):
-        with pytest.raises(TypeError):
-            driver = Driver(config_dict, output_dataset_filename=None)
-
     def test_default_output_directory(self, config_dict):
 
         for i in range(100):
@@ -95,13 +93,13 @@ class TestDriver():
 
         driver = test_driver
         assert driver.params["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
-        assert driver.params["LazyESN"]["n_reservoir"] == config_dict["LazyESN"]["n_reservoir"]
+        assert driver.params["lazyesn"]["n_reservoir"] == config_dict["lazyesn"]["n_reservoir"]
 
         expected = {
                 "xdata": {
                     "zstore_path": "new.zarr",
                 },
-                "LazyESN": {
+                "lazyesn": {
                     "n_reservoir": 100,
                 },
             }
@@ -110,7 +108,7 @@ class TestDriver():
 
         # make sure these changed
         assert driver.params["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
-        assert driver.params["LazyESN"]["n_reservoir"] == expected["LazyESN"]["n_reservoir"]
+        assert driver.params["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
 
         # but make sure this one didn't
         assert driver.params["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
@@ -136,18 +134,45 @@ class TestDriver():
         with pytest.raises(KeyError):
             driver.set_params(c)
 
+    def test_case(self, test_driver):
+        driver = test_driver
+        c = driver.params.copy()
+        expected = driver.params.copy()
+        c["XDATA"] = c["xdata"]
+        del c["xdata"]
+
+        driver.set_params(c)
+        assert driver.params == expected
+
+        driver.overwrite_params(c)
+        assert driver.params == expected
+
 
 @pytest.fixture(scope="function")
-def train_driver(test_data):
+def eager_driver(test_data):
+    driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"))
+    fname = "eager-xdata.zarr"
+    edata = test_data.isel(y=0, z=0).chunk({"x":-1}).to_dataset().to_zarr(fname)
+    yield driver, edata
+    rmtree(driver.output_directory)
+    rmtree(fname)
 
-    driver = Driver(join(os.path.dirname(__file__), "config-train.yaml"))
+
+@pytest.fixture(scope="function")
+def lazy_driver(test_data):
+
+    driver = Driver(join(os.path.dirname(__file__), "config-lazy.yaml"))
     yield driver, test_data
     rmtree(driver.output_directory)
 
 
 class TestDriverTraining():
-    def test_micro_training(self, train_driver):
 
-        driver, test_data = train_driver
+    @pytest.mark.parametrize(
+            "this_driver", ("eager_driver", "lazy_driver")
+        )
+    def test_micro_training(self, this_driver, request):
+
+        driver, _ = request.getfixturevalue(this_driver)
         driver.run_micro_calibration()
-        assert os.path.basename(driver.output_dataset_filename) in os.listdir(driver.output_directory)
+        assert len(glob(f"{driver.output_directory}/*esn-weights.zarr")) == 1
