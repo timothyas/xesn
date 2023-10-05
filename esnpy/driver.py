@@ -76,7 +76,7 @@ class Driver():
 
         self.localtime.start(f"Storing {self.esn_name} Weights")
         ds = esn.to_xds()
-        ds.to_zarr(join(self.output_directory, f"{self.esn_name}-weights.zarr"))
+        ds.to_zarr(join(self.output_directory, f"{self.esn_name}-weights.zarr"), mode="w")
         self.localtime.stop()
 
         self.walltime.stop("Total Walltime")
@@ -110,7 +110,7 @@ class Driver():
                     n_steps=self.params["testing"]["n_steps"],
                     n_spinup=self.params["testing"]["n_spinup"]
                     )
-            xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"))
+            xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
 
         self.localtime.stop()
 

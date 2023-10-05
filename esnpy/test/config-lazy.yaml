@@ -58,7 +58,7 @@ training:
     batch_size          : null
 
 esn_weights:
-    store               : output-driver-00/lazyesn-weights.zarr
+    store               : test-lazy-driver/lazyesn-weights.zarr
 
 testing:
     n_spinup            : 10
