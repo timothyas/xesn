@@ -7,9 +7,9 @@ xdata:
     field_name            : 'theta'
     subsampling:
         time:
-            training    : [ null, 100, null]
-            validation  : [1_000, 1_500, null]
-            testing     : [1_500,  null, null]
+            training    : [ null,  100, null]
+            validation  : [  100,  150, null]
+            testing     : [  150, null, null]
 
     normalization:
         bias            : 0.
@@ -56,3 +56,12 @@ lazyesn:
 training:
     n_spinup            : 0
     batch_size          : null
+
+esn_weights:
+    store               : output-driver-00/lazyesn-weights.zarr
+
+testing:
+    n_spinup            : 10
+    n_samples           : 2
+    n_steps             : 5
+    random_seed         : 0

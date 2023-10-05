@@ -6,10 +6,15 @@ import logging
 import inspect
 from contextlib import redirect_stdout
 
-from .xdata import XData
+#TODO remove these if test is added to esn methods
+import numpy as np
+import xarray as xr
+
 from .esn import ESN
+from .io import from_zarr
 from .lazyesn import LazyESN
 from .timer import Timer
+from .xdata import XData
 
 class Driver():
     name                    = "driver"
@@ -31,7 +36,7 @@ class Driver():
         elif "lazyesn" in self.params.keys():
             self.ESN = LazyESN
 
-        self.rc_name = self.ESN.__name__.lower()
+        self.esn_name = self.ESN.__name__.lower()
 
         self.walltime = Timer(filename=self.logfile)
         self.localtime = Timer(filename=self.logfile)
@@ -62,22 +67,93 @@ class Driver():
         self.localtime.stop()
 
         # setup ESN
-        self.localtime.start(f"Building {self.rc_name}")
-        esn = self.ESN(**self.params[self.rc_name])
+        self.localtime.start(f"Building {self.esn_name}")
+        esn = self.ESN(**self.params[self.esn_name])
         esn.build()
         self.localtime.stop()
 
-        self.localtime.start(f"Training {self.rc_name}")
-        array = xda.data if "lazy" in self.rc_name else xda.values
+        self.localtime.start(f"Training {self.esn_name}")
+        array = xda.data if "lazy" in self.esn_name else xda.values
         esn.train(array, **self.params["training"])
         self.localtime.stop()
 
-        self.localtime.start(f"Storing {self.rc_name} Weights")
+        self.localtime.start(f"Storing {self.esn_name} Weights")
         ds = esn.to_xds()
-        ds.to_zarr(join(self.output_directory, f"{self.rc_name}-weights.zarr"))
+        ds.to_zarr(join(self.output_directory, f"{self.esn_name}-weights.zarr"))
         self.localtime.stop()
 
         self.walltime.stop("Total Walltime")
+
+
+    def run_test(self):
+
+        self.walltime.start("Starting Testing")
+
+        # setup the data
+        self.localtime.start("Setting up Data")
+        data = XData(**self.params["xdata"])
+        xda = data.setup(mode="testing")
+        self.localtime.stop()
+
+        # pull samples from data
+        self.localtime.start("Get Test Samples")
+        test_data = self.get_samples("testing", test_data=xda, **self.params["testing"])
+        self.localtime.stop()
+
+        # setup ESN from zarr
+        self.localtime.start("Read ESN Zarr Store")
+        esn = from_zarr(**self.params["esn_weights"])
+        self.localtime.stop()
+
+        # make predictions
+        self.localtime.start("Make Test Predictions")
+        coords = {key: test_data[0][key] for key in test_data[0].dims if key != "time"}
+        coords["time"] = test_data[0].time.isel(time=slice(self.params["testing"]["n_spinup"], None))
+        dims = test_data[0].dims
+        for i, tester in enumerate(test_data):
+            xds = xr.Dataset()
+            array = tester.data if "lazy" in self.esn_name else tester.values
+            prediction = esn.predict(
+                    array,
+                    n_steps=self.params["testing"]["n_steps"],
+                    n_spinup=self.params["testing"]["n_spinup"]
+                    )
+            xds["truth"] = xr.DataArray(tester.isel(time=slice(self.params["testing"]["n_spinup"], None)), coords=coords, dims=dims)
+            xds["prediction"] = xr.DataArray(prediction, coords=xds.truth.coords, dims=xds.truth.dims)
+            xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"))
+
+        self.localtime.stop()
+
+        self.walltime.stop()
+
+
+    def get_samples(self, mode, test_data, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
+
+        self.set_sample_indices(
+                mode,
+                len(test_data.time),
+                n_samples,
+                n_steps,
+                n_spinup,
+                random_seed,
+                sample_indices)
+
+        testers = [test_data.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
+                   for ridx in self.params[mode]["sample_indices"]]
+        return testers
+
+
+    def set_sample_indices(self, mode, data_length, n_samples, n_steps, n_spinup, random_seed, sample_indices):
+
+        if sample_indices is None:
+
+            rstate = np.random.RandomState(seed=random_seed)
+            n_valid = data_length - (n_steps + n_spinup)
+            sample_indices = rstate.choice(n_valid, n_samples, replace=False)
+
+        # make sure types are good to go
+        sample_indices = list(int(x) for x in sample_indices)
+        self.overwrite_params({mode: {"sample_indices": sample_indices}})
 
 
 #    def run_macro_calibration(self):
@@ -232,8 +308,9 @@ class Driver():
                 "lazyesn": LazyESN,
                 "training": LazyESN.train,
                 "validation": None,
-                "testing": None,
-                "compute": None}
+                "testing": self.get_samples,
+                "compute": None,
+                "esn_weights": None}
         bad_sections = []
         for key in params.keys():
             try:
@@ -244,13 +321,13 @@ class Driver():
         if len(bad_sections)>0:
             raise KeyError(f"Driver._check_config_options: unrecognized config section(s): {bad_sections}")
 
-
         # Check options in each section
         for section in params.keys():
             Func = expected[section]
-            kw, *_ = inspect.getfullargspec(Func)
-            for key in params[section].keys():
-                try:
-                    assert key in kw
-                except:
-                    raise KeyError(f"Driver._check_config_options: unrecognized option {key} in section {section}")
+            if Func is not None:
+                kw, *_ = inspect.getfullargspec(Func)
+                for key in params[section].keys():
+                    try:
+                        assert key in kw
+                    except:
+                        raise KeyError(f"Driver._check_config_options: unrecognized option {key} in section {section}")

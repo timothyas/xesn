@@ -50,7 +50,7 @@ def test_yaml_driver(config_yaml):
     yield driver
     rmtree(driver.output_directory)
 
-class TestDriver():
+class TestDriverBasic():
 
     @pytest.mark.parametrize(
             "tester", ("test_driver", "test_yaml_driver"),
@@ -166,7 +166,7 @@ def lazy_driver(test_data):
     rmtree(driver.output_directory)
 
 
-class TestDriverTraining():
+class TestDriverCompute():
 
     @pytest.mark.parametrize(
             "this_driver", ("eager_driver", "lazy_driver")
@@ -176,3 +176,14 @@ class TestDriverTraining():
         driver, _ = request.getfixturevalue(this_driver)
         driver.run_micro_calibration()
         assert len(glob(f"{driver.output_directory}/*esn-weights.zarr")) == 1
+
+
+    @pytest.mark.parametrize(
+            "this_driver", ("eager_driver", "lazy_driver")
+        )
+    def test_testing(self, this_driver, request):
+
+        driver, _ = request.getfixturevalue(this_driver)
+        driver.run_micro_calibration()
+
+        driver.run_test()
