@@ -155,10 +155,18 @@ def test_data():
     tester = TestESN()
 
     datasets = {}
+
+    time = np.arange(tester.n_train)
     for n_input in [3, 7]:
         datasets[n_input] = {
-                "u": rs.normal(size=(n_input, tester.n_train)),
-                "y": rs.normal(size=(tester.n_output, tester.n_train))
+                "u": xr.DataArray(
+                    rs.normal(size=(n_input, tester.n_train)),
+                    coords={"x": np.arange(n_input), "time": time},
+                    dims=("x", "time")),
+                "y": xr.DataArray(
+                    rs.normal(size=(tester.n_output, tester.n_train)),
+                    coords={"x": np.arange(tester.n_output), "time": time},
+                    dims=("x", "time"))
                 }
     yield datasets
 
@@ -199,6 +207,13 @@ class TestTraining(TestESN):
             esn.train(test_data[self.n_input]["u"], n_spinup=self.n_train+1)
 
 
+    def test_time_is_last(self, test_data):
+        esn = ESN(**self.kw)
+        esn.build()
+        with pytest.raises(AssertionError):
+            esn.train(test_data[self.n_input]["u"].T, n_spinup=0)
+
+
 class TestPrediction(TestESN):
     n_steps = 10
     path    = "test-store.zarr"
@@ -233,6 +248,31 @@ class TestPrediction(TestESN):
             v = esn.predict(u, n_steps=self.n_steps, n_spinup=n_spinup)
 
             assert v.shape == (esn.n_output, self.n_steps+1)
+
+
+    @pytest.mark.parametrize(
+            "n_spinup", (0, 10, 100_000)
+    )
+    def test_testing(self, test_data, n_spinup):
+        esn, u = self.custom_setup_method(test_data)
+
+        if n_spinup > u.shape[-1]:
+            with pytest.raises(AssertionError):
+                xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+        else:
+            xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+
+            assert xds["prediction"].shape == (esn.n_output, self.n_steps+1)
+            assert xds["prediction"].shape == xds["truth"].shape
+            assert xds["prediction"].dims == xds["truth"].dims
+            assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+
+
+    def test_time_is_last(self, test_data):
+        esn, u = self.custom_setup_method(test_data)
+
+        with pytest.raises(AssertionError):
+            esn.predict(u.T, n_steps=self.n_steps, n_spinup=0)
 
 
     def test_storage(self, test_data):

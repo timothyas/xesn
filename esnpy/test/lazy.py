@@ -17,15 +17,15 @@ class TestLazy(TestESN):
     n_input     = 5
     n_output    = 3
     n_train     = 500
-    data_chunks = (3, 1_000)
-    overlap     = {0: 1, 1: 0}
+    esn_chunks  = {"x": 3, "time": 1_000}
+    overlap     = {"x": 1, "time": 0}
     persist     = True
-    equal_list  = ("overlap", "data_chunks", "persist", "overlap", "n_reservoir", "boundary")
+    equal_list  = ("overlap", "esn_chunks", "persist", "overlap", "n_reservoir", "boundary")
     close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter")
 
     @property
     def kw(self):
-        keys = ["data_chunks", "overlap", "persist"]
+        keys = ["esn_chunks", "overlap", "persist"]
         kw = super().kw.copy()
         kw.update({
             key: getattr(self, key) for key in keys})
@@ -40,7 +40,8 @@ def test_data():
     tester = TestLazy()
     rs = darray.random.RandomState(0)
     datasets = {}
-    for shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+    for dims, shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+            ( ("x",),     ("x", "y"),   ("x", "y", "z") ),
             ( ( 4 ,),     ( 4 ,  6 ),   ( 4 ,  6 ,  5 ) ),
             ( ( 2 ,),     ( 2 ,  3 ),   ( 2 ,  3 ,  5 ) ),
             ( ( 1 ,),     ( 1 ,  1 ),   ( 1 ,  1 ,  0 ) ),
@@ -49,6 +50,7 @@ def test_data():
             ):
         shape += (tester.n_train,)
         nd = len(shape)
+        dims += ("time",)
         chunks += (-1,)
         overlap += (0,)
 
@@ -56,13 +58,15 @@ def test_data():
         Wout_shape[1]  = tester.n_reservoir*2
 
         datasets[nd] = {
-                "data": rs.normal(size=shape, chunks=chunks),
+                "data": xr.DataArray(
+                    rs.normal(size=shape, chunks=chunks),
+                    dims=dims),
                 "shape": shape,
-                "chunks": chunks,
-                "overlap": overlap,
+                "chunks": dict(zip(dims, chunks)),
+                "overlap": dict(zip(dims, overlap)),
                 "Wout_chunks": Wout_chunks,
                 "Wout_shape": Wout_shape,
-                "overlap": {i:o for i, o in enumerate(overlap)},
+                "overlap": {d:o for d, o in zip(dims,overlap)},
                 }
     yield datasets
 
@@ -86,25 +90,41 @@ class TestInit(TestLazy):
                 assert_allclose(test, expected)
 
         # test some basic properties to lock them in
-        assert esn.data_chunks == esn.output_chunks
-        assert esn.input_chunks == (self.n_input, self.data_chunks[-1])
+        assert esn.esn_chunks == esn.output_chunks
+        assert esn.input_chunks == {"x":self.n_input, "time": self.esn_chunks["time"]}
         assert esn.ndim_state == 1
         assert esn.r_chunks == (self.n_reservoir,)
         assert esn.Wout_chunks == (self.n_output, self.n_reservoir)
 
+
+    @pytest.mark.parametrize(
+            "attr, expected", [
+                ("overlap", 0),
+                ("esn_chunks", -1)
+            ]
+        )
+    def test_default_time(self, attr, expected):
+
+        kw = self.kw.copy()
+        kw[attr].pop("time")
+
+        esn = LazyESN(**kw)
+        assert getattr(esn, attr)["time"] == expected
+
+
     def test_not_implemented(self):
 
         kw = self.kw.copy()
-        kw["overlap"] = {0:1, 1:1, 2:1, 3:0}
-        kw["data_chunks"] = (2, 2, 2, 1000)
+        kw["overlap"] = {"x":1, "y":1, "z":1, "time":0}
+        kw["esn_chunks"] = {"x":2, "y":2, "z":2, "time":1000}
         with pytest.raises(NotImplementedError):
             esn = LazyESN(**kw)
 
     def test_for_negative_chunksizes(self):
 
         kw = self.kw.copy()
-        kw["data_chunks"] = (3,-1,1_000)
-        kw["overlap"] = (3, 0, 1_000)
+        kw["esn_chunks"] = {"x":3, "y": -1, "time": 1_000}
+        kw["overlap"] = {"x":3, "y":0, "time":1_000}
         with pytest.raises(ValueError):
             esn = LazyESN(**kw)
 
@@ -135,7 +155,7 @@ class TestTraining(TestLazy):
 
         u = expected["data"]
         kw = self.kw.copy()
-        kw["data_chunks"] = expected["chunks"]
+        kw["esn_chunks"] = expected["chunks"]
         kw["overlap"] = expected["overlap"]
 
         esn = LazyESN(**kw)
@@ -144,6 +164,21 @@ class TestTraining(TestLazy):
 
         assert esn.Wout.chunksize == tuple(expected["Wout_chunks"])
         assert esn.Wout.shape == tuple(expected["Wout_shape"])
+
+    def test_time_is_last(self, test_data):
+
+        expected = test_data[2]
+
+        u = expected["data"]
+        kw = self.kw.copy()
+        kw["esn_chunks"] = expected["chunks"]
+        kw["overlap"] = expected["overlap"]
+
+        esn = LazyESN(**kw)
+        esn.build()
+        with pytest.raises(AssertionError):
+            esn.train(u.T, n_spinup=0, batch_size=100)
+
 
 
 # TODO: Data with NaNs...
@@ -165,7 +200,7 @@ class TestPrediction(TestLazy):
 
     def custom_setup_method(self, chunks, overlap):
         kw = self.kw.copy()
-        kw["data_chunks"] = chunks
+        kw["esn_chunks"] = chunks
         kw["overlap"] = overlap
 
         esn = LazyESN(
@@ -210,6 +245,39 @@ class TestPrediction(TestLazy):
             v = esn.predict(u, n_steps=self.n_steps, n_spinup=n_spinup)
 
             assert v.shape == expected["shape"][:-1] + (self.n_steps+1,)
+
+    @pytest.mark.parametrize(
+            "n_spinup", (0, 10, 100_000)
+    )
+    def test_testing(self, test_data, n_dim, n_spinup):
+
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
+
+        if n_spinup > u.shape[-1]:
+            with pytest.raises(AssertionError):
+                xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+        else:
+            xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+
+            assert xds["prediction"].shape == expected["shape"][:-1] + (self.n_steps+1,)
+            assert xds["prediction"].shape == xds["truth"].shape
+            assert xds["prediction"].data.chunksize == xds["truth"].data.chunksize
+            assert xds["prediction"].dims == xds["truth"].dims
+            assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+
+    def test_time_is_last(self, test_data, n_dim):
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
+
+        with pytest.raises(AssertionError):
+            esn.predict(u.T, n_steps=self.n_steps, n_spinup=0)
 
 
     def test_storage(self, test_data, n_dim):

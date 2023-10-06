@@ -23,9 +23,4 @@ def from_zarr(store, **kwargs):
             Wout = Wout[...,None]
 
     esn.Wout = Wout
-
-    # Overlap dictionary is interpreted with string keys
-    if "overlap" in args:
-        esn.overlap = {int(k):v for k,v in esn.overlap.items()}
-
     return esn

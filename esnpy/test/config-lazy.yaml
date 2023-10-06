@@ -23,15 +23,16 @@ lazyesn:
     tikhonov_parameter  : 1.e-6
     persist             : True
 #
-    data_chunks: [5, 5, 5, 1] 
-        #    x               : 5
-        #    y               : 5
-        #    z               : 5
+    esn_chunks:
+        x               : 5
+        y               : 5
+        z               : 5
+        time            : -1
     overlap:
-        0               : 1
-        1               : 1
-        2               : 0
-        3               : 0
+        x               : 1
+        y               : 1
+        z               : 0
+        time            : 0
 #
     input_factor        : 1.0
     input_kwargs:

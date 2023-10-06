@@ -25,12 +25,12 @@ class LazyESN(ESN):
 
     @property
     def output_chunks(self):
-        return self.data_chunks
+        return self.esn_chunks
 
     @property
     def input_chunks(self):
         """output chunks expanded to include overlap region"""
-        return tuple(n+2*o for n,o in zip(self.output_chunks, self.overlap.values()))
+        return {k: self.output_chunks[k]+2*self.overlap[k] for k in self.output_chunks.keys()}
 
     @property
     def ndim_state(self):
@@ -53,7 +53,7 @@ class LazyESN(ESN):
 
 
     def __init__(self,
-            data_chunks,
+            esn_chunks,
             n_reservoir,
             input_factor,
             adjacency_factor,
@@ -72,15 +72,24 @@ class LazyESN(ESN):
         self.overlap        = overlap
         self.boundary       = boundary
         self.persist        = persist
-        self.data_chunks    = tuple(data_chunks)
+        self.esn_chunks     = esn_chunks
 
-        # We can't have -1's in the spatial data_chunks,
+        # "time" doesn't have to be in overlap or esn_chunks,
+        # since it's trivially a single chunk/no overlap
+        # make that assumption here
+        if "time" not in overlap:
+            self.overlap["time"] = 0
+
+        if "time" not in esn_chunks:
+            self.esn_chunks["time"] = -1
+
+        # We can't have -1's in the spatial esn_chunks,
         # because we're taking products to compute sizes
-        if any(x < 0 for x in self.data_chunks[:-1]):
-            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of data_chunks. Provide the actual value please.")
+        if any(x < 0 for k, x in self.esn_chunks.items() if k != "time"):
+            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of esn_chunks. Provide the actual value please.")
 
-        n_output = _prod(self.output_chunks[:-1])
-        n_input = _prod(self.input_chunks[:-1])
+        n_output = _prod([x for k, x in self.output_chunks.items() if k!="time"])
+        n_input = _prod([x for k, x in self.input_chunks.items() if k!="time"])
 
         super().__init__(
                 n_input=n_input,
@@ -125,19 +134,20 @@ class LazyESN(ESN):
     def train(self, y, n_spinup=0, batch_size=None):
         """
         Args:
-            y (dask.array): n_state1, n_state2, ..., n_time
+            y (xarray.DataArray): n_state1, n_state2, ..., n_time
         """
 
-        if isinstance(y, xr.DataArray):
-            y = y.data
+        self._time_check(y, "LazyESN.train", "y")
 
-        halo_data = overlap(y, depth=self.overlap, boundary=self.boundary, allow_rechunk=False)
+        doverlap = self.dask_overlap(y.dims)
+        halo_data = overlap(y.data, depth=doverlap, boundary=self.boundary, allow_rechunk=False)
+        halo_data = halo_data.rechunk({-1: -1})
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
                 _train_nd,
                 halo_data,
-                overlap=self.overlap,
+                overlap=doverlap,
                 n_spinup=n_spinup,
                 batch_size=batch_size,
                 W=self.W,
@@ -156,10 +166,14 @@ class LazyESN(ESN):
 
     def predict(self, y, n_steps, n_spinup):
 
+        self._time_check(y, "LazyESN.predict", "y")
+
         assert y.shape[-1] >= n_spinup+1
 
         # Get overlapped data
-        halo_data = overlap(y[..., :n_spinup+1], depth=self.overlap, boundary=self.boundary)
+        doverlap = self.dask_overlap(y.dims)
+        halo_data = overlap(y.data[..., :n_spinup+1], depth=doverlap, boundary=self.boundary)
+        halo_data = halo_data.rechunk({-1: -1})
         halo_data = halo_data.persist() if self.persist else halo_data
 
         ukw = { "W"             : self.W,
@@ -186,20 +200,30 @@ class LazyESN(ESN):
 
         # Setup and loop
         u0 = halo_data[..., n_spinup]
-        prediction = [y[..., n_spinup]]
+        prediction = [y.data[..., n_spinup]]
         for n in range(n_steps):
 
             r0 = map_blocks(_update_nd, r0, u0, chunks=self.r_chunks, **ukw, **dkw)
-            v  = map_blocks(_readout, self.Wout, r0, chunks=y[...,0].chunksize, drop_axis=drop_axis, **dkw)
+            v  = map_blocks(_readout, self.Wout, r0, chunks=y[...,0].data.chunksize, drop_axis=drop_axis, **dkw)
 
-            u0 = overlap(v, depth=self.overlap, boundary=self.boundary)
+            u0 = overlap(v, depth=doverlap, boundary=self.boundary)
             prediction.append(v)
 
         # Stack, rechunk, persist, return
         prediction = stack(prediction, axis=-1)
         prediction = prediction.rechunk({-1:-1})
         prediction = prediction.persist() if self.persist else prediction
-        return prediction
+
+        fdims, fcoords = self._get_fcoords(y.dims, y.coords, n_steps, n_spinup)
+        xpred = xr.DataArray(
+                prediction,
+                coords=fcoords,
+                dims=fdims)
+        return xpred
+
+
+    def dask_overlap(self, dims):
+        return {dims.index(d): self.overlap[d] for d in self.overlap.keys()}
 
 
 def _train_nd(halo_data,

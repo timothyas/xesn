@@ -195,34 +195,24 @@ class ESN():
 
         # Check if training labels are different from input data
         y = u if y is None else y
+        self._time_check(u, "ESN.train", "u")
+        self._time_check(y, "ESN.train", "y")
+
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
-        if isinstance(u, darray.Array):
-            u = u.compute()
-        elif isinstance(u, xr.DataArray):
-            u = u.values
-
-        if isinstance(y, darray.Array):
-            y = y.compute()
-        elif isinstance(y, xr.DataArray):
-            y = y.values
-
         self.Wout = _train_1d(
-                u, y, n_spinup, batch_size,
+                u.values, y.values, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
                 self.tikhonov_parameter)
 
 
-    def predict(self, u, n_steps, n_spinup):
+    def predict(self, y, n_steps, n_spinup):
 
-        if isinstance(u, darray.Array):
-            u = u.compute()
-        elif isinstance(u, xr.DataArray):
-            u = u.values
+        self._time_check(y, "ESN.predict", "y")
 
-        uT = u.T
-        _, n_time = u.shape
+        yT = y.values.T
+        _, n_time = y.shape
         assert n_time >= n_spinup
 
         # Make containers
@@ -237,50 +227,33 @@ class ESN():
 
         # Spinup
         for n in range(n_spinup):
-            r = _update(r, uT[n], **kw)
+            r = _update(r, yT[n], **kw)
 
         # Prediction
-        vT[0] = uT[n_spinup]
+        vT[0] = yT[n_spinup]
         for n in range(1, n_steps+1):
             r = _update(r, vT[n-1], **kw)
             vT[n] = self.Wout @ r
 
-        return vT.T
+        fdims, fcoords = self._get_fcoords(y.dims, y.coords, n_steps, n_spinup)
+        xpred = xr.DataArray(
+                vT.T,
+                coords=fcoords,
+                dims=fdims)
+
+        return xpred
 
 
     def test(self, y, n_steps, n_spinup):
-
-        assert isinstance(y, xr.DataArray)
+        """Only difference with prediction is that this returns a dataset with truth included"""
 
         # make prediction
-        prediction = self.predict(y.data, n_steps, n_spinup)
-
-        # package it up with truth (no spinup)
-        tslice = slice(n_spinup, n_spinup+n_steps+1)
-        coords = {key: y[key] for key in y.dims if key != "time"}
-        coords["time"] = y["time"].isel(time=tslice)
-
         xds = xr.Dataset()
-        xds["prediction"] = xr.DataArray(
-                prediction,
-                coords=coords,
-                dims=y.dims)
+        xds["prediction"] = self.predict(y, n_steps, n_spinup)
         xds["truth"] = xr.DataArray(
-                y.isel(time=tslice).data,
-                coords=coords,
-                dims=y.dims)
-
-        # add forecast time and make swap it with time
-        # deal with time units if applicable, otherwise just make an index array
-        ftime = y.time[tslice] - y.time[n_spinup]
-        xds["ftime"] = xr.DataArray(
-                ftime,
-                coords={"time": coords["time"]},
-                dims="time",
-                attrs={
-                    "long_name": "forecast_time",
-                    "description": "time passed since prediction initial condition, not including ESN spinup"})
-        xds = xds.swap_dims({"time": "ftime"})
+                y.sel(time=xds.prediction.time).data,
+                coords=xds.prediction.coords,
+                dims=xds.prediction.dims)
         return xds
 
 
@@ -317,6 +290,53 @@ class ESN():
             ds.attrs[key] = val
 
         return ds
+
+
+    @staticmethod
+    def _time_check(array, method, arrayname):
+        """Make sure "time" is the last dimension"""
+
+        assert array.dims[-1] == "time", \
+                f"{method}: {arrayname} must have 'time' as the final dimension"
+
+
+    def _get_fcoords(self, dims, coords, n_steps, n_spinup):
+        """Get forecast coordinates without the spinup period, and remake a forecast time
+        indicating time passed since start of prediction
+        This is just for xarray packaging.
+        """
+
+        fdims = tuple(d if d != "time" else "ftime" for d in dims)
+
+        tslice = slice(n_spinup, n_spinup+n_steps+1)
+        fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
+        fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
+        fcoords["time"] = xr.DataArray(
+                coords["time"].isel(time=tslice).values,
+                coords={"ftime": fcoords["ftime"]},
+                dims="ftime",
+                attrs=coords["time"].attrs.copy(),
+                )
+        return fdims, fcoords
+
+
+    @staticmethod
+    def _get_ftime(time):
+        """input time should be sliced to only have initial conditions and prediction"""
+
+        ftime = time.values - time[0].values
+        xftime = xr.DataArray(
+                ftime,
+                coords={"ftime": ftime},
+                dims="ftime",
+                attrs={
+                    "long_name": "forecast_time",
+                    "description": "time passed since prediction initial condition, not including ESN spinup"
+                    }
+                )
+        if "units" in time.attrs:
+            xftime.attrs["units"] = time.attrs["units"]
+        return xftime
 
 
 def _update(r, u, W, Win, bias_vector, leak_rate):

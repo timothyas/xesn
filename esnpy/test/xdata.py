@@ -160,7 +160,7 @@ class TestSetup(TestXData):
         xd = XData(self.field_name,
                    self.zstore_path,
                    dimensions=self.dimensions,
-                   subsampling={"time":{"training":slice(np.datetime64("2000-01-01"))}})
+                   subsampling={"time":{"training":(np.datetime64("2000-01-01"),)}})
 
         with pytest.raises(TypeError):
             xd.subsample(test_data, mode="training")
