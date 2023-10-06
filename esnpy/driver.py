@@ -120,7 +120,7 @@ class Driver():
 
         # pull samples from data
         self.localtime.start("Get Test Samples")
-        test_data = self.get_samples("testing", test_data=xda, **self.params["testing"])
+        test_data = self.get_samples("testing", xda=xda, **self.params["testing"])
         self.localtime.stop()
 
         # setup ESN from zarr
