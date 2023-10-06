@@ -256,8 +256,9 @@ class ESN():
         prediction = self.predict(y.data, n_steps, n_spinup)
 
         # package it up with truth (no spinup)
+        tslice = slice(n_spinup, n_spinup+n_steps+1)
         coords = {key: y[key] for key in y.dims if key != "time"}
-        coords["time"] = y["time"].isel(time=slice(n_spinup, None))
+        coords["time"] = y["time"].isel(time=tslice)
 
         xds = xr.Dataset()
         xds["prediction"] = xr.DataArray(
@@ -265,19 +266,22 @@ class ESN():
                 coords=coords,
                 dims=y.dims)
         xds["truth"] = xr.DataArray(
-                y.isel(time=slice(n_spinup, None)).data,
+                y.isel(time=tslice).data,
                 coords=coords,
                 dims=y.dims)
 
         # add forecast time and make swap it with time
+        # deal with time units if applicable, otherwise just make an index array
+        ftime = y.time[tslice] - y.time[n_spinup]
         xds["ftime"] = xr.DataArray(
-                xp.arange(n_steps+1),
+                ftime,
                 coords={"time": coords["time"]},
-                dims="time")
+                dims="time",
+                attrs={
+                    "long_name": "forecast_time",
+                    "description": "time passed since prediction initial condition, not including ESN spinup"})
         xds = xds.swap_dims({"time": "ftime"})
         return xds
-
-
 
 
     def to_xds(self):

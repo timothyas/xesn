@@ -150,7 +150,8 @@ class TestDriverBasic():
 
 @pytest.fixture(scope="function")
 def eager_driver(test_data):
-    driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"))
+    driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"),
+                    output_directory="test-eager-driver")
     fname = "eager-xdata.zarr"
     edata = test_data.isel(y=0, z=0).chunk({"x":-1}).to_dataset().to_zarr(fname)
     yield driver, edata
@@ -161,7 +162,8 @@ def eager_driver(test_data):
 @pytest.fixture(scope="function")
 def lazy_driver(test_data):
 
-    driver = Driver(join(os.path.dirname(__file__), "config-lazy.yaml"))
+    driver = Driver(join(os.path.dirname(__file__), "config-lazy.yaml"),
+                    output_directory="test-lazy-driver")
     yield driver, test_data
     rmtree(driver.output_directory)
 
