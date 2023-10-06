@@ -17,15 +17,15 @@ class TestLazy(TestESN):
     n_input     = 5
     n_output    = 3
     n_train     = 500
-    data_chunks = (3, 1_000)
-    overlap     = {0: 1, 1: 0}
+    esn_chunks  = {"x": 3, "time": 1_000}
+    overlap     = {"x": 1, "time": 0}
     persist     = True
-    equal_list  = ("overlap", "data_chunks", "persist", "overlap", "n_reservoir", "boundary")
+    equal_list  = ("overlap", "esn_chunks", "persist", "overlap", "n_reservoir", "boundary")
     close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter")
 
     @property
     def kw(self):
-        keys = ["data_chunks", "overlap", "persist"]
+        keys = ["esn_chunks", "overlap", "persist"]
         kw = super().kw.copy()
         kw.update({
             key: getattr(self, key) for key in keys})
@@ -40,7 +40,8 @@ def test_data():
     tester = TestLazy()
     rs = darray.random.RandomState(0)
     datasets = {}
-    for shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+    for dims, shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+            ( ("x",),     ("x", "y"),   ("x", "y", "z") ),
             ( ( 4 ,),     ( 4 ,  6 ),   ( 4 ,  6 ,  5 ) ),
             ( ( 2 ,),     ( 2 ,  3 ),   ( 2 ,  3 ,  5 ) ),
             ( ( 1 ,),     ( 1 ,  1 ),   ( 1 ,  1 ,  0 ) ),
@@ -49,6 +50,7 @@ def test_data():
             ):
         shape += (tester.n_train,)
         nd = len(shape)
+        dims += ("time",)
         chunks += (-1,)
         overlap += (0,)
 
@@ -56,13 +58,15 @@ def test_data():
         Wout_shape[1]  = tester.n_reservoir*2
 
         datasets[nd] = {
-                "data": rs.normal(size=shape, chunks=chunks),
+                "data": xr.DataArray(
+                    rs.normal(size=shape, chunks=chunks),
+                    dims=dims),
                 "shape": shape,
-                "chunks": chunks,
-                "overlap": overlap,
+                "chunks": dict(zip(dims, chunks)),
+                "overlap": dict(zip(dims, overlap)),
                 "Wout_chunks": Wout_chunks,
                 "Wout_shape": Wout_shape,
-                "overlap": {i:o for i, o in enumerate(overlap)},
+                "overlap": {d:o for d, o in zip(dims,overlap)},
                 }
     yield datasets
 
@@ -86,8 +90,8 @@ class TestInit(TestLazy):
                 assert_allclose(test, expected)
 
         # test some basic properties to lock them in
-        assert esn.data_chunks == esn.output_chunks
-        assert esn.input_chunks == (self.n_input, self.data_chunks[-1])
+        assert esn.esn_chunks == esn.output_chunks
+        assert esn.input_chunks == {"x":self.n_input, "time": self.esn_chunks["time"]}
         assert esn.ndim_state == 1
         assert esn.r_chunks == (self.n_reservoir,)
         assert esn.Wout_chunks == (self.n_output, self.n_reservoir)
@@ -95,16 +99,16 @@ class TestInit(TestLazy):
     def test_not_implemented(self):
 
         kw = self.kw.copy()
-        kw["overlap"] = {0:1, 1:1, 2:1, 3:0}
-        kw["data_chunks"] = (2, 2, 2, 1000)
+        kw["overlap"] = {"x":1, "y":1, "z":1, "time":0}
+        kw["esn_chunks"] = {"x":2, "y":2, "z":2, "time":1000}
         with pytest.raises(NotImplementedError):
             esn = LazyESN(**kw)
 
     def test_for_negative_chunksizes(self):
 
         kw = self.kw.copy()
-        kw["data_chunks"] = (3,-1,1_000)
-        kw["overlap"] = (3, 0, 1_000)
+        kw["esn_chunks"] = {"x":3, "y": -1, "time": 1_000}
+        kw["overlap"] = {"x":3, "y":0, "time":1_000}
         with pytest.raises(ValueError):
             esn = LazyESN(**kw)
 
@@ -135,7 +139,7 @@ class TestTraining(TestLazy):
 
         u = expected["data"]
         kw = self.kw.copy()
-        kw["data_chunks"] = expected["chunks"]
+        kw["esn_chunks"] = expected["chunks"]
         kw["overlap"] = expected["overlap"]
 
         esn = LazyESN(**kw)
@@ -165,7 +169,7 @@ class TestPrediction(TestLazy):
 
     def custom_setup_method(self, chunks, overlap):
         kw = self.kw.copy()
-        kw["data_chunks"] = chunks
+        kw["esn_chunks"] = chunks
         kw["overlap"] = overlap
 
         esn = LazyESN(

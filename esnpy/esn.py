@@ -249,39 +249,55 @@ class ESN():
 
 
     def test(self, y, n_steps, n_spinup):
+        """Only difference with prediction is that this returns a dataset with truth included"""
 
         assert isinstance(y, xr.DataArray)
 
         # make prediction
-        prediction = self.predict(y.data, n_steps, n_spinup)
-
-        # package it up with truth (no spinup)
-        tslice = slice(n_spinup, n_spinup+n_steps+1)
-        coords = {key: y[key] for key in y.dims if key != "time"}
-        coords["time"] = y["time"].isel(time=tslice)
-
         xds = xr.Dataset()
-        xds["prediction"] = xr.DataArray(
-                prediction,
-                coords=coords,
-                dims=y.dims)
+        xds["prediction"] = self.predict(y.data, n_steps, n_spinup)
         xds["truth"] = xr.DataArray(
-                y.isel(time=tslice).data,
-                coords=coords,
+                y.sel(time=xds.prediction.time).data,
+                coords=xds.prediction.coords,
                 dims=y.dims)
+        return xds
 
-        # add forecast time and make swap it with time
-        # deal with time units if applicable, otherwise just make an index array
-        ftime = y.time[tslice] - y.time[n_spinup]
-        xds["ftime"] = xr.DataArray(
+
+    def _get_fcoords(self, dims, coords, n_steps, n_spinup):
+        """Get forecast coordinates without the spinup period, and remake a forecast time
+        indicating time passed since start of prediction"""
+
+        fdims = tuple(d if d != "time" else "ftime" for d in dims)
+
+        tslice = slice(n_spinup, n_spinup+n_steps+1)
+        fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
+        fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
+        fcoords["time"] = xr.DataArray(
+                coords["time"].isel(time=tslice).values,
+                coords={"ftime": fcoords["ftime"]},
+                dims="ftime",
+                attrs=coords["time"].attrs.copy(),
+                )
+        return fdims, fcoords
+
+
+    @staticmethod
+    def _get_ftime(time):
+        """input time should be sliced to only have initial conditions and prediction"""
+
+        ftime = time.values - time[0].values
+        xftime = xr.DataArray(
                 ftime,
-                coords={"time": coords["time"]},
-                dims="time",
+                coords={"ftime": ftime},
+                dims="ftime",
                 attrs={
                     "long_name": "forecast_time",
-                    "description": "time passed since prediction initial condition, not including ESN spinup"})
-        xds = xds.swap_dims({"time": "ftime"})
-        return xds
+                    "description": "time passed since prediction initial condition, not including ESN spinup"
+                    }
+                )
+        if "units" in time.attrs:
+            xftime.attrs["units"] = time.attrs["units"]
+        return xftime
 
 
     def to_xds(self):
