@@ -14,3 +14,6 @@ from .driver import Driver
 from .esn import ESN
 from .lazyesn import LazyESN
 from .io import from_zarr
+
+from .matrix import RandomMatrix, SparseRandomMatrix
+from .xdata import XData

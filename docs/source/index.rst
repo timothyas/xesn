@@ -10,5 +10,6 @@ Welcome to esnpy's documentation!
    :maxdepth: 1
 
    installation
-   api
    references
+   api
+

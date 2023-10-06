@@ -210,8 +210,7 @@ class Driver():
 
     def make_output_directory(self, out_dir):
         """Make provided output directory. If none given, make a unique directory:
-            output-{self.name}-XX
-        XX is 00->99
+        output-{self.name}-XX, where XX is 00->99
 
         Args:
             out_dir (str or None): path to dump output, or None for default
