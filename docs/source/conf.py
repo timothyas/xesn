@@ -21,18 +21,15 @@ extensions = [
         "sphinx.ext.autodoc",
         "sphinx.ext.autosummary",
         "sphinx.ext.napoleon",
-        "sphinx_automodapi.automodapi",
-        "autoapi.sphinx",
         ]
 
 numpydoc_show_class_members = False
 
-        #"nbsphinx",
-
 templates_path = ['_templates']
 exclude_patterns = []
 
-autoapi_modules = {"esnpy": None}
+napoleon_custom_sections = [("Returns", "params_style"),
+                            ("Sets Attributes", "params_style")]
 
 
 # -- Options for HTML output -------------------------------------------------
