@@ -215,6 +215,29 @@ class TestPrediction(TestLazy):
 
             assert v.shape == expected["shape"][:-1] + (self.n_steps+1,)
 
+    @pytest.mark.parametrize(
+            "n_spinup", (0, 10, 100_000)
+    )
+    def test_testing(self, test_data, n_dim, n_spinup):
+
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
+
+        if n_spinup > u.shape[-1]:
+            with pytest.raises(AssertionError):
+                xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+        else:
+            xds = esn.test(u, n_steps=self.n_steps, n_spinup=n_spinup)
+
+            assert xds["prediction"].shape == expected["shape"][:-1] + (self.n_steps+1,)
+            assert xds["prediction"].shape == xds["truth"].shape
+            assert xds["prediction"].data.chunksize == xds["truth"].data.chunksize
+            assert xds["prediction"].dims == xds["truth"].dims
+            assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+
 
     def test_storage(self, test_data, n_dim):
         expected = test_data[n_dim]

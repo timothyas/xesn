@@ -198,31 +198,16 @@ class ESN():
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
-        if isinstance(u, darray.Array):
-            u = u.compute()
-        elif isinstance(u, xr.DataArray):
-            u = u.values
-
-        if isinstance(y, darray.Array):
-            y = y.compute()
-        elif isinstance(y, xr.DataArray):
-            y = y.values
-
         self.Wout = _train_1d(
-                u, y, n_spinup, batch_size,
+                u.values, y.values, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
                 self.tikhonov_parameter)
 
 
-    def predict(self, u, n_steps, n_spinup):
+    def predict(self, y, n_steps, n_spinup):
 
-        if isinstance(u, darray.Array):
-            u = u.compute()
-        elif isinstance(u, xr.DataArray):
-            u = u.values
-
-        uT = u.T
-        _, n_time = u.shape
+        yT = y.values.T
+        _, n_time = y.shape
         assert n_time >= n_spinup
 
         # Make containers
@@ -237,15 +222,21 @@ class ESN():
 
         # Spinup
         for n in range(n_spinup):
-            r = _update(r, uT[n], **kw)
+            r = _update(r, yT[n], **kw)
 
         # Prediction
-        vT[0] = uT[n_spinup]
+        vT[0] = yT[n_spinup]
         for n in range(1, n_steps+1):
             r = _update(r, vT[n-1], **kw)
             vT[n] = self.Wout @ r
 
-        return vT.T
+        fdims, fcoords = self._get_fcoords(y.dims, y.coords, n_steps, n_spinup)
+        xpred = xr.DataArray(
+                vT.T,
+                coords=fcoords,
+                dims=fdims)
+
+        return xpred
 
 
     def test(self, y, n_steps, n_spinup):
@@ -255,11 +246,11 @@ class ESN():
 
         # make prediction
         xds = xr.Dataset()
-        xds["prediction"] = self.predict(y.data, n_steps, n_spinup)
+        xds["prediction"] = self.predict(y, n_steps, n_spinup)
         xds["truth"] = xr.DataArray(
                 y.sel(time=xds.prediction.time).data,
                 coords=xds.prediction.coords,
-                dims=y.dims)
+                dims=xds.prediction.dims)
         return xds
 
 
