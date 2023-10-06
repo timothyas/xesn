@@ -21,6 +21,10 @@ class Driver():
 
     The experiments are configured with a parameter dict, that can be created either
     with a yaml file or by explicitly passing the dict itself.
+
+    Args:
+        config (str or dict): either a path to a yaml file or dict containing experiment parameters
+        output_directory (str, optional): directory to save results and write logs to
     """
     name                    = "driver"
     output_directory        = None
@@ -30,14 +34,10 @@ class Driver():
     def __init__(self,
                  config,
                  output_directory=None):
-        """
-        Args:
-            config (str or dict): either a path to a yaml file or dict containing experiment parameters
-            output_directory (str, optional): directory to save results and write logs to
-        """
 
-        self.make_output_directory(output_directory)
-        self.create_logger()
+
+        self._make_output_directory(output_directory)
+        self._create_logger()
         self.set_params(config)
 
         # Look for ESN or LazyESN
@@ -159,7 +159,7 @@ class Driver():
             testers (list of xarray.DataArray): with each separate validation/test sample
         """
 
-        self.set_sample_indices(
+        self._set_sample_indices(
                 mode,
                 len(xda.time),
                 n_samples,
@@ -173,7 +173,7 @@ class Driver():
         return testers
 
 
-    def set_sample_indices(self, mode, data_length, n_samples, n_steps, n_spinup, random_seed, sample_indices):
+    def _set_sample_indices(self, mode, data_length, n_samples, n_steps, n_spinup, random_seed, sample_indices):
         """If sample indices aren't provided, get them.
 
         Sets Attributes:
@@ -208,7 +208,7 @@ class Driver():
 #        self.walltime.stop("Total Walltime")
 
 
-    def make_output_directory(self, out_dir):
+    def _make_output_directory(self, out_dir):
         """Make provided output directory. If none given, make a unique directory:
         output-{self.name}-XX, where XX is 00->99
 
@@ -237,7 +237,7 @@ class Driver():
         self.output_directory = out_dir
 
 
-    def create_logger(self):
+    def _create_logger(self):
         """Create a logfile and logger for writing all text output to
 
         Sets Attributes:

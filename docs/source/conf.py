@@ -29,7 +29,8 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 napoleon_custom_sections = [("Returns", "params_style"),
-                            ("Sets Attributes", "params_style")]
+                            ("Sets Attributes", "params_style"),
+                            ]
 
 
 # -- Options for HTML output -------------------------------------------------
