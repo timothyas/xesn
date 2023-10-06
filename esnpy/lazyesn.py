@@ -69,11 +69,19 @@ class LazyESN(ESN):
             bias_kwargs=None):
 
         # Figure out input/output from data chunk sizes
-        # TODO: make sure "time" is present
         self.overlap        = overlap
         self.boundary       = boundary
         self.persist        = persist
         self.esn_chunks     = esn_chunks
+
+        # "time" doesn't have to be in overlap or esn_chunks,
+        # since it's trivially a single chunk/no overlap
+        # make that assumption here
+        if "time" not in overlap:
+            self.overlap["time"] = 0
+
+        if "time" not in esn_chunks:
+            self.esn_chunks["time"] = -1
 
         # We can't have -1's in the spatial esn_chunks,
         # because we're taking products to compute sizes

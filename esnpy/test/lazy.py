@@ -96,6 +96,22 @@ class TestInit(TestLazy):
         assert esn.r_chunks == (self.n_reservoir,)
         assert esn.Wout_chunks == (self.n_output, self.n_reservoir)
 
+
+    @pytest.mark.parametrize(
+            "attr, expected", [
+                ("overlap", 0),
+                ("esn_chunks", -1)
+            ]
+        )
+    def test_default_time(self, attr, expected):
+
+        kw = self.kw.copy()
+        kw[attr].pop("time")
+
+        esn = LazyESN(**kw)
+        assert getattr(esn, attr)["time"] == expected
+
+
     def test_not_implemented(self):
 
         kw = self.kw.copy()
