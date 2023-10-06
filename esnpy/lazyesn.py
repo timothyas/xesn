@@ -25,7 +25,7 @@ class LazyESN(ESN):
 
     @property
     def output_chunks(self):
-        return self.data_chunks
+        return self.esn_chunks
 
     @property
     def input_chunks(self):
@@ -53,7 +53,7 @@ class LazyESN(ESN):
 
 
     def __init__(self,
-            data_chunks,
+            esn_chunks,
             n_reservoir,
             input_factor,
             adjacency_factor,
@@ -72,12 +72,12 @@ class LazyESN(ESN):
         self.overlap        = overlap
         self.boundary       = boundary
         self.persist        = persist
-        self.data_chunks    = tuple(data_chunks)
+        self.esn_chunks    = tuple(esn_chunks)
 
-        # We can't have -1's in the spatial data_chunks,
+        # We can't have -1's in the spatial esn_chunks,
         # because we're taking products to compute sizes
-        if any(x < 0 for x in self.data_chunks[:-1]):
-            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of data_chunks. Provide the actual value please.")
+        if any(x < 0 for x in self.esn_chunks[:-1]):
+            raise ValueError("LazyESN.__init__: Cannot have negative numbers or Nones in non-temporal axis locations of esn_chunks. Provide the actual value please.")
 
         n_output = _prod(self.output_chunks[:-1])
         n_input = _prod(self.input_chunks[:-1])
@@ -132,6 +132,7 @@ class LazyESN(ESN):
             y = y.data
 
         halo_data = overlap(y, depth=self.overlap, boundary=self.boundary, allow_rechunk=False)
+        halo_data = halo_data.rechunk({-1: -1})
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
@@ -158,8 +159,12 @@ class LazyESN(ESN):
 
         assert y.shape[-1] >= n_spinup+1
 
+        if isinstance(y, xr.DataArray):
+            y = y.data
+
         # Get overlapped data
         halo_data = overlap(y[..., :n_spinup+1], depth=self.overlap, boundary=self.boundary)
+        halo_data = halo_data.rechunk({-1: -1})
         halo_data = halo_data.persist() if self.persist else halo_data
 
         ukw = { "W"             : self.W,
