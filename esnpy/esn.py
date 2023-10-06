@@ -195,6 +195,9 @@ class ESN():
 
         # Check if training labels are different from input data
         y = u if y is None else y
+        self._time_check(u, "ESN.train", "u")
+        self._time_check(y, "ESN.train", "y")
+
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
@@ -205,6 +208,8 @@ class ESN():
 
 
     def predict(self, y, n_steps, n_spinup):
+
+        self._time_check(y, "ESN.predict", "y")
 
         yT = y.values.T
         _, n_time = y.shape
@@ -242,8 +247,6 @@ class ESN():
     def test(self, y, n_steps, n_spinup):
         """Only difference with prediction is that this returns a dataset with truth included"""
 
-        assert isinstance(y, xr.DataArray)
-
         # make prediction
         xds = xr.Dataset()
         xds["prediction"] = self.predict(y, n_steps, n_spinup)
@@ -252,43 +255,6 @@ class ESN():
                 coords=xds.prediction.coords,
                 dims=xds.prediction.dims)
         return xds
-
-
-    def _get_fcoords(self, dims, coords, n_steps, n_spinup):
-        """Get forecast coordinates without the spinup period, and remake a forecast time
-        indicating time passed since start of prediction"""
-
-        fdims = tuple(d if d != "time" else "ftime" for d in dims)
-
-        tslice = slice(n_spinup, n_spinup+n_steps+1)
-        fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
-        fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
-        fcoords["time"] = xr.DataArray(
-                coords["time"].isel(time=tslice).values,
-                coords={"ftime": fcoords["ftime"]},
-                dims="ftime",
-                attrs=coords["time"].attrs.copy(),
-                )
-        return fdims, fcoords
-
-
-    @staticmethod
-    def _get_ftime(time):
-        """input time should be sliced to only have initial conditions and prediction"""
-
-        ftime = time.values - time[0].values
-        xftime = xr.DataArray(
-                ftime,
-                coords={"ftime": ftime},
-                dims="ftime",
-                attrs={
-                    "long_name": "forecast_time",
-                    "description": "time passed since prediction initial condition, not including ESN spinup"
-                    }
-                )
-        if "units" in time.attrs:
-            xftime.attrs["units"] = time.attrs["units"]
-        return xftime
 
 
     def to_xds(self):
@@ -324,6 +290,53 @@ class ESN():
             ds.attrs[key] = val
 
         return ds
+
+
+    @staticmethod
+    def _time_check(array, method, arrayname):
+        """Make sure "time" is the last dimension"""
+
+        assert array.dims[-1] == "time", \
+                f"{method}: {arrayname} must have 'time' as the final dimension"
+
+
+    def _get_fcoords(self, dims, coords, n_steps, n_spinup):
+        """Get forecast coordinates without the spinup period, and remake a forecast time
+        indicating time passed since start of prediction
+        This is just for xarray packaging.
+        """
+
+        fdims = tuple(d if d != "time" else "ftime" for d in dims)
+
+        tslice = slice(n_spinup, n_spinup+n_steps+1)
+        fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
+        fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
+        fcoords["time"] = xr.DataArray(
+                coords["time"].isel(time=tslice).values,
+                coords={"ftime": fcoords["ftime"]},
+                dims="ftime",
+                attrs=coords["time"].attrs.copy(),
+                )
+        return fdims, fcoords
+
+
+    @staticmethod
+    def _get_ftime(time):
+        """input time should be sliced to only have initial conditions and prediction"""
+
+        ftime = time.values - time[0].values
+        xftime = xr.DataArray(
+                ftime,
+                coords={"ftime": ftime},
+                dims="ftime",
+                attrs={
+                    "long_name": "forecast_time",
+                    "description": "time passed since prediction initial condition, not including ESN spinup"
+                    }
+                )
+        if "units" in time.attrs:
+            xftime.attrs["units"] = time.attrs["units"]
+        return xftime
 
 
 def _update(r, u, W, Win, bias_vector, leak_rate):

@@ -207,6 +207,13 @@ class TestTraining(TestESN):
             esn.train(test_data[self.n_input]["u"], n_spinup=self.n_train+1)
 
 
+    def test_time_is_last(self, test_data):
+        esn = ESN(**self.kw)
+        esn.build()
+        with pytest.raises(AssertionError):
+            esn.train(test_data[self.n_input]["u"].T, n_spinup=0)
+
+
 class TestPrediction(TestESN):
     n_steps = 10
     path    = "test-store.zarr"
@@ -259,6 +266,13 @@ class TestPrediction(TestESN):
             assert xds["prediction"].shape == xds["truth"].shape
             assert xds["prediction"].dims == xds["truth"].dims
             assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+
+
+    def test_time_is_last(self, test_data):
+        esn, u = self.custom_setup_method(test_data)
+
+        with pytest.raises(AssertionError):
+            esn.predict(u.T, n_steps=self.n_steps, n_spinup=0)
 
 
     def test_storage(self, test_data):

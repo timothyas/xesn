@@ -149,6 +149,21 @@ class TestTraining(TestLazy):
         assert esn.Wout.chunksize == tuple(expected["Wout_chunks"])
         assert esn.Wout.shape == tuple(expected["Wout_shape"])
 
+    def test_time_is_last(self, test_data):
+
+        expected = test_data[2]
+
+        u = expected["data"]
+        kw = self.kw.copy()
+        kw["esn_chunks"] = expected["chunks"]
+        kw["overlap"] = expected["overlap"]
+
+        esn = LazyESN(**kw)
+        esn.build()
+        with pytest.raises(AssertionError):
+            esn.train(u.T, n_spinup=0, batch_size=100)
+
+
 
 # TODO: Data with NaNs...
 @pytest.mark.parametrize(
@@ -237,6 +252,16 @@ class TestPrediction(TestLazy):
             assert xds["prediction"].data.chunksize == xds["truth"].data.chunksize
             assert xds["prediction"].dims == xds["truth"].dims
             assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+
+    def test_time_is_last(self, test_data, n_dim):
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
+
+        with pytest.raises(AssertionError):
+            esn.predict(u.T, n_steps=self.n_steps, n_spinup=0)
 
 
     def test_storage(self, test_data, n_dim):

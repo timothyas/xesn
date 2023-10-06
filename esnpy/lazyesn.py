@@ -129,6 +129,7 @@ class LazyESN(ESN):
             y (xarray.DataArray): n_state1, n_state2, ..., n_time
         """
 
+        self._time_check(y, "LazyESN.train", "y")
 
         doverlap = self.dask_overlap(y.dims)
         halo_data = overlap(y.data, depth=doverlap, boundary=self.boundary, allow_rechunk=False)
@@ -156,6 +157,8 @@ class LazyESN(ESN):
 
 
     def predict(self, y, n_steps, n_spinup):
+
+        self._time_check(y, "LazyESN.predict", "y")
 
         assert y.shape[-1] >= n_spinup+1
 
