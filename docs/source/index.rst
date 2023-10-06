@@ -10,6 +10,8 @@ Welcome to esnpy's documentation!
    :maxdepth: 1
 
    installation
+   notebooks/basic_usage
+   notebooks/lazy_usage
    references
    api
 
