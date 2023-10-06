@@ -73,6 +73,9 @@ class XData():
             elif isinstance(myslice.start, float) or isinstance(myslice.stop, float):
                 xda = xda.sel({dim: myslice})
 
+            else:
+                raise TypeError(f"XData.subsample: unrecognized slice type, only ints or floats allowed")
+
             print(f"XData.subsample: Subsampled/sliced {dim}: {xda[dim]}")
 
         # Squeeze out any singular dimensions after slicing

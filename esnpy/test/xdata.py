@@ -155,6 +155,17 @@ class TestSetup(TestXData):
             xd.subsample(test_data, mode="training")
 
 
+    def test_subsample_type(self, test_data):
+
+        xd = XData(self.field_name,
+                   self.zstore_path,
+                   dimensions=self.dimensions,
+                   subsampling={"time":{"training":slice(np.datetime64("2000-01-01"))}})
+
+        with pytest.raises(TypeError):
+            xd.subsample(test_data, mode="training")
+
+
     def test_normalize(self, test_data):
         xd = XData(self.field_name,
                    self.zstore_path,

@@ -50,7 +50,7 @@ def test_yaml_driver(config_yaml):
     yield driver
     rmtree(driver.output_directory)
 
-class TestDriver():
+class TestDriverBasic():
 
     @pytest.mark.parametrize(
             "tester", ("test_driver", "test_yaml_driver"),
@@ -150,7 +150,8 @@ class TestDriver():
 
 @pytest.fixture(scope="function")
 def eager_driver(test_data):
-    driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"))
+    driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"),
+                    output_directory="test-eager-driver")
     fname = "eager-xdata.zarr"
     edata = test_data.isel(y=0, z=0).chunk({"x":-1}).to_dataset().to_zarr(fname)
     yield driver, edata
@@ -161,12 +162,13 @@ def eager_driver(test_data):
 @pytest.fixture(scope="function")
 def lazy_driver(test_data):
 
-    driver = Driver(join(os.path.dirname(__file__), "config-lazy.yaml"))
+    driver = Driver(join(os.path.dirname(__file__), "config-lazy.yaml"),
+                    output_directory="test-lazy-driver")
     yield driver, test_data
     rmtree(driver.output_directory)
 
 
-class TestDriverTraining():
+class TestDriverCompute():
 
     @pytest.mark.parametrize(
             "this_driver", ("eager_driver", "lazy_driver")
@@ -176,3 +178,14 @@ class TestDriverTraining():
         driver, _ = request.getfixturevalue(this_driver)
         driver.run_micro_calibration()
         assert len(glob(f"{driver.output_directory}/*esn-weights.zarr")) == 1
+
+
+    @pytest.mark.parametrize(
+            "this_driver", ("eager_driver", "lazy_driver")
+        )
+    def test_testing(self, this_driver, request):
+
+        driver, _ = request.getfixturevalue(this_driver)
+        driver.run_micro_calibration()
+
+        driver.run_test()

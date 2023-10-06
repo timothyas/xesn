@@ -1,4 +1,5 @@
 from functools import reduce
+import xarray as xr
 from dask.array import map_blocks, stack
 from dask.array.overlap import overlap
 
@@ -126,6 +127,9 @@ class LazyESN(ESN):
         Args:
             y (dask.array): n_state1, n_state2, ..., n_time
         """
+
+        if isinstance(y, xr.DataArray):
+            y = y.data
 
         halo_data = overlap(y, depth=self.overlap, boundary=self.boundary, allow_rechunk=False)
         halo_data = halo_data.persist() if self.persist else halo_data
