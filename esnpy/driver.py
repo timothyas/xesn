@@ -107,7 +107,7 @@ class Driver():
         Required Parameter Sections:
             - "xdata" with options passed to :meth:`XData.__init__`
             - "esn_weights" with options passed to :func:`from_zarr`
-            - "testing" with options passed to :meth:`get_samples`
+            - "testing" with options passed to :meth:`get_samples`, except "mode" and "xda"
         """
 
         self.walltime.start("Starting Testing")
