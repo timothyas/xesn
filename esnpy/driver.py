@@ -15,6 +15,13 @@ from .timer import Timer
 from .xdata import XData
 
 class Driver():
+    """This is intended to automate the ESN usage. The main methods to use are:
+        - :meth:`run_micro_calibration`: train ESN readout weights
+        - :meth:`run_test`: test a trained ESN on a number of random samples from a test dataset
+
+    The experiments are configured with a parameter dict, that can be created either
+    with a yaml file or by explicitly passing the dict itself.
+    """
     name                    = "driver"
     output_directory        = None
     walltime                = None
@@ -23,6 +30,11 @@ class Driver():
     def __init__(self,
                  config,
                  output_directory=None):
+        """
+        Args:
+            config (str or dict): either a path to a yaml file or dict containing experiment parameters
+            output_directory (str, optional): directory to save results and write logs to
+        """
 
         self.make_output_directory(output_directory)
         self.create_logger()
@@ -55,6 +67,13 @@ class Driver():
 
 
     def run_micro_calibration(self):
+        """Perform ESN training, learn the readout matrix weights.
+
+        Required Parameter Sections:
+            - "xdata" with options passed to :meth:`XData.__init__`
+            - "esn" or "lazyesn" with options passed to :meth:`ESN.__init__` or :meth:`LazyESN.__init__`
+            - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
+        """
 
         self.walltime.start("Starting Micro Calibration")
 
@@ -83,6 +102,13 @@ class Driver():
 
 
     def run_test(self):
+        """Perform ESN training, learn the readout matrix weights.
+
+        Required Parameter Sections:
+            - "xdata" with options passed to :meth:`XData.__init__`
+            - "esn_weights" with options passed to :func:`from_zarr`
+            - "testing" with options passed to :meth:`get_samples`
+        """
 
         self.walltime.start("Starting Testing")
 
@@ -117,23 +143,42 @@ class Driver():
         self.walltime.stop()
 
 
-    def get_samples(self, mode, test_data, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
+    def get_samples(self, mode, xda, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
+        """Pull random samples from validation or test dataset
+
+        Args:
+            mode (str): indicating validation or test
+            xda (xarray.DataArray): with the full chunk of data to pull samples from
+            n_samples (int): number of samples to grab
+            n_steps (int): number of steps to make in validation/test prediction
+            n_spinup (int): number of spinup steps before prediction
+            random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
+            samples_indices (list, optional): the temporal indices denoting the start of the prediction period (including spinup)
+
+        Returns:
+            testers (list of xarray.DataArray): with each separate validation/test sample
+        """
 
         self.set_sample_indices(
                 mode,
-                len(test_data.time),
+                len(xda.time),
                 n_samples,
                 n_steps,
                 n_spinup,
                 random_seed,
                 sample_indices)
 
-        testers = [test_data.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
+        testers = [xda.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
                    for ridx in self.params[mode]["sample_indices"]]
         return testers
 
 
     def set_sample_indices(self, mode, data_length, n_samples, n_steps, n_spinup, random_seed, sample_indices):
+        """If sample indices aren't provided, get them.
+
+        Sets Attributes:
+            sample_indices (list): with temporal indices denoting the start of the prediction period (including spinup)
+        """
 
         if sample_indices is None:
 
@@ -194,7 +239,7 @@ class Driver():
 
 
     def create_logger(self):
-        """Create a logfile and logger for writing all output to
+        """Create a logfile and logger for writing all text output to
 
         Sets Attributes:
             logfile (str): path to logfile: ouput_directory / stdout.log
@@ -253,9 +298,9 @@ class Driver():
     def overwrite_params(self, new_params):
         """Overwrite specific parameters with the values in the nested dict new_params, e.g.
 
-        new_params = {'model':{'n_reservoir':1000}}
+        new_params = {'esn':{'n_reservoir':1000}}
 
-        will overwrite driver.params['model']['n_reservoir'] with 1000, without having
+        will overwrite driver.params['esn']['n_reservoir'] with 1000, without having
         to recreate the big gigantic dictionary again.
 
         Args:
@@ -277,7 +322,7 @@ class Driver():
 
 
     def print_log(self, *args, **kwargs):
-        """Print to log file"""
+        """Print to log file as specified in :attr:`logname`"""
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
                 print(*args, **kwargs)

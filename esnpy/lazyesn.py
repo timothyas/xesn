@@ -15,12 +15,13 @@ else:
 from .esn import ESN, _train_1d, _update
 
 class LazyESN(ESN):
-    """
+    """A distributed/parallelized ESN network based on the multi-dimensional generalization of
+    Pathak et al., (2017) as used in Smith et al., (2023), similar to Arcomano et al., (2020).
+
     Assumptions:
         1. Time axis is last
         2. Non-global axes, i.e., axes which is chunked up or made up of patches, are first
         3. Can handle multi-dimensional data, but only 2D chunking
-
     """
 
     @property
@@ -132,9 +133,17 @@ class LazyESN(ESN):
 
 
     def train(self, y, n_spinup=0, batch_size=None):
-        """
+        """Learn the readout matrix weights through ridge regression.
+
         Args:
-            y (xarray.DataArray): n_state1, n_state2, ..., n_time
+            y (xarray.DataArray): target or label data for training, if different from the input data
+            n_spinup (int, optional): number of spinup steps for the ESN, not included in training
+            batch_size (int, optional): used to perform training in batches,
+                but note that all time data are still loaded into memory regardless of this parameter
+
+        Sets Attributes:
+            Wout (array_like): (:attr:`n_ouput`, :attr:`n_reservoir`)
+                the readout matrix, mapping from reservoir to output space
         """
 
         self._time_check(y, "LazyESN.train", "y")
@@ -223,6 +232,8 @@ class LazyESN(ESN):
 
 
     def dask_overlap(self, dims):
+        """To use dask.overlap, we need a dictionary referencing axis indices, not
+        named dimensions as with xarray. Create that index based dict here"""
         return {dims.index(d): self.overlap[d] for d in self.overlap.keys()}
 
 
@@ -237,11 +248,6 @@ def _train_nd(halo_data,
         tikhonov_parameter=None,
         block_info=None,
         ):
-    """
-
-    Args:
-        halo_data (dask.array): n_state1, n_state2, ..., n_time
-    """
 
     # Deal with overlap related masking
     # Note: how to put this stuff in _prepare_1d_inputs, even though we only need and use the inner mask here?
