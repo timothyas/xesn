@@ -13,6 +13,10 @@ else:
     from scipy import sparse, linalg
 
 class RandomMatrix():
+    """Creates a random numpy or cupy based matrix via :meth:`__call__`.
+    Use input arguments to control the shape, generator distribution, normalization, and
+    the random number generator seed.
+    """
 
     # Set by user
     n_rows          = None
@@ -50,11 +54,22 @@ class RandomMatrix():
 
 
     def __call__(self):
+        """The main routine to use. Creates and normalizes a matrix as specified by attributes.
+
+        Returns:
+            A (array_like): numpy or cupy generated random matrix
+        """
         A = self.create_matrix()
         return self.normalize(A)
 
 
     def create_matrix(self):
+        """Create either a uniform or normal random matrix.
+
+        Returns:
+            A (array_like): with entries drawn from a standard normal or [-1,1]
+                uniform distribution
+        """
 
         if self.distribution == "uniform":
             A = self.random_state.uniform(
@@ -71,6 +86,15 @@ class RandomMatrix():
 
 
     def normalize(self, A):
+        """Rescale a random matrix either through simple multiplication, or
+        by first normalizing by the matrix's spectral radius or induced 2 norm
+
+        Args:
+            A (array_like): random matrix
+
+        Returns:
+            A (array_like): rescaled matrix, based on class attributes
+        """
 
         denominator = 1.0
         if self.normalization == "svd":
@@ -86,6 +110,9 @@ class RandomMatrix():
 
 
 class SparseRandomMatrix(RandomMatrix):
+    """Similar to RandomMatrix, but used to create a sparse random matrix.
+    Additional controls are the density and sparse array layout.
+    """
 
     density         = None
     format          = "coo" # scipy's default

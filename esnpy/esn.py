@@ -15,6 +15,9 @@ else:
 from .matrix import RandomMatrix, SparseRandomMatrix
 
 class ESN():
+    """A classic ESN architecture, with no distribution or parallelism.
+    It is assumed that all data used with this architecture can fit into memory.
+    """
     W                   = None
     Win                 = None
     Wout                = None
@@ -192,6 +195,19 @@ class ESN():
 
 
     def train(self, u, y=None, n_spinup=0, batch_size=None):
+        """Learn the readout matrix weights through ridge regression.
+
+        Args:
+            u (xarray.DataArray): input data driving the ESN, with "time" as the last dimension
+            y (xarray.DataArray, optional): target or label data for training, if different from the input data
+            n_spinup (int, optional): number of spinup steps for the ESN, not included in training
+            batch_size (int, optional): used to perform training in batches,
+                but note that all time data are still loaded into memory regardless of this parameter
+
+        Sets Attributes:
+            Wout (array_like): (:attr:`n_ouput`, :attr:`n_reservoir`)
+                the readout matrix, mapping from reservoir to output space
+        """
 
         # Check if training labels are different from input data
         y = u if y is None else y
@@ -208,6 +224,19 @@ class ESN():
 
 
     def predict(self, y, n_steps, n_spinup):
+        """Use the ESN to make a prediction
+
+        Args:
+            y (xarray.DataArray): the input data driving the reservoir during spinup, must have "time" as the last dimension,
+                and it needs to have at least ``n_spinup`` entries in time
+            n_steps (int): number of prediction steps to take
+            n_spinup (int): number of spinup steps before making the prediction
+
+        Returns:
+            xpred (xarray.DataArray): the prediction, with no spinup data and length ``n_steps+1`` along
+                the newly created ``ftime`` dimension, created by differencing each timestamp and time at
+                prediction initial conditions
+        """
 
         self._time_check(y, "ESN.predict", "y")
 
@@ -245,7 +274,18 @@ class ESN():
 
 
     def test(self, y, n_steps, n_spinup):
-        """Only difference with prediction is that this returns a dataset with truth included"""
+        """Make a prediction to be compared to a truth. The only difference
+        with :meth:`predict` is that this returns a dataset with both the prediction and truth.
+
+        Args:
+            y (xarray.DataArray): the input data driving the reservoir during spinup, must have "time" as the last dimension,
+                and it needs to have at least ``n_spinup`` entries in time
+            n_steps (int): number of prediction steps to take
+            n_spinup (int): number of spinup steps before making the prediction
+
+        Returns:
+            xds (xarray.Dataset): with fields "prediction" and "truth", see :meth:`predict`
+        """
 
         # make prediction
         xds = xr.Dataset()
@@ -261,7 +301,11 @@ class ESN():
         """Return object as :obj:`xarray.Dataset`
 
         Note:
-            For now, not storing :attr:`W` or :attr:`Win`. Instead, store the random seed for each within kwargs.
+            This does not store :attr:`W` or :attr:`Win`. Instead, store the random seed for each within kwargs.
+
+        Returns:
+            xds (xarray.Dataset): with field "Wout" containing the readout matrix, and attributes
+                that can recreate the ESN
         """
 
         if self.Wout is None:

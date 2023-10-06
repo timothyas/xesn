@@ -4,6 +4,9 @@ import numpy as np
 import xarray as xr
 
 class XData():
+    """A class to open a zarr store into xarray and do very simple preprocessing operations.
+    See :meth:`setup` for the main usage.
+    """
 
     def __init__(self,
                  field_name,
@@ -21,17 +24,13 @@ class XData():
 
 
     def setup(self, mode):
-        """
-
-        TODO:
-        1. change the name
-        2. how to print to logfile
+        """Open up a zarr store, and as desired/necessary: transpose, subsample, and normalize it.
 
         Args:
             mode (str): either "training", "validation", or "testing"
 
         Returns:
-            xda (xarray.Dataset): containing the desired field with any preprocessing
+            xda (xarray.Dataset): containing the desired field with any preprocessing done
         """
 
         # get lazy data, return xarray dataset
@@ -50,6 +49,23 @@ class XData():
 
 
     def subsample(self, xda, mode):
+        """Subsample a DataArray along axes specified in :attr:`subsampling`.
+        Note that the "time" section has to have modes, e.g., indicating training, validation, or testing.
+
+        Note:
+            Each dimension can be subsampled either via indices if integers are provided,
+            or by value if floats are provided. These types can't be mixed for the same axis though, and
+            no other type is supported, e.g., numpy.datetime64 or datetime.datetime, because
+            these types can't be specified easily in a yaml file to the Driver class, which
+            is the main point of interaction here.
+
+        Args:
+            xda (xarray.DataArray): a multi-dimensional array to be subsampled
+            mode (str): indicating how to subsample the time dimension
+
+        Returns:
+            xda (xarray.DataArray): subsampled
+        """
 
         slices = self.subsampling if self.subsampling is not None else dict()
         for dim, slc in slices.items():
@@ -84,6 +100,18 @@ class XData():
 
 
     def normalize(self, xda):
+        """Very simple, this may eventually be hooked up with scikit learn for more advanced normalization.
+        Right now, normalize with scalars :attr:`bias` and :attr:`scale` as
+
+        .. math::
+            (xda - bias) / scale
+
+        Args:
+            xda (xarray.DataArray): with the field to be normalized
+
+        Returns:
+            xda (xarray.DataArray): normalized
+        """
 
         # good practice?
         if self.normalization is None:

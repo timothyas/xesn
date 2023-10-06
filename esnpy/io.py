@@ -5,6 +5,15 @@ from .esn import ESN
 from .lazyesn import LazyESN
 
 def from_zarr(store, **kwargs):
+    """Create an ESN or LazyESN from a zarr store.
+
+    Args:
+        store (MutableMapping or str): path or mapping to a filesystem with a zarr store. See xarray.open_zarr for details.
+        **kwargs (dict): additional keyword arguments are passed to xarray.open_zarr
+
+    Returns:
+        esn (ESN or LazyESN): an ESN or distributed ESN
+    """
 
     xds = xr.open_zarr(store, **kwargs)
 
