@@ -1,0 +1,35 @@
+name: esn_docs 
+channels:
+    - conda-forge
+dependencies:
+    - python=3.10
+# Basics
+    - numpy
+    - scipy
+    - matplotlib
+# xarray et al
+    - xarray
+    - netCDF4
+    - bottleneck
+    - dask[complete]
+    - zarr
+# optional
+    - seaborn
+    - cmocean
+# jupyter etc
+    - jupyter
+    - ipython
+    - ipykernel
+# Testing
+    - pytest
+    - coverage
+# docs stuff
+    - sphinx
+    - sphinx_rtd_theme
+# notebook docs
+    - pandoc
+    - nbsphinx
+# for generating class dependence diagram
+    - graphviz
+    - python-graphviz
+    - pip
