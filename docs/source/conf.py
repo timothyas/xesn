@@ -11,8 +11,8 @@ import sys
 sys.path.insert(0, os.path.abspath("../"))
 
 project = 'esnpy'
-copyright = '2023, Timothy A. Smith, Stephen G. Penny, Jason A. Platt, Tse-Chun Chen'
-author = 'Timothy A. Smith, Stephen G. Penny, Jason A. Platt, Tse-Chun Chen'
+copyright = '2023, esnpy developers'
+author = 'esnpy developers'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
