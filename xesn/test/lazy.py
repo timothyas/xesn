@@ -7,10 +7,10 @@ from shutil import rmtree
 
 import dask.array as darray
 
-from esnpy.lazyesn import LazyESN
-from esnpy.io import from_zarr
+from xesn.lazyesn import LazyESN
+from xesn.io import from_zarr
 
-from esnpy.test.esn import TestESN
+from xesn.test.esn import TestESN
 
 class TestLazy(TestESN):
 

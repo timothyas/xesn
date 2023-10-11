@@ -2,27 +2,27 @@ API
 ###
 
 .. autosummary::
-   esnpy.Driver
-   esnpy.ESN
-   esnpy.LazyESN
-   esnpy.from_zarr
+   xesn.Driver
+   xesn.ESN
+   xesn.LazyESN
+   xesn.from_zarr
 
-.. autoclass:: esnpy.Driver
+.. autoclass:: xesn.Driver
    :members:
 
-.. autoclass:: esnpy.ESN
+.. autoclass:: xesn.ESN
    :members:
 
-.. autoclass:: esnpy.LazyESN
+.. autoclass:: xesn.LazyESN
    :members:
 
-.. autofunction:: esnpy.from_zarr
+.. autofunction:: xesn.from_zarr
 
-.. autoclass:: esnpy.XData
+.. autoclass:: xesn.XData
    :members:
 
-.. autoclass:: esnpy.RandomMatrix
+.. autoclass:: xesn.RandomMatrix
    :members:
 
-.. autoclass:: esnpy.SparseRandomMatrix
+.. autoclass:: xesn.SparseRandomMatrix
    :members:
