@@ -40,9 +40,12 @@ def test_data():
     tester = TestLazy()
     rs = darray.random.RandomState(0)
     datasets = {}
-    for dims, shape, chunks, overlap, Wout_chunks, Wout_shape in zip(
+    # zchunks is used to create the data, mirroring a zarr store with smaller chunks
+    # than what we want for the ESN
+    for dims, shape, zchunks, chunks, overlap, Wout_chunks, Wout_shape in zip(
             ( ("x",),     ("x", "y"),   ("x", "y", "z") ),
             ( ( 4 ,),     ( 4 ,  6 ),   ( 4 ,  6 ,  5 ) ),
+            ( ( 1 ,),     ( 1 ,  3 ),   ( 1 ,  3 ,  5 ) ),
             ( ( 2 ,),     ( 2 ,  3 ),   ( 2 ,  3 ,  5 ) ),
             ( ( 1 ,),     ( 1 ,  1 ),   ( 1 ,  1 ,  0 ) ),
             ( [2, None], [  6, None], [   30, None, 1]),
@@ -51,6 +54,7 @@ def test_data():
         shape += (tester.n_train,)
         nd = len(shape)
         dims += ("time",)
+        zchunks += (tester.n_train/5,)
         chunks += (-1,)
         overlap += (0,)
 
@@ -59,7 +63,7 @@ def test_data():
 
         datasets[nd] = {
                 "data": xr.DataArray(
-                    rs.normal(size=shape, chunks=chunks),
+                    rs.normal(size=shape, chunks=zchunks),
                     dims=dims),
                 "shape": shape,
                 "chunks": dict(zip(dims, chunks)),
@@ -265,7 +269,7 @@ class TestPrediction(TestLazy):
 
             assert xds["prediction"].shape == expected["shape"][:-1] + (self.n_steps+1,)
             assert xds["prediction"].shape == xds["truth"].shape
-            assert xds["prediction"].data.chunksize == xds["truth"].data.chunksize
+            assert xds["prediction"].data.chunksize[:-1] == tuple(esn.output_chunks.values())[:-1]
             assert xds["prediction"].dims == xds["truth"].dims
             assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
 

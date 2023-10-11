@@ -148,9 +148,9 @@ class LazyESN(ESN):
 
         self._time_check(y, "LazyESN.train", "y")
 
-        doverlap = self.dask_overlap(y.dims)
-        halo_data = overlap(y.data, depth=doverlap, boundary=self.boundary, allow_rechunk=False)
-        halo_data = halo_data.rechunk({-1: -1})
+        doverlap = self._dask_overlap(y.dims)
+        target_data = y.chunk(self.output_chunks).data
+        halo_data = overlap(target_data, depth=doverlap, boundary=self.boundary, allow_rechunk=False)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
@@ -180,9 +180,9 @@ class LazyESN(ESN):
         assert y.shape[-1] >= n_spinup+1
 
         # Get overlapped data
-        doverlap = self.dask_overlap(y.dims)
-        halo_data = overlap(y.data[..., :n_spinup+1], depth=doverlap, boundary=self.boundary)
-        halo_data = halo_data.rechunk({-1: -1})
+        doverlap = self._dask_overlap(y.dims)
+        target_data = y[..., :n_spinup+1].chunk(self.output_chunks).data
+        halo_data = overlap(target_data, depth=doverlap, boundary=self.boundary)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         ukw = { "W"             : self.W,
@@ -209,11 +209,12 @@ class LazyESN(ESN):
 
         # Setup and loop
         u0 = halo_data[..., n_spinup]
-        prediction = [y.data[..., n_spinup]]
+        prediction = [target_data[..., n_spinup]]
+        chunksize = target_data[..., 0].chunksize
         for n in range(n_steps):
 
             r0 = map_blocks(_update_nd, r0, u0, chunks=self.r_chunks, **ukw, **dkw)
-            v  = map_blocks(_readout, self.Wout, r0, chunks=y[...,0].data.chunksize, drop_axis=drop_axis, **dkw)
+            v  = map_blocks(_readout, self.Wout, r0, chunks=chunksize, drop_axis=drop_axis, **dkw)
 
             u0 = overlap(v, depth=doverlap, boundary=self.boundary)
             prediction.append(v)
@@ -231,7 +232,7 @@ class LazyESN(ESN):
         return xpred
 
 
-    def dask_overlap(self, dims):
+    def _dask_overlap(self, dims):
         """To use dask.overlap, we need a dictionary referencing axis indices, not
         named dimensions as with xarray. Create that index based dict here"""
         return {dims.index(d): self.overlap[d] for d in self.overlap.keys()}
