@@ -1,4 +1,4 @@
-name: esn
+name: xesn
 channels:
     - conda-forge
 dependencies:

@@ -10,9 +10,9 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath("../"))
 
-project = 'esnpy'
-copyright = '2023, esnpy developers'
-author = 'esnpy developers'
+project = 'xesn'
+copyright = '2023, xesn developers'
+author = 'xesn developers'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

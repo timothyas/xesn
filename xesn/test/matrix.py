@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy import linalg, sparse
 
-from esnpy.matrix import RandomMatrix, SparseRandomMatrix
+from xesn.matrix import RandomMatrix, SparseRandomMatrix
 
 class TestMatrix:
     n_rows      = 10

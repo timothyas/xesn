@@ -18,7 +18,7 @@ from timer import Timer
 
 import sys
 sys.path.append("..")
-from esnpy import ESN, from_zarr
+from xesn import ESN, from_zarr
 
 class ScalingTest():
 

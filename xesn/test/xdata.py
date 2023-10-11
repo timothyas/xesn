@@ -7,7 +7,7 @@ from shutil import rmtree
 
 import dask.array as darray
 
-from esnpy.xdata import XData
+from xesn.xdata import XData
 
 
 class TestXData:

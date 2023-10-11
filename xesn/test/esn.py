@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose, assert_array_equal
 import xarray as xr
 from shutil import rmtree
 
-from esnpy.esn import ESN
-from esnpy.io import from_zarr
+from xesn.esn import ESN
+from xesn.io import from_zarr
 
 class TestESN:
     n_input             = 3
