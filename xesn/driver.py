@@ -27,6 +27,7 @@ class Driver():
         output_directory (str, optional): directory to save results and write logs to
     """
     name                    = "driver"
+    config                  = None
     output_directory        = None
     walltime                = None
     localtime               = None
@@ -38,12 +39,12 @@ class Driver():
 
         self._make_output_directory(output_directory)
         self._create_logger()
-        self.set_params(config)
+        self.set_config(config)
 
         # Look for ESN or LazyESN
-        if "esn" in self.params.keys():
+        if "esn" in self.config.keys():
             self.ESN = ESN
-        elif "lazyesn" in self.params.keys():
+        elif "lazyesn" in self.config.keys():
             self.ESN = LazyESN
 
         self.esn_name = self.ESN.__name__.lower()
@@ -79,18 +80,18 @@ class Driver():
 
         # setup the data
         self.localtime.start("Setting up Data")
-        data = XData(**self.params["xdata"])
+        data = XData(**self.config["xdata"])
         xda = data.setup(mode="training")
         self.localtime.stop()
 
         # setup ESN
         self.localtime.start(f"Building {self.esn_name}")
-        esn = self.ESN(**self.params[self.esn_name])
+        esn = self.ESN(**self.config[self.esn_name])
         esn.build()
         self.localtime.stop()
 
         self.localtime.start(f"Training {self.esn_name}")
-        esn.train(xda, **self.params["training"])
+        esn.train(xda, **self.config["training"])
         self.localtime.stop()
 
         self.localtime.start(f"Storing {self.esn_name} Weights")
@@ -109,23 +110,23 @@ class Driver():
 
         # setup the data
         self.localtime.start("Setting up Data")
-        data = XData(**self.params["xdata"])
+        data = XData(**self.config["xdata"])
         xda = data.setup(mode="validation")
-        macro_data = self.get_samples("validation", xda=xda, **self.params["validation"])
+        macro_data = self.get_samples("validation", xda=xda, **self.config["validation"])
         xda = data.setup(mode="training")
         self.localtime.stop()
 
         # create cost function
         self.localtime.start("Setting up cost function")
-        cf = CostFunction(self.ESN, xda, macro_data, self.params)
+        cf = CostFunction(self.ESN, xda, macro_data, self.config)
         self.localtime.stop()
 
         # optimize
         self.localtime.start("Starting Bayesian Optimization")
-        p_opt = optimize(self.params["optim"]["parameters"],
-                         self.params["optim"]["transformations"],
+        p_opt = optimize(self.config["optim"]["parameters"],
+                         self.config["optim"]["transformations"],
                          cost_function,
-                         **self.params["ego"])
+                         **self.config["ego"])
         self.localtime.stop()
 
         self.walltime.stop()
@@ -144,18 +145,18 @@ class Driver():
 
         # setup the data
         self.localtime.start("Setting up Data")
-        data = XData(**self.params["xdata"])
+        data = XData(**self.config["xdata"])
         xda = data.setup(mode="testing")
         self.localtime.stop()
 
         # pull samples from data
         self.localtime.start("Get Test Samples")
-        test_data = self.get_samples("testing", xda=xda, **self.params["testing"])
+        test_data = self.get_samples("testing", xda=xda, **self.config["testing"])
         self.localtime.stop()
 
         # setup ESN from zarr
         self.localtime.start("Read ESN Zarr Store")
-        esn = from_zarr(**self.params["esn_weights"])
+        esn = from_zarr(**self.config["esn_weights"])
         self.localtime.stop()
 
         # make predictions
@@ -163,8 +164,8 @@ class Driver():
         for i, tester in enumerate(test_data):
             xds = esn.test(
                     tester,
-                    n_steps=self.params["testing"]["n_steps"],
-                    n_spinup=self.params["testing"]["n_spinup"]
+                    n_steps=self.config["testing"]["n_steps"],
+                    n_spinup=self.config["testing"]["n_spinup"]
                     )
             xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
 
@@ -199,7 +200,7 @@ class Driver():
                 sample_indices)
 
         testers = [xda.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
-                   for ridx in self.params[mode]["sample_indices"]]
+                   for ridx in self.config[mode]["sample_indices"]]
         return testers
 
 
@@ -218,7 +219,7 @@ class Driver():
 
         # make sure types are good to go
         sample_indices = list(int(x) for x in sample_indices)
-        self.overwrite_params({mode: {"sample_indices": sample_indices}})
+        self.overwrite_config({mode: {"sample_indices": sample_indices}})
 
 
 #    def run_macro_calibration(self):
@@ -226,7 +227,7 @@ class Driver():
 #        self.walltime.start("Starting Macro Calibration")
 #
 #        # setup the data
-#        data = XData(**self.params["xdata"])
+#        data = XData(**self.config["xdata"])
 #        xda = data.setup()
 #
 #        # define the loss function
@@ -290,7 +291,7 @@ class Driver():
         self.logger.addHandler(fh)
 
 
-    def set_params(self, config):
+    def set_config(self, config):
         """Read the nested parameter dictionary or take it directly, and write a copy for
         reference in the output_directory.
 
@@ -298,56 +299,53 @@ class Driver():
             config (str or dict): filename (path) to the configuration yaml file, or nested dictionary with parameters
 
         Sets Attribute:
-            params (dict): with a big nested dictionary with all parameters
+            config (dict): with a big nested dictionary with all parameters
         """
 
         if isinstance(config, str):
             with open(config, "r") as f:
-                params = yaml.safe_load(f)
+                config = yaml.safe_load(f)
 
-        elif isinstance(config, dict):
-            params = config
-
-        else:
-            raise TypeError(f"Driver.set_params: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
+        elif not isinstance(config, dict):
+            raise TypeError(f"Driver.set_config: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
 
         # make the section names lower case
-        lparams = {}
-        for key in params.keys():
-            lparams[key.lower()] = params[key]
+        lconfig = {}
+        for key in config.keys():
+            lconfig[key.lower()] = config[key]
 
-        self._check_config_options(lparams)
-        self.params = lparams
+        self._check_config_options(lconfig)
+        self.config = lconfig
 
         outname = os.path.join(self.output_directory, "config.yaml")
         with open(outname, "w") as f:
-            yaml.dump(self.params, stream=f)
+            yaml.dump(self.config, stream=f)
 
 
-    def overwrite_params(self, new_params):
-        """Overwrite specific parameters with the values in the nested dict new_params, e.g.
+    def overwrite_config(self, new_config):
+        """Overwrite specific parameters with the values in the nested dict new_config, e.g.
 
-        new_params = {'esn':{'n_reservoir':1000}}
+        new_config = {'esn':{'n_reservoir':1000}}
 
-        will overwrite driver.params['esn']['n_reservoir'] with 1000, without having
+        will overwrite driver.config['esn']['n_reservoir'] with 1000, without having
         to recreate the big gigantic dictionary again.
 
         Args:
-            new_params (dict): nested dictionary with values to overwrite object's parameters with
+            new_config (dict): nested dictionary with values to overwrite object's parameters with
 
         Sets Attribute:
-            params (dict): with the nested dictionary based on the input config file
+            config (dict): with the nested dictionary based on the input config file
         """
 
-        params = self.params.copy()
-        for section, this_dict in new_params.items():
+        config = self.config.copy()
+        for section, this_dict in new_config.items():
             for key, val in this_dict.items():
                 s = section.lower()
-                self.print_log(f"Driver.overwrite_params: Overwriting driver.params['{s}']['{key}'] with {val}")
-                params[s][key] = val
+                self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}'] with {val}")
+                config[s][key] = val
 
         # Overwrite our copy of config.yaml in output_dir and reset attr
-        self.set_params(params)
+        self.set_config(config)
 
 
     def print_log(self, *args, **kwargs):
@@ -357,12 +355,12 @@ class Driver():
                 print(*args, **kwargs)
 
 
-    def _check_config_options(self, params):
+    def _check_config_options(self, config):
         """Make sure we recognize each configuration section name, and each option name.
         No type or value checking
 
         Args:
-            params (dict): the big nested options dictionary
+            config (dict): the big nested options dictionary
         """
 
         # Check sections
@@ -376,7 +374,7 @@ class Driver():
                 "compute": None,
                 "esn_weights": None}
         bad_sections = []
-        for key in params.keys():
+        for key in config.keys():
             try:
                 assert key in expected.keys()
             except:
@@ -386,11 +384,11 @@ class Driver():
             raise KeyError(f"Driver._check_config_options: unrecognized config section(s): {bad_sections}")
 
         # Check options in each section
-        for section in params.keys():
+        for section in config.keys():
             Func = expected[section]
             if Func is not None:
                 kw, *_ = inspect.getfullargspec(Func)
-                for key in params[section].keys():
+                for key in config[section].keys():
                     try:
                         assert key in kw
                     except:

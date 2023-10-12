@@ -11,7 +11,7 @@ TODOs
     - EGO
     - validation/optim forecasts
     - data management like persist
-- Do we need to _check_params like with driver? or assume it's coming from driver?
+- Do we need to _check_config like with driver? or assume it's coming from driver?
 - Should this inherit driver?
 - Right now, computing temporal normalization on the fly for each macro sample... not how we did it before... does this matter?
 - is it faster to make dask.array.zeros containers, or a list that gets .compute called on it?
@@ -27,15 +27,15 @@ Other optim stuff
 from dask.array import zeros
 
 class CostFunction():
-    def __init__(self, ESNModel, micro_data, macro_data, params):
+    def __init__(self, ESNModel, micro_data, macro_data, config):
 
         self.ESN        = ESNModel
         self.micro_data = micro_data
         self.macro_data = macro_data
-        self.params     = params
+        self.config     = config
 
 
-    def cost(macro_param_sets, micro_data, macro_data):
+    def __call__(macro_param_sets, micro_data, macro_data):
 
         #TODO: figure out what size cost needs to be again...
         # For now assuming that macro_param_sets is this shape:
@@ -48,25 +48,25 @@ class CostFunction():
                     ESNModel=self.ESNModel,
                     micro_data=self.micro_data,
                     macro_data=self.macro_data,
-                    params=self.params)
+                    config=self.config)
 
         cost = cost.compute()
         return cost.reshape(-1, 1)
 
 
-def _cost(self, macro_params, ESNModel, micro_data, macro_data, params):
+def _cost(self, macro_params, ESNModel, micro_data, macro_data, config):
 
-    macro_names = tuple(params["optim"]["parameters"].keys())
+    macro_names = tuple(config["optim"]["parameters"].keys())
 
-    esnp = _get_esn_args(macro_params, macro_names, params[ESNModel.__name__.lower()])
+    esnc = _get_esn_args(macro_params, macro_names, config[ESNModel.__name__.lower()])
 
-    esn = ESNModel(**esnp)
+    esn = ESNModel(**esnc)
     esn.build()
-    esn.train(micro_data, **params["training"])
+    esn.train(micro_data, **config["training"])
 
-    n_macro = params["optim"]["n_samples"]
-    n_spinup = params["optim"]["n_spinup"]
-    n_steps = params["optim"]["n_forecast_steps"]
+    n_macro = config["optim"]["n_samples"]
+    n_spinup = config["optim"]["n_spinup"]
+    n_steps = config["optim"]["n_forecast_steps"]
 
     cost = zeros(n_macro, chunks=(1,))
     for i, truth in enumerate(macro_data):
@@ -78,7 +78,7 @@ def _cost(self, macro_params, ESNModel, micro_data, macro_data, params):
     if xp.isnan(avg_cost) or xp.isinf(avg_cost) or avg_cost > 1.e9:
         avg_cost = 1.e9
     else:
-        avg_cost = avg_cost.persist() if params["optim"]["persist"] else avg_cost
+        avg_cost = avg_cost.persist() if config["optim"]["persist"] else avg_cost
     return avg_cost
 
 
@@ -91,15 +91,15 @@ def nrmse(xds):
     return xp.sqrt(nmse)
 
 
-def _get_esn_args(macro_params, macro_names, params):
+def _get_esn_args(macro_params, macro_names, config):
 
-    esnp = params.copy()
+    esnc = config.copy()
     for key, val in zip(macro_names, macro_params):
         if key[:5] == "log10":
-            esnp[key[6:]] = 10. ** val
+            esnc[key[6:]] = 10. ** val
         elif key[:3] == "log":
-            esnp[key[4:]] = xp.exp( val )
+            esnc[key[4:]] = xp.exp( val )
         else:
-            esnp[key] = val
+            esnc[key] = val
 
-    return esnp
+    return esnc

@@ -89,11 +89,11 @@ class TestDriverBasic():
 
         rmtree(expected)
 
-    def test_overwrite_params(self, test_driver, config_dict):
+    def test_overwrite_config(self, test_driver, config_dict):
 
         driver = test_driver
-        assert driver.params["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
-        assert driver.params["lazyesn"]["n_reservoir"] == config_dict["lazyesn"]["n_reservoir"]
+        assert driver.config["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
+        assert driver.config["lazyesn"]["n_reservoir"] == config_dict["lazyesn"]["n_reservoir"]
 
         expected = {
                 "xdata": {
@@ -104,19 +104,19 @@ class TestDriverBasic():
                 },
             }
 
-        driver.overwrite_params(expected)
+        driver.overwrite_config(expected)
 
         # make sure these changed
-        assert driver.params["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
-        assert driver.params["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
+        assert driver.config["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
+        assert driver.config["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
 
         # but make sure this one didn't
-        assert driver.params["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
+        assert driver.config["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
 
-    def test_params_type(self, test_driver):
+    def test_config_type(self, test_driver):
         driver = test_driver
         with pytest.raises(TypeError):
-            driver.set_params(["blah", "blah", "blah"])
+            driver.set_config(["blah", "blah", "blah"])
 
 
     def test_bad_section(self, test_driver, config_dict):
@@ -124,7 +124,7 @@ class TestDriverBasic():
         c["blah"] = {"a": 1}
         driver = test_driver
         with pytest.raises(KeyError):
-            driver.set_params(c)
+            driver.set_config(c)
 
 
     def test_bad_option(self, test_driver, config_dict):
@@ -132,20 +132,20 @@ class TestDriverBasic():
         c["xdata"]["blah"] = None
         driver = test_driver
         with pytest.raises(KeyError):
-            driver.set_params(c)
+            driver.set_config(c)
 
     def test_case(self, test_driver):
         driver = test_driver
-        c = driver.params.copy()
-        expected = driver.params.copy()
+        c = driver.config.copy()
+        expected = driver.config.copy()
         c["XDATA"] = c["xdata"]
         del c["xdata"]
 
-        driver.set_params(c)
-        assert driver.params == expected
+        driver.set_config(c)
+        assert driver.config == expected
 
-        driver.overwrite_params(c)
-        assert driver.params == expected
+        driver.overwrite_config(c)
+        assert driver.config == expected
 
 
 @pytest.fixture(scope="function")
