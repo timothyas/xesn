@@ -101,6 +101,36 @@ class Driver():
         self.walltime.stop("Total Walltime")
 
 
+    def run_macro_calibration(self):
+        """Perform Bayesian optimization on macro-scale ESN parameters using surrogate modeling toolbox.
+        """
+
+        self.walltime.start("Starting Macro Calibration")
+
+        # setup the data
+        self.localtime.start("Setting up Data")
+        data = XData(**self.params["xdata"])
+        xda = data.setup(mode="validation")
+        macro_data = self.get_samples("validation", xda=xda, **self.params["validation"])
+        xda = data.setup(mode="training")
+        self.localtime.stop()
+
+        # create cost function
+        self.localtime.start("Setting up cost function")
+        cf = CostFunction(self.ESN, xda, macro_data, self.params)
+        self.localtime.stop()
+
+        # optimize
+        self.localtime.start("Starting Bayesian Optimization")
+        p_opt = optimize(self.params["optim"]["parameters"],
+                         self.params["optim"]["transformations"],
+                         cost_function,
+                         **self.params["ego"])
+        self.localtime.stop()
+
+        self.walltime.stop()
+
+
     def run_test(self):
         """Perform ESN training, learn the readout matrix weights.
 
