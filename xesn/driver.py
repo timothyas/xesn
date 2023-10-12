@@ -314,7 +314,10 @@ class Driver():
             for key, val in this_dict.items():
                 s = section.lower()
                 self.print_log(f"Driver.overwrite_params: Overwriting driver.params['{s}']['{key}'] with {val}")
-                params[s][key] = val
+                if s in params:
+                    params[s][key] = val
+                else:
+                    params[s] = {key: val}
 
         # Overwrite our copy of config.yaml in output_dir and reset attr
         self.set_params(params)
