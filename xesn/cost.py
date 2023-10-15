@@ -26,6 +26,8 @@ Other optim stuff
 
 from dask.array import zeros
 
+from .optim import inverse_transform
+
 class CostFunction():
     def __init__(self, ESNModel, micro_data, macro_data, config):
 
@@ -54,24 +56,29 @@ class CostFunction():
         return cost.reshape(-1, 1)
 
 
-def _cost(self, macro_params, ESNModel, micro_data, macro_data, config):
+def _cost(self, x_transformed, ESNModel, micro_data, macro_data, config):
 
-    macro_names = tuple(config["optim"]["parameters"].keys())
+    # perform any inverse transformations e.g. of log/log10
+    x_names = tuple(config["macro_training"]["parameters"].keys())
+    params_transformed = zip(x_names, x_transformed)
+    params = inverse_transform(params_transformed, config["macro_training"]["transformations"])
 
-    esnc = _get_esn_args(macro_params, macro_names, config[ESNModel.__name__.lower()])
+    # update parameters, build, and train esn
+    esnc = config[ESNModel.__name__.lower()].copy().update(params)
 
     esn = ESNModel(**esnc)
     esn.build()
     esn.train(micro_data, **config["training"])
 
-    n_macro = config["optim"]["n_samples"]
-    n_spinup = config["optim"]["n_spinup"]
-    n_steps = config["optim"]["n_forecast_steps"]
+    # run the forecasts to compute cost
+    n_macro = config["macro_training"]["forecast"]["n_samples"]
+    n_spinup = config["macro_training"]["forecast"]["n_spinup"]
+    n_steps = config["macro_training"]["forecast"]["n_steps"]
 
     cost = zeros(n_macro, chunks=(1,))
     for i, truth in enumerate(macro_data):
         xds = esn.test(truth, n_steps=n_steps, n_spinup=n_spinup)
-        cost[i] = nrmse(xds)
+        cost[i] = nrmse(xds).data
 
     avg_cost = cost.mean()
 
@@ -84,22 +91,7 @@ def _cost(self, macro_params, ESNModel, micro_data, macro_data, config):
 
 def nrmse(xds):
 
-    # right now just compute NRMSE, will separate this later
     temporal_weights = 1. / xds["truth"].std("time")
     norm_error = (xds["prediction"] - xds["truth"]) * temporal_weights
     nmse = (norm_error**2).mean()
     return xp.sqrt(nmse)
-
-
-def _get_esn_args(macro_params, macro_names, config):
-
-    esnc = config.copy()
-    for key, val in zip(macro_names, macro_params):
-        if key[:5] == "log10":
-            esnc[key[6:]] = 10. ** val
-        elif key[:3] == "log":
-            esnc[key[4:]] = xp.exp( val )
-        else:
-            esnc[key] = val
-
-    return esnc

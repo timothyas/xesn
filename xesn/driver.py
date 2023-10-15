@@ -111,8 +111,8 @@ class Driver():
         # setup the data
         self.localtime.start("Setting up Data")
         data = XData(**self.config["xdata"])
-        xda = data.setup(mode="validation")
-        macro_data = self.get_samples("validation", xda=xda, **self.config["validation"])
+        xda = data.setup(mode="macro_training")
+        macro_data = self.get_samples("macro_training", xda=xda, **self.config["macro_training"]["forecast"])
         xda = data.setup(mode="training")
         self.localtime.stop()
 
@@ -125,7 +125,7 @@ class Driver():
         self.localtime.start("Starting Bayesian Optimization")
         p_opt = optimize(self.config["optim"]["parameters"],
                          self.config["optim"]["transformations"],
-                         cost_function,
+                         cf,
                          **self.config["ego"])
         self.localtime.stop()
 
@@ -220,23 +220,6 @@ class Driver():
         # make sure types are good to go
         sample_indices = list(int(x) for x in sample_indices)
         self.overwrite_config({mode: {"sample_indices": sample_indices}})
-
-
-#    def run_macro_calibration(self):
-#
-#        self.walltime.start("Starting Macro Calibration")
-#
-#        # setup the data
-#        data = XData(**self.config["xdata"])
-#        xda = data.setup()
-#
-#        # define the loss function
-#
-#        # optimize
-#
-#        # Retrain (for now... need to dig into this)
-#
-#        self.walltime.stop("Total Walltime")
 
 
     def _make_output_directory(self, out_dir):

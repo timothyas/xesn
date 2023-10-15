@@ -23,14 +23,14 @@ def optimize(self, macro_params, transformations, cost_function, **kwargs):
     surrogate           = KRG(design_space=design_space, print_global=False)
 
     ego = EGO(surrogate=surrogate, **kwargs)
-    x_opt_transformed, y_opt, _, x_data, y_data = ego.optimize(fun=cost_function)
+    x_opt_transformed, y_opt, _* = ego.optimize(fun=cost_function)
 
-    param_opt_transformed = zip(macro_params.keys(), x_opt_transformed)
-    param_opt = inverse_transform(opt_transformed, transformations)
+    params_opt_transformed = zip(macro_params.keys(), x_opt_transformed)
+    params_opt = inverse_transform(params_opt_transformed, transformations)
 
     print("\n --- Optimization Results ---")
     print("\nOptimal inputs:")
-    for key, val in param_opt.items():
+    for key, val in params_opt.items():
         print(f"\t{key:<28s}: {val}")
 
     print("\nApproximate cost minimum:")
@@ -94,7 +94,6 @@ def inverse_transform(transformed_params, transformations):
             params[key] = _transform(xp.exp, val)
 
         return params
-
 
 
 def _transform(fun, val):
