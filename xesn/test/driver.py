@@ -25,6 +25,12 @@ def config_dict():
             "lazyesn": {
                 "n_reservoir": 500,
             },
+            "testing": {
+                "n_samples": 5,
+                "n_steps": 2,
+                "n_spinup": 3,
+                "random_seed": 0,
+            },
         }
     yield c
 
@@ -147,6 +153,35 @@ class TestDriverBasic():
         driver.overwrite_config(c)
         assert driver.config == expected
 
+    def test_samples(self, test_driver, test_data):
+        driver = test_driver
+        indices = driver.get_sample_indices(len(test_data["time"]), **driver.config["testing"])
+
+        # run it once
+        testers, new_indices = driver.get_samples(test_data, **driver.config["testing"])
+        assert_array_equal(indices, new_indices)
+        assert len(testers) == driver.config["testing"]["n_samples"]
+
+        # make sure it's the same when we give the indices
+        testers2, _ = driver.get_samples(
+                test_data,
+                driver.config["testing"]["n_samples"],
+                driver.config["testing"]["n_steps"],
+                driver.config["testing"]["n_spinup"],
+                sample_indices=indices)
+        for t1,t2 in zip(testers, testers2):
+            assert_array_equal(t1,t2)
+
+        # now raise a problem when different n_samples and len(indices)
+        with pytest.raises(AssertionError):
+            driver.get_samples(
+                    test_data,
+                    driver.config["testing"]["n_samples"],
+                    driver.config["testing"]["n_steps"],
+                    driver.config["testing"]["n_spinup"],
+                    sample_indices=indices[:2])
+
+
 
 @pytest.fixture(scope="function")
 def eager_driver(test_data):
@@ -189,3 +224,12 @@ class TestDriverCompute():
         driver.run_micro_calibration()
 
         driver.run_test()
+
+        # make sure sample indices got written out
+        new_config = f"{driver.output_directory}/config.yaml"
+        with open(new_config, "r") as f:
+            nc = yaml.safe_load(f)
+
+        assert all(x == y for x,y in zip(
+            driver.config["testing"]["sample_indices"],
+            nc["testing"]["sample_indices"]))

@@ -151,7 +151,9 @@ class Driver():
 
         # pull samples from data
         self.localtime.start("Get Test Samples")
-        test_data = self.get_samples("testing", xda=xda, **self.config["testing"])
+        test_data, indices = self.get_samples(xda=xda, **self.config["testing"])
+        if "sample_indices" not in self.config["testing"]:
+            self.overwrite_config({"testing": {"sample_indices": indices}})
         self.localtime.stop()
 
         # setup ESN from zarr
@@ -174,52 +176,57 @@ class Driver():
         self.walltime.stop()
 
 
-    def get_samples(self, mode, xda, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
-        """Pull random samples from validation or test dataset
+    def get_samples(self, xda, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
+        """Pull random samples from macro_training or test dataset
 
         Args:
-            mode (str): indicating validation or test
             xda (xarray.DataArray): with the full chunk of data to pull samples from
             n_samples (int): number of samples to grab
             n_steps (int): number of steps to make in validation/test prediction
             n_spinup (int): number of spinup steps before prediction
             random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
-            samples_indices (list, optional): the temporal indices denoting the start of the prediction period (including spinup)
+            samples_indices (list, optional): the temporal indices denoting the start of the prediction period (including spinup), if provided then do not get a random sample of indices first
 
         Returns:
-            testers (list of xarray.DataArray): with each separate validation/test sample
-        """
-
-        self._set_sample_indices(
-                mode,
-                len(xda.time),
-                n_samples,
-                n_steps,
-                n_spinup,
-                random_seed,
-                sample_indices)
-
-        testers = [xda.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
-                   for ridx in self.config[mode]["sample_indices"]]
-        return testers
-
-
-    def _set_sample_indices(self, mode, data_length, n_samples, n_steps, n_spinup, random_seed, sample_indices):
-        """If sample indices aren't provided, get them.
-
-        Sets Attributes:
-            sample_indices (list): with temporal indices denoting the start of the prediction period (including spinup)
+            samples (list of xarray.DataArray): with each separate sample trajectory
+            sample_indices (list of int): with the initial conditions for the start of prediction phase, not the start of spinup
         """
 
         if sample_indices is None:
+            sample_indices = self.get_sample_indices(
+                    len(xda["time"]),
+                    n_samples,
+                    n_steps,
+                    n_spinup,
+                    random_seed)
 
-            rstate = np.random.RandomState(seed=random_seed)
-            n_valid = data_length - (n_steps + n_spinup)
-            sample_indices = rstate.choice(n_valid, n_samples, replace=False)
+        else:
+            assert len(sample_indices) == n_samples, f"Driver.get_samples: found different values for len(sample_indices) and n_samples"
 
-        # make sure types are good to go
+        samples = [xda.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
+                   for ridx in sample_indices]
+
+        return samples, sample_indices
+
+
+    def get_sample_indices(self, data_length, n_samples, n_steps, n_spinup, random_seed):
+        """Get random sample indices from dataset (without replacement) denoting initial conditions for training, validation, or testing
+
+        Args:
+            data_length (int): length of the dataseries along the time dimension
+            n_samples (int): number of samples to grab
+            n_steps (int): number of steps to make in validation/test prediction
+            n_spinup (int): number of spinup steps before prediction
+            random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
+
+        Returns:
+            sample_indices (list): with integer indices denoting prediction initial conditions, not start of spinup
+        """
+        rstate = np.random.RandomState(seed=random_seed)
+        n_valid = data_length - (n_steps + n_spinup)
+        sample_indices = rstate.choice(n_valid, n_samples, replace=False)
         sample_indices = list(int(x) for x in sample_indices)
-        self.overwrite_config({mode: {"sample_indices": sample_indices}})
+        return sample_indices
 
 
     def _make_output_directory(self, out_dir):
@@ -352,9 +359,8 @@ class Driver():
                 "esn": ESN,
                 "lazyesn": LazyESN,
                 "training": LazyESN.train,
-                "validation": None,
+                "macro_training": None,
                 "testing": self.get_samples,
-                "compute": None,
                 "esn_weights": None}
         bad_sections = []
         for key in config.keys():
