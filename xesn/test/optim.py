@@ -52,3 +52,26 @@ def test_inverse_transform(transform_inputs, request):
     assert_allclose(np.array(ptest["input_factor"]), 10.** np.array(params["input_factor"]))
     assert_allclose(np.array(ptest["adjacency_factor"]), np.exp(np.array(params["adjacency_factor"])))
     assert_allclose(np.array(ptest["bias"]), np.array(params["bias"]))
+
+@pytest.mark.parametrize(
+        "transformer", (transform, inverse_transform)
+    )
+def test_no_key(transform_params, transformer):
+
+    params, transforms = transform_params
+    t = transforms.copy()
+    t["blah"] = "log"
+    with pytest.raises(KeyError):
+        transformer(params, t)
+
+
+@pytest.mark.parametrize(
+        "transformer", (transform, inverse_transform)
+    )
+def test_notimplemented(transform_params, transformer):
+
+    params, transforms = transform_params
+    t = transforms.copy()
+    t["input_factor"] = "something_crazy"
+    with pytest.raises(NotImplementedError):
+        transformer(params, t)

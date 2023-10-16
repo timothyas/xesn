@@ -1,11 +1,3 @@
-"""
-
-TODO
-----
-- do we want to transform the bounds? is that confusing? should this be specified with a "transform" option?
-- look for initial sample and remap between named dictionary and array values
-"""
-
 from . import _use_cupy
 if _use_cupy:
     import cupy as xp
@@ -63,7 +55,7 @@ def transform(params, transformations):
         try:
             assert key in params
         except AssertionError:
-            raise KeyError(f"Could not find {key} in optimization parameters, was provided {tuple(params.keys())}")
+            raise KeyError(f"Could not find '{key}' in optimization parameters, was provided {tuple(params.keys())}")
 
         try:
             assert transform in ("log", "log10")
@@ -89,7 +81,7 @@ def inverse_transform(transformed_params, transformations):
         try:
             assert key in params
         except AssertionError:
-            raise KeyError(f"Could not find {key} in optimization parameters, was provided {tuple(params.keys())}")
+            raise KeyError(f"Could not find '{key}' in optimization parameters, was provided {tuple(params.keys())}")
 
         try:
             assert transform in ("log", "log10")
