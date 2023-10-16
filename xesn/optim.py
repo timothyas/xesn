@@ -5,8 +5,16 @@ TODO
 - do we want to transform the bounds? is that confusing? should this be specified with a "transform" option?
 - look for initial sample and remap between named dictionary and array values
 """
+
+from . import _use_cupy
+if _use_cupy:
+    import cupy as xp
+
+else:
+    import numpy as xp
+
 from smt.applications import EGO
-from smt.surrogate_models import KRG, XSpecs
+from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
 def optimize(self, macro_params, transformations, cost_function, **kwargs):
@@ -23,7 +31,7 @@ def optimize(self, macro_params, transformations, cost_function, **kwargs):
     surrogate           = KRG(design_space=design_space, print_global=False)
 
     ego = EGO(surrogate=surrogate, **kwargs)
-    x_opt_transformed, y_opt, _* = ego.optimize(fun=cost_function)
+    x_opt_transformed, y_opt, *_ = ego.optimize(fun=cost_function)
 
     params_opt_transformed = zip(macro_params.keys(), x_opt_transformed)
     params_opt = inverse_transform(params_opt_transformed, transformations)
@@ -63,13 +71,14 @@ def transform(params, transformations):
             raise NotImplementedError(f"transformation {transform} unrecognized for parameter {key}, only 'log' and 'log10' implemented")
 
         # Note that I'm not renaming the parameters in order to keep the dict order
+        val = params[key]
         if transform == "log10":
             transformed_params[key] = _transform(xp.log10, val)
 
         elif transform == "log":
             transformed_params[key] = _transform(xp.log, val)
 
-        return transformed_params
+    return transformed_params
 
 
 def inverse_transform(transformed_params, transformations):
@@ -87,17 +96,17 @@ def inverse_transform(transformed_params, transformations):
         except AssertionError:
             raise NotImplementedError(f"transformation {transform} unrecognized for parameter {key}, only 'log' and 'log10' implemented")
 
+        val = params[key]
         if transform == "log10":
             params[key] = _transform(lambda x : 10. ** x, val)
 
         elif transform == "log":
             params[key] = _transform(xp.exp, val)
 
-        return params
+    return params
 
 
 def _transform(fun, val):
-    val = params[key]
     if isinstance(val, (float, int)):
         newval = fun(val)
     else:

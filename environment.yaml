@@ -2,7 +2,7 @@ name: xesn
 channels:
     - conda-forge
 dependencies:
-    - python=3.10
+    - python=3.11
 # Basics
     - numpy
     - scipy
@@ -14,18 +14,10 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
-# optional
-    - seaborn
-    - cmocean
+# ML and optim
+    - smt
 # jupyter etc
     - jupyter
-    - ipython
-    - ipykernel
 # Testing
     - pytest
     - coverage
-# nice things
-    - colordiff
-# Specify blas to use mkl
-    - mkl
-    - libblas=*=*mkl
