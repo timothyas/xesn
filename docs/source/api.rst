@@ -26,3 +26,7 @@ API
 
 .. autoclass:: xesn.SparseRandomMatrix
    :members:
+
+.. autofunction:: xesn.optim.transform
+
+.. autofunction:: xesn.optim.inverse_transform

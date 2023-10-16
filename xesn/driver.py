@@ -73,8 +73,8 @@ class Driver():
         """Perform ESN training, learn the readout matrix weights.
 
         Required Parameter Sections:
-            - "xdata" with options passed to :meth:`XData.__init__`
-            - "esn" or "lazyesn" with options passed to :meth:`ESN.__init__` or :meth:`LazyESN.__init__`
+            - "xdata" with options passed to :meth:`XData`, and expected time slices for "training"
+            - "esn" or "lazyesn" with options passed to :meth:`ESN` or :meth:`LazyESN`
             - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
         """
 
@@ -106,6 +106,16 @@ class Driver():
 
     def run_macro_calibration(self):
         """Perform Bayesian optimization on macro-scale ESN parameters using surrogate modeling toolbox.
+
+        Required Parameter Sections:
+            - "xdata" with options passed to :meth:`XData`, and expected time slices "macro_training" and "training"
+            - "esn" or "lazyesn" with options passed to :meth:`ESN` or :meth:`LazyESN`
+            - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
+            - "macro_training" with a variety of subsections:
+                - "parameters" (required) with key/value pairs as the parameters to be optimized, and their bounds as values
+                - "transformations" (optional) with any desired transformations on the input variables pre-optimization, see :func:`xesn.optim.transform` for example
+                - "forecast" with options for sample forecasts to optimize macro parameters with, see :meth:`get_samples` for a list of parameters (other than xda)
+                - "ego" with parameters except for evaluation/cost function (which is defined by a :class:`CostFunction`) and surrogate (assumed to be ``smt.surrogate_models.KRG``) as passed to `smt.applications.EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
         """
 
         self.walltime.start("Starting Macro Calibration")
@@ -137,12 +147,12 @@ class Driver():
 
 
     def run_test(self):
-        """Perform ESN training, learn the readout matrix weights.
+        """Make test predictions using a pre-trained ESN.
 
         Required Parameter Sections:
-            - "xdata" with options passed to :meth:`XData.__init__`
+            - "xdata" with options passed to :meth:`XData`
             - "esn_weights" with options passed to :func:`from_zarr`
-            - "testing" with options passed to :meth:`get_samples`, except "mode" and "xda"
+            - "testing" with options passed to :meth:`get_samples`, except "xda"
         """
 
         self.walltime.start("Starting Testing")
@@ -186,7 +196,7 @@ class Driver():
         Args:
             xda (xarray.DataArray): with the full chunk of data to pull samples from
             n_samples (int): number of samples to grab
-            n_steps (int): number of steps to make in validation/test prediction
+            n_steps (int): number of steps to make in sample prediction
             n_spinup (int): number of spinup steps before prediction
             random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
             samples_indices (list, optional): the temporal indices denoting the start of the prediction period (including spinup), if provided then do not get a random sample of indices first
@@ -219,7 +229,7 @@ class Driver():
         Args:
             data_length (int): length of the dataseries along the time dimension
             n_samples (int): number of samples to grab
-            n_steps (int): number of steps to make in validation/test prediction
+            n_steps (int): number of steps to make in sample prediction
             n_spinup (int): number of spinup steps before prediction
             random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
 

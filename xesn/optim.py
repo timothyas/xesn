@@ -40,13 +40,23 @@ def optimize(macro_params, transformations, cost_function, **kwargs):
 
 
 def transform(params, transformations):
-    """
+    """Transform parameters for optimization, with only either log or log10.
+    Parameters with unspecified transformations are untouched.
+
     Args:
         parameters (dict): parameter names and values contain either array/list or value of parameter
         transformations (dict): with what we want to do to each variable for optimization, e.g. log
 
     Returns:
-        transformed_params
+        transformed_params (dict): with updated parameters based on transformations, or untouched if not specified
+
+    Example:
+        >>> params = {"input_factor": 0.5, "adjacency_factor": 0.5, "bias": 0.5}
+        >>> transforms = {"input_factor": "log", "adjacency_factor": "log10"}
+        >>> transform(params, transforms)
+        {'input_factor': -0.6931471805599453,
+         'adjacency_factor': -0.3010299956639812,
+         'bias': 0.5}
     """
 
     transformed_params = params.copy()
@@ -74,6 +84,24 @@ def transform(params, transformations):
 
 
 def inverse_transform(transformed_params, transformations):
+    """Perform the inverse of the specified transformation, of either only log or log10.
+    Parameters with unspecified transformations are untouched.
+
+    Args:
+        transformed_parameters (dict): parameter names and values contain either array/list or value of parameter
+        transformations (dict): with what we want to do to each variable for optimization, either log or log10 (or unspecified)
+
+    Returns:
+        transformed_params (dict): with updated parameters based on transformations, or untouched if not specified
+
+    Example:
+        >>> params = {"input_factor": -0.69, "adjacency_factor": -0.3, "bias": 0.5}
+        >>> transforms = {"input_factor": "log", "adjacency_factor": "log10"}
+        >>> inverse_transform(params, transforms)
+        {'input_factor': 0.5015760690660556,
+         'adjacency_factor': 0.5011872336272722,
+         'bias': 0.5}
+    """
 
     params = transformed_params.copy()
     for key, transform in transformations.items():

@@ -21,3 +21,7 @@ dependencies:
 # Testing
     - pytest
     - coverage
+# docs stuff
+    - sphinx
+    - sphinx_rtd_theme
+    - nbsphinx
