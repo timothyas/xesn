@@ -31,8 +31,6 @@ class CostFunction():
 
     def __call__(self, macro_param_sets):
 
-        #TODO: figure out what size cost needs to be again...
-        # For now assuming that macro_param_sets is this shape:
         n_parallel, n_params = macro_param_sets.shape
 
         cost = zeros(n_parallel, chunks=(1,))

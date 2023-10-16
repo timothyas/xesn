@@ -10,7 +10,8 @@ from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
 def optimize(macro_params, transformations, cost_function, **kwargs):
-    """
+    """A simple interface with :class:`EGO`
+
     Args:
         macro_params (dict): containing parameter name and bounds as key, val pairs
         transformations (dict): containing parameter name and transformation (e.g., log10) as key, val pairs
