@@ -112,7 +112,9 @@ class Driver():
         self.localtime.start("Setting up Data")
         data = XData(**self.config["xdata"])
         xda = data.setup(mode="macro_training")
-        macro_data = self.get_samples("macro_training", xda=xda, **self.config["macro_training"]["forecast"])
+        macro_data, indices = self.get_samples(xda=xda, **self.config["macro_training"]["forecast"])
+        if "sample_indices" not in self.config["macro_training"]["forecast"]:
+            self.overwrite_config({"macro_training": {"forecast": {"sample_indices": indices}}})
         xda = data.setup(mode="training")
         self.localtime.stop()
 

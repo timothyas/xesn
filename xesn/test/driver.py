@@ -233,3 +233,21 @@ class TestDriverCompute():
         assert all(x == y for x,y in zip(
             driver.config["testing"]["sample_indices"],
             nc["testing"]["sample_indices"]))
+
+
+    @pytest.mark.parametrize(
+            "this_driver", ("eager_driver", "lazy_driver")
+        )
+    def test_macro_training(self, this_driver, request):
+
+        driver, _ = request.getfixturevalue(this_driver)
+        driver.run_macro_calibration()
+
+        # make sure sample indices got written out
+        new_config = f"{driver.output_directory}/config.yaml"
+        with open(new_config, "r") as f:
+            nc = yaml.safe_load(f)
+
+        assert all(x == y for x,y in zip(
+            driver.config["macro_training"]["forecast"]["sample_indices"],
+            nc["macro_training"]["forecast"]["sample_indices"]))

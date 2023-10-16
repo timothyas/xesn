@@ -7,9 +7,9 @@ xdata:
     field_name            : 'theta'
     subsampling:
         time:
-            training    : [ null,  100, null]
-            validation  : [  100,  150, null]
-            testing     : [  150, null, null]
+            training        : [ null,  100, null]
+            macro_training  : [  100,  150, null]
+            testing         : [  150, null, null]
 
     normalization:
         bias            : 0.
@@ -66,3 +66,18 @@ testing:
     n_samples           : 2
     n_steps             : 5
     random_seed         : 0
+
+macro_training:
+    parameters:
+        input_factor    : [1.e-2, 2.]
+        adjacency_factor: [1.e-2, 2.]
+        bias            : [0.   , 2.]
+    transformations:
+        input_factor    : log10
+        adjacency_factor: log
+
+    forecast:
+        n_spinup        : 10
+        n_samples       : 2
+        n_steps         : 2
+        random_seed     : 1
