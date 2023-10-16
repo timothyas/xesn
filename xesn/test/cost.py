@@ -12,7 +12,17 @@ from xesn.cost import CostFunction
 from xesn.xdata import XData
 from xesn.driver import Driver
 from xesn.test.xdata import test_data
-from xesn.test.driver import lazy_driver
+from xesn.test.driver import eager_driver, lazy_driver
+
+@pytest.fixture(scope="function")
+def eager_macro_driver(eager_driver):
+    driver, eager_data = eager_driver
+    data = XData(**driver.config["xdata"])
+    xda = data.setup(mode="macro_training")
+    macro_data, indices = driver.get_samples(xda=xda, **driver.config["macro_training"]["forecast"])
+    train_data = data.setup(mode="training")
+    yield driver, train_data, macro_data
+
 
 @pytest.fixture(scope="function")
 def lazy_macro_driver(lazy_driver, test_data):
@@ -23,11 +33,13 @@ def lazy_macro_driver(lazy_driver, test_data):
 
     train_data = data.setup(mode="training")
     yield driver, train_data, macro_data
-    # Do we need to rmtree(driver.output_directory)
 
 
-def test_init(lazy_macro_driver):
-    driver, train_data, macro_data = lazy_macro_driver
+@pytest.mark.parametrize(
+        "this_driver", ("eager_macro_driver", "lazy_macro_driver"),
+    )
+def test_init(this_driver, request):
+    driver, train_data, macro_data = request.getfixturevalue(this_driver)
 
     cf = CostFunction(driver.ESN, train_data, macro_data, driver.config)
 
@@ -42,8 +54,11 @@ def test_init(lazy_macro_driver):
         # For some reason... n_parallel=1 makes design.sample_valid hang
         "n_parallel", [4]
     )
-def test_eval(lazy_macro_driver, n_parallel):
-    driver, train_data, macro_data = lazy_macro_driver
+@pytest.mark.parametrize(
+        "this_driver", ("eager_macro_driver", "lazy_macro_driver"),
+    )
+def test_eval(n_parallel, this_driver, request):
+    driver, train_data, macro_data = request.getfixturevalue(this_driver)
 
     cf = CostFunction(driver.ESN, train_data, macro_data, driver.config)
 

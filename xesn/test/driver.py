@@ -13,7 +13,6 @@ import dask.array as darray
 
 from xesn.driver import Driver
 from xesn.test.xdata import test_data
-from xesn.test.esn import test_data as eager_data
 
 @pytest.fixture(scope="function")
 def config_dict():

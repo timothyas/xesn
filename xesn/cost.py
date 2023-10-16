@@ -1,7 +1,6 @@
 """Will need to generally do the following
 
 TODO
-1. Do this for lazy, then worry about generalizing.
 2. First do NRMSE, spectral will follow.
 
 Questions
