@@ -8,9 +8,11 @@ from contextlib import redirect_stdout
 
 import numpy as np
 
+from .cost import CostFunction
 from .esn import ESN
 from .io import from_zarr
 from .lazyesn import LazyESN
+from .optim import optimize
 from .timer import Timer
 from .xdata import XData
 
@@ -125,10 +127,10 @@ class Driver():
 
         # optimize
         self.localtime.start("Starting Bayesian Optimization")
-        p_opt = optimize(self.config["optim"]["parameters"],
-                         self.config["optim"]["transformations"],
+        p_opt = optimize(self.config["macro_training"]["parameters"],
+                         self.config["macro_training"]["transformations"],
                          cf,
-                         **self.config["ego"])
+                         **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
         self.walltime.stop()
@@ -333,8 +335,14 @@ class Driver():
         for section, this_dict in new_config.items():
             for key, val in this_dict.items():
                 s = section.lower()
-                self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}'] with {val}")
-                config[s][key] = val
+                if not isinstance(val, dict):
+                    self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}'] with {val}")
+                    config[s][key] = val
+                else:
+                    for k2, v2 in val.items():
+                        self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}']['{k2}'] with {v2}")
+                        config[s][key][k2] = v2
+
 
         # Overwrite our copy of config.yaml in output_dir and reset attr
         self.set_config(config)

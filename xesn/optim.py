@@ -9,7 +9,7 @@ from smt.applications import EGO
 from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
-def optimize(self, macro_params, transformations, cost_function, **kwargs):
+def optimize(macro_params, transformations, cost_function, **kwargs):
     """
     Args:
         macro_params (dict): containing parameter name and bounds as key, val pairs
@@ -19,13 +19,13 @@ def optimize(self, macro_params, transformations, cost_function, **kwargs):
     """
 
     bounds_transformed  = transform(macro_params, transformations)
-    design_space        = DesignSpace(bounds_transformed)
+    design_space        = DesignSpace(list(bounds_transformed.values()))
     surrogate           = KRG(design_space=design_space, print_global=False)
 
     ego = EGO(surrogate=surrogate, **kwargs)
     x_opt_transformed, y_opt, *_ = ego.optimize(fun=cost_function)
 
-    params_opt_transformed = zip(macro_params.keys(), x_opt_transformed)
+    params_opt_transformed = dict(zip(macro_params.keys(), x_opt_transformed))
     params_opt = inverse_transform(params_opt_transformed, transformations)
 
     print("\n --- Optimization Results ---")
@@ -36,7 +36,7 @@ def optimize(self, macro_params, transformations, cost_function, **kwargs):
     print("\nApproximate cost minimum:")
     print(f"\t{y_opt}\n")
 
-    return param_opt
+    return params_opt
 
 
 def transform(params, transformations):

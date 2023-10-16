@@ -1,7 +1,5 @@
 xdata:
     dimensions            : ['x', 'y', 'z', 'time']
-        #    delta_t               : 300
-        #    time_units            : s
 #
     zstore_path           : test-xdata.zarr
     field_name            : 'theta'
@@ -72,6 +70,7 @@ macro_training:
         input_factor    : [1.e-2, 2.]
         adjacency_factor: [1.e-2, 2.]
         bias            : [0.   , 2.]
+
     transformations:
         input_factor    : log10
         adjacency_factor: log
@@ -81,3 +80,11 @@ macro_training:
         n_samples       : 2
         n_steps         : 2
         random_seed     : 1
+
+    ego:
+        n_iter          : 1
+        n_max_optim     : 1
+        n_start         : 3
+        n_parallel      : 2
+        n_doe           : 3
+        random_state    : 0
