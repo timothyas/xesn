@@ -347,11 +347,20 @@ class Driver():
                 s = section.lower()
                 if not isinstance(val, dict):
                     self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}'] with {val}")
-                    config[s][key] = val
+                    if s in config:
+                        config[s][key] = val
+                    else:
+                        config[s] = {key: val}
                 else:
                     for k2, v2 in val.items():
                         self.print_log(f"Driver.overwrite_config: Overwriting driver.config['{s}']['{key}']['{k2}'] with {v2}")
-                        config[s][key][k2] = v2
+                        if s in config:
+                            if key in config[s]:
+                                config[s][key][k2] = v2
+                            else:
+                                config[s][key] = {k2: v2}
+                        else:
+                            config[s] = {key: {k2: v2}}
 
 
         # Overwrite our copy of config.yaml in output_dir and reset attr
