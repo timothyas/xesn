@@ -76,8 +76,13 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
 
     # Deal with persist here
     #avg_cost = avg_cost.persist() if config["optim"]["persist"] else avg_cost
-    if xp.isnan(avg_cost) or xp.isinf(avg_cost) or avg_cost > 1.e9:
-        avg_cost = 1.e9
+
+    # Deal with wacky numbers
+    default = 1e9
+    cost_upper_bound = config["macro_training"].get("cost_upper_bound", default)
+    cost_upper_bound = default if cost_upper_bound is None else cost_upper_bound
+    if xp.isnan(avg_cost) or xp.isinf(avg_cost) or avg_cost > cost_upper_bound:
+        avg_cost = cost_upper_bound
     return avg_cost
 
 

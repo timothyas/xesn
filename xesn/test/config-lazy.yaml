@@ -88,3 +88,5 @@ macro_training:
         n_parallel      : 2
         n_doe           : 3
         random_state    : 0
+
+    cost_upper_bound    : 1.e9
