@@ -250,3 +250,6 @@ class TestDriverCompute():
         assert all(x == y for x,y in zip(
             driver.config["macro_training"]["forecast"]["sample_indices"],
             nc["macro_training"]["forecast"]["sample_indices"]))
+
+        config_optim = f"{driver.output_directory}/config-optim.yaml"
+        assert os.path.isfile(config_optim)

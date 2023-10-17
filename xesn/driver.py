@@ -143,6 +143,14 @@ class Driver():
                          **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
+        config_optim = self.config.copy()
+        config_optim[self.esn_name].update(config_optim)
+        outname = os.path.join(self.output_directory, "config-optim.yaml")
+        with open(outname, "w") as f:
+            yaml.dump(config_optim, stream=f)
+
+        self.print_log(f"Optimal configuration written to {outname}")
+
         self.walltime.stop()
 
 
