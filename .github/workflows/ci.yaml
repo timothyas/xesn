@@ -26,14 +26,14 @@ jobs:
       - name: Cache conda
         uses: actions/cache@v2
         env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
+          # Increase this value to reset cache if ci/environment.yaml has not changed
           CACHE_NUMBER: 0
         with:
           path: ~/conda_pkgs_dir
           key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yaml') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: ddc # Defined in ci/environment*.yml
+          activate-environment: xesn # Defined in ci/environment*.yml
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
           environment-file: ci/environment.yaml
