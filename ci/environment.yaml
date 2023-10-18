@@ -13,10 +13,10 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
-# ML and optim
-    - smt
 # jupyter etc
     - jupyter
 # Testing
     - pytest
     - coverage
+    - pip:
+        - smt>=2.0.1
