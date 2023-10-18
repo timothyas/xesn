@@ -84,17 +84,22 @@ class Driver():
         # setup the data
         self.localtime.start("Setting up Data")
         data = XData(**self.config["xdata"])
-        xda = data.setup(mode="training")
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                xda = data.setup(mode="training")
         self.localtime.stop()
 
         # setup ESN
         self.localtime.start(f"Building {self.esn_name}")
         esn = self.ESN(**self.config[self.esn_name])
         esn.build()
+        self.print_log(str(esn))
         self.localtime.stop()
 
         self.localtime.start(f"Training {self.esn_name}")
-        esn.train(xda, **self.config["training"])
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                esn.train(xda, **self.config["training"])
         self.localtime.stop()
 
         self.localtime.start(f"Storing {self.esn_name} Weights")
@@ -124,11 +129,19 @@ class Driver():
         # setup the data
         self.localtime.start("Setting up Data")
         data = XData(**self.config["xdata"])
-        xda = data.setup(mode="macro_training")
+        # First macro data sets
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                xda = data.setup(mode="macro_training")
+
         macro_data, indices = self.get_samples(xda=xda, **self.config["macro_training"]["forecast"])
         if "sample_indices" not in self.config["macro_training"]["forecast"]:
             self.overwrite_config({"macro_training": {"forecast": {"sample_indices": indices}}})
-        xda = data.setup(mode="training")
+
+        # Now training data
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                xda = data.setup(mode="training")
         self.localtime.stop()
 
         # create cost function
@@ -138,10 +151,12 @@ class Driver():
 
         # optimize
         self.localtime.start("Starting Bayesian Optimization")
-        p_opt = optimize(self.config["macro_training"]["parameters"],
-                         self.config["macro_training"]["transformations"],
-                         cf,
-                         **self.config["macro_training"]["ego"])
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                p_opt = optimize(self.config["macro_training"]["parameters"],
+                                 self.config["macro_training"]["transformations"],
+                                 cf,
+                                 **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
         config_optim = self.config.copy()
@@ -169,7 +184,9 @@ class Driver():
         # setup the data
         self.localtime.start("Setting up Data")
         data = XData(**self.config["xdata"])
-        xda = data.setup(mode="testing")
+        with open(self.logfile, 'a') as file:
+            with redirect_stdout(file):
+                xda = data.setup(mode="testing")
         self.localtime.stop()
 
         # pull samples from data
