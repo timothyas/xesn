@@ -14,8 +14,6 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
-# ML and optim
-    - smt
 # jupyter etc
     - jupyter
 # Testing
@@ -25,3 +23,6 @@ dependencies:
     - sphinx
     - sphinx_rtd_theme
     - nbsphinx
+    - pip
+    - pip:
+      - smt>=2.0.1

@@ -5,6 +5,7 @@ import yaml
 import logging
 import inspect
 from contextlib import redirect_stdout
+import re
 
 import numpy as np
 
@@ -315,8 +316,7 @@ class Driver():
         """
 
         if isinstance(config, str):
-            with open(config, "r") as f:
-                config = yaml.safe_load(f)
+            config = self.load(config)
 
         elif not isinstance(config, dict):
             raise TypeError(f"Driver.set_config: Unrecognized type for experiment config, must be either yaml filename (str) or a dictionary with parameter values")
@@ -380,6 +380,38 @@ class Driver():
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
                 print(*args, **kwargs)
+
+
+    @staticmethod
+    def load(fname):
+        """An extension of :func:`yaml.safe_load` that recognizes 1e9 as float not string
+        (i.e., don't require the 1.0 or the sign +9).
+
+        Thanks to <https://stackoverflow.com/a/30462009>.
+
+        Args:
+            fname (str): path to yaml file
+
+        Returns:
+            config (dict): with the contents of the yaml file
+        """
+
+
+        loader = yaml.SafeLoader
+        loader.add_implicit_resolver(
+            u'tag:yaml.org,2002:float',
+            re.compile(u'''^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$''', re.X),
+            list(u'-+0123456789.'))
+
+        with open(fname, "r") as f:
+            config = yaml.load(f, Loader=loader)
+        return config
 
 
     def _check_config_options(self, config):

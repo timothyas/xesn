@@ -181,6 +181,28 @@ class TestDriverBasic():
                     sample_indices=indices[:2])
 
 
+    def test_load(self, test_driver):
+        """Test this addition to yaml.load to recognize floats more intuitively"""
+
+        driver = test_driver
+        c = driver.load("config-lazy.yaml")
+        assert tuple(c["xdata"]["dimensions"]) == ("x", "y", "z", "time")
+        assert tuple(c["xdata"]["subsampling"]["time"]["training"]) == (None, 100, None)
+        assert isinstance(c["xdata"]["normalization"]["bias"], float)
+        assert np.abs(c["xdata"]["normalization"]["bias"]) < 1e-15
+        assert isinstance(c["lazyesn"]["n_reservoir"], int)
+        assert isinstance(c["lazyesn"]["tikhonov_parameter"], float)
+        assert_allclose(c["lazyesn"]["tikhonov_parameter"], 1.e-6)
+        assert isinstance(c["lazyesn"]["persist"], bool)
+        assert c["lazyesn"]["persist"]
+        assert c["training"]["batch_size"] is None
+        assert isinstance(c["macro_training"]["cost_upper_bound"], float)
+        assert_allclose(c["macro_training"]["cost_upper_bound"], 1e9)
+        assert isinstance(c["macro_training"]["parameters"]["input_factor"][0], float)
+        assert isinstance(c["macro_training"]["parameters"]["input_factor"][1], float)
+        assert_allclose(c["macro_training"]["parameters"]["input_factor"], [0.01, 100])
+
+
 
 @pytest.fixture(scope="function")
 def eager_driver(test_data):

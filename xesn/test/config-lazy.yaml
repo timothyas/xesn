@@ -67,7 +67,7 @@ testing:
 
 macro_training:
     parameters:
-        input_factor    : [1.e-2, 2.]
+        input_factor    : [1.e-2, 1e2]
         adjacency_factor: [1.e-2, 2.]
         bias            : [0.   , 2.]
 
@@ -89,4 +89,4 @@ macro_training:
         n_doe           : 3
         random_state    : 0
 
-    cost_upper_bound    : 1.e9
+    cost_upper_bound    : 1e9
