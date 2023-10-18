@@ -185,7 +185,7 @@ class TestDriverBasic():
         """Test this addition to yaml.load to recognize floats more intuitively"""
 
         driver = test_driver
-        c = driver.load("config-lazy.yaml")
+        c = driver.load(join(os.path.dirname(__file__), "config-lazy.yaml"))
         assert tuple(c["xdata"]["dimensions"]) == ("x", "y", "z", "time")
         assert tuple(c["xdata"]["subsampling"]["time"]["training"]) == (None, 100, None)
         assert isinstance(c["xdata"]["normalization"]["bias"], float)
