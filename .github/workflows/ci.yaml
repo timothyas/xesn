@@ -20,20 +20,20 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v2
       - name: Cache conda
         uses: actions/cache@v2
         env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
+          # Increase this value to reset cache if ci/environment.yaml has not changed
           CACHE_NUMBER: 0
         with:
           path: ~/conda_pkgs_dir
           key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yaml') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: ddc # Defined in ci/environment*.yml
+          activate-environment: xesn # Defined in ci/environment*.yml
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
           environment-file: ci/environment.yaml
@@ -41,7 +41,7 @@ jobs:
       - name: Run Unit Tests
         shell: bash -l {0}
         run: |
-          coverage run --rcfile=coverage.toml -m pytest --verbose xesn/test/driver.py xesn/test/matrix.py xesn/test/esn.py xesn/test/lazy.py xesn/test/xdata.py
+          coverage run --rcfile=coverage.toml -m pytest --verbose xesn/test/matrix.py xesn/test/esn.py xesn/test/lazy.py xesn/test/xdata.py xesn/test/optim.py xesn/test/driver.py xesn/test/cost.py
       - name: Show coverage report
         shell: bash -l {0}
         run: |

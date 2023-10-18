@@ -13,18 +13,11 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
-# optional
-    - seaborn
-    - cmocean
 # jupyter etc
     - jupyter
-    - ipython
-    - ipykernel
 # Testing
     - pytest
     - coverage
-# nice things
-    - colordiff
-# Specify blas to use mkl
-    - mkl
-    - libblas=*=*mkl
+    - pip
+    - pip:
+        - smt>=2.0.1

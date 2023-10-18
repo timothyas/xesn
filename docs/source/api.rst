@@ -26,3 +26,12 @@ API
 
 .. autoclass:: xesn.SparseRandomMatrix
    :members:
+
+.. autoclass:: xesn.cost.CostFunction
+   :members:
+
+.. autofunction:: xesn.optim.optimize
+
+.. autofunction:: xesn.optim.transform
+
+.. autofunction:: xesn.optim.inverse_transform

@@ -13,7 +13,6 @@ import dask.array as darray
 
 from xesn.driver import Driver
 from xesn.test.xdata import test_data
-from xesn.test.esn import test_data as eager_data
 
 @pytest.fixture(scope="function")
 def config_dict():
@@ -24,6 +23,12 @@ def config_dict():
             },
             "lazyesn": {
                 "n_reservoir": 500,
+            },
+            "testing": {
+                "n_samples": 5,
+                "n_steps": 2,
+                "n_spinup": 3,
+                "random_seed": 0,
             },
         }
     yield c
@@ -89,11 +94,11 @@ class TestDriverBasic():
 
         rmtree(expected)
 
-    def test_overwrite_params(self, test_driver, config_dict):
+    def test_overwrite_config(self, test_driver, config_dict):
 
         driver = test_driver
-        assert driver.params["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
-        assert driver.params["lazyesn"]["n_reservoir"] == config_dict["lazyesn"]["n_reservoir"]
+        assert driver.config["xdata"]["zstore_path"] == config_dict["xdata"]["zstore_path"]
+        assert driver.config["lazyesn"]["n_reservoir"] == config_dict["lazyesn"]["n_reservoir"]
 
         expected = {
                 "xdata": {
@@ -104,19 +109,19 @@ class TestDriverBasic():
                 },
             }
 
-        driver.overwrite_params(expected)
+        driver.overwrite_config(expected)
 
         # make sure these changed
-        assert driver.params["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
-        assert driver.params["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
+        assert driver.config["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
+        assert driver.config["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
 
         # but make sure this one didn't
-        assert driver.params["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
+        assert driver.config["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
 
-    def test_params_type(self, test_driver):
+    def test_config_type(self, test_driver):
         driver = test_driver
         with pytest.raises(TypeError):
-            driver.set_params(["blah", "blah", "blah"])
+            driver.set_config(["blah", "blah", "blah"])
 
 
     def test_bad_section(self, test_driver, config_dict):
@@ -124,7 +129,7 @@ class TestDriverBasic():
         c["blah"] = {"a": 1}
         driver = test_driver
         with pytest.raises(KeyError):
-            driver.set_params(c)
+            driver.set_config(c)
 
 
     def test_bad_option(self, test_driver, config_dict):
@@ -132,20 +137,71 @@ class TestDriverBasic():
         c["xdata"]["blah"] = None
         driver = test_driver
         with pytest.raises(KeyError):
-            driver.set_params(c)
+            driver.set_config(c)
 
     def test_case(self, test_driver):
         driver = test_driver
-        c = driver.params.copy()
-        expected = driver.params.copy()
+        c = driver.config.copy()
+        expected = driver.config.copy()
         c["XDATA"] = c["xdata"]
         del c["xdata"]
 
-        driver.set_params(c)
-        assert driver.params == expected
+        driver.set_config(c)
+        assert driver.config == expected
 
-        driver.overwrite_params(c)
-        assert driver.params == expected
+        driver.overwrite_config(c)
+        assert driver.config == expected
+
+    def test_samples(self, test_driver, test_data):
+        driver = test_driver
+        indices = driver.get_sample_indices(len(test_data["time"]), **driver.config["testing"])
+
+        # run it once
+        testers, new_indices = driver.get_samples(test_data, **driver.config["testing"])
+        assert_array_equal(indices, new_indices)
+        assert len(testers) == driver.config["testing"]["n_samples"]
+
+        # make sure it's the same when we give the indices
+        testers2, _ = driver.get_samples(
+                test_data,
+                driver.config["testing"]["n_samples"],
+                driver.config["testing"]["n_steps"],
+                driver.config["testing"]["n_spinup"],
+                sample_indices=indices)
+        for t1,t2 in zip(testers, testers2):
+            assert_array_equal(t1,t2)
+
+        # now raise a problem when different n_samples and len(indices)
+        with pytest.raises(AssertionError):
+            driver.get_samples(
+                    test_data,
+                    driver.config["testing"]["n_samples"],
+                    driver.config["testing"]["n_steps"],
+                    driver.config["testing"]["n_spinup"],
+                    sample_indices=indices[:2])
+
+
+    def test_load(self, test_driver):
+        """Test this addition to yaml.load to recognize floats more intuitively"""
+
+        driver = test_driver
+        c = driver.load(join(os.path.dirname(__file__), "config-lazy.yaml"))
+        assert tuple(c["xdata"]["dimensions"]) == ("x", "y", "z", "time")
+        assert tuple(c["xdata"]["subsampling"]["time"]["training"]) == (None, 100, None)
+        assert isinstance(c["xdata"]["normalization"]["bias"], float)
+        assert np.abs(c["xdata"]["normalization"]["bias"]) < 1e-15
+        assert isinstance(c["lazyesn"]["n_reservoir"], int)
+        assert isinstance(c["lazyesn"]["tikhonov_parameter"], float)
+        assert_allclose(c["lazyesn"]["tikhonov_parameter"], 1.e-6)
+        assert isinstance(c["lazyesn"]["persist"], bool)
+        assert c["lazyesn"]["persist"]
+        assert c["training"]["batch_size"] is None
+        assert isinstance(c["macro_training"]["cost_upper_bound"], float)
+        assert_allclose(c["macro_training"]["cost_upper_bound"], 1e9)
+        assert isinstance(c["macro_training"]["parameters"]["input_factor"][0], float)
+        assert isinstance(c["macro_training"]["parameters"]["input_factor"][1], float)
+        assert_allclose(c["macro_training"]["parameters"]["input_factor"], [0.01, 100])
+
 
 
 @pytest.fixture(scope="function")
@@ -189,3 +245,33 @@ class TestDriverCompute():
         driver.run_micro_calibration()
 
         driver.run_test()
+
+        # make sure sample indices got written out
+        new_config = f"{driver.output_directory}/config.yaml"
+        with open(new_config, "r") as f:
+            nc = yaml.safe_load(f)
+
+        assert all(x == y for x,y in zip(
+            driver.config["testing"]["sample_indices"],
+            nc["testing"]["sample_indices"]))
+
+
+    @pytest.mark.parametrize(
+            "this_driver", ("eager_driver", "lazy_driver")
+        )
+    def test_macro_training(self, this_driver, request):
+
+        driver, _ = request.getfixturevalue(this_driver)
+        driver.run_macro_calibration()
+
+        # make sure sample indices got written out
+        new_config = f"{driver.output_directory}/config.yaml"
+        with open(new_config, "r") as f:
+            nc = yaml.safe_load(f)
+
+        assert all(x == y for x,y in zip(
+            driver.config["macro_training"]["forecast"]["sample_indices"],
+            nc["macro_training"]["forecast"]["sample_indices"]))
+
+        config_optim = f"{driver.output_directory}/config-optim.yaml"
+        assert os.path.isfile(config_optim)
