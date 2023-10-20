@@ -67,7 +67,9 @@ def test_data():
                 "z": np.linspace(  0, 50, 5),
                 "time": np.linspace(0, 2000, 200),
                 },
-            dims=tester.dimensions)
+            dims=tester.dimensions,
+            attrs={"description": "This is some test data!"},
+            )
     u.name = tester.field_name
     u.to_dataset().to_zarr(tester.zstore_path, mode="w")
     yield u
@@ -166,15 +168,38 @@ class TestSetup(TestXData):
             xd.subsample(test_data, mode="training")
 
 
-    def test_normalize(self, test_data):
+    @pytest.mark.parametrize(
+            "keep_attrs", (True, False)
+        )
+    def test_normalize(self, test_data, keep_attrs):
         xd = XData(self.field_name,
                    self.zstore_path,
                    dimensions=self.dimensions,
                    normalization=self.normalization)
 
-        test = xd.normalize(test_data)
+        test = xd.normalize(test_data, keep_attrs=keep_attrs)
         expected = (test_data - self.normalization["bias"]) / self.normalization["scale"]
         assert_allclose(test, expected)
+
+        if keep_attrs:
+            assert test.attrs == test_data.attrs
+
+
+    @pytest.mark.parametrize(
+            "keep_attrs", (True, False)
+        )
+    def test_normalize_inverse(self, test_data, keep_attrs):
+        xd = XData(self.field_name,
+                   self.zstore_path,
+                   dimensions=self.dimensions,
+                   normalization=self.normalization)
+
+        test = xd.normalize_inverse(test_data, keep_attrs)
+        expected = test_data *  self.normalization["scale"] + self.normalization["bias"]
+        assert_allclose(test, expected)
+
+        if keep_attrs:
+            assert test.attrs == test_data.attrs
 
 
     # Some repetition here, but I think it's worth it

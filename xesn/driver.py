@@ -209,6 +209,8 @@ class Driver():
                     n_steps=self.config["testing"]["n_steps"],
                     n_spinup=self.config["testing"]["n_spinup"]
                     )
+            xds["prediction"] = data.normalize_inverse(xds["prediction"], keep_attrs=True)
+            xds["truth"] = data.normalize_inverse(xds["truth"], keep_attrs=True)
             xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
 
         self.localtime.stop()
