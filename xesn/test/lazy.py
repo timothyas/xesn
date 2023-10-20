@@ -21,7 +21,7 @@ class TestLazy(TestESN):
     overlap     = {"x": 1, "time": 0}
     persist     = True
     equal_list  = ("overlap", "esn_chunks", "persist", "overlap", "n_reservoir", "boundary")
-    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter")
+    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter")
 
     @property
     def kw(self):

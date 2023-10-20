@@ -14,7 +14,7 @@ class TestESN:
     n_reservoir         = 100
     n_train             = 500
     connectedness       = 5
-    bias                = 0.1
+    bias_factor         = 0.1
     leak_rate           = 0.5
     tikhonov_parameter  = 1e-6
 
@@ -24,10 +24,10 @@ class TestESN:
     @property
     def kw(self):
         return {key: getattr(self, key) for key in [
-            "n_input", "n_output", "n_reservoir", "connectedness", "bias", "leak_rate", "tikhonov_parameter", "input_factor", "adjacency_factor"]}
+            "n_input", "n_output", "n_reservoir", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter", "input_factor", "adjacency_factor"]}
 
     equal_list  = ("n_input", "n_output", "n_reservoir")
-    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias", "leak_rate", "tikhonov_parameter")
+    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter")
 
 
 class TestInit(TestESN):
@@ -50,7 +50,7 @@ class TestInit(TestESN):
     @pytest.mark.parametrize(
             "key, val, raises, error",
             [
-                ("bias", -1., pytest.raises, ValueError),
+                ("bias_factor", -1., pytest.raises, ValueError),
                 ("connectedness", 101, pytest.raises, ValueError),
                 ("connectedness", 90, pytest.warns, RuntimeWarning),
             ],
