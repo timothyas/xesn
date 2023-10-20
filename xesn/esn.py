@@ -41,7 +41,7 @@ class ESN():
         return self.adjacency_kwargs["factor"]
 
     @property
-    def bias(self):
+    def bias_factor(self):
         return self.bias_kwargs["factor"]
 
     def __init__(self,
@@ -50,10 +50,10 @@ class ESN():
             n_reservoir,
             input_factor,
             adjacency_factor,
-            connectedness,
-            bias,
+            bias_factor,
             leak_rate,
             tikhonov_parameter,
+            connectedness,
             input_kwargs=None,
             adjacency_kwargs=None,
             bias_kwargs=None):
@@ -104,20 +104,20 @@ class ESN():
         # Handle bias vector options
         self.bias_kwargs = {
             "distribution"  : "uniform",
-            "factor"        : bias,
+            "factor"        : bias_factor,
             "random_seed"   : None
             }
         if bias_kwargs is not None:
             self.bias_kwargs.update(bias_kwargs)
 
-        if self.bias_kwargs["factor"] != bias:
-            raise ValueError(f"ESN.__init__: conflicting bias factor given with options 'bias' and 'bias_kwargs[''factor'']'")
+        if self.bias_kwargs["factor"] != bias_factor:
+            raise ValueError(f"ESN.__init__: conflicting bias factor given with options 'bias_factor' and 'bias_kwargs[''factor'']'")
 
         # Check inputs
         try:
-            assert self.bias >= 0.0
+            assert self.bias_factor >= 0.0
         except AssertionError:
-            raise ValueError(f"ESN.__init__: bias must be non-negative, got {self.bias}")
+            raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
         try:
             assert self.connectedness < self.n_reservoir
@@ -138,7 +138,7 @@ class ESN():
                 f'    {"n_reservoir:":<24s}{self.n_reservoir}\n'+\
                  '--- \n'+\
                 f'    {"connectedness:":<24s}{self.connectedness}\n'+\
-                f'    {"bias:":<24s}{self.bias}\n'+\
+                f'    {"bias_factor:":<24s}{self.bias_factor}\n'+\
                 f'    {"leak_rate:":<24s}{self.leak_rate}\n'+\
                 f'    {"tikhonov_parameter:":<24s}{self.tikhonov_parameter}\n'+\
                  '--- \n'+\

@@ -52,12 +52,12 @@ def transform(params, transformations):
         transformed_params (dict): with updated parameters based on transformations, or untouched if not specified
 
     Example:
-        >>> params = {"input_factor": 0.5, "adjacency_factor": 0.5, "bias": 0.5}
+        >>> params = {"input_factor": 0.5, "adjacency_factor": 0.5, "bias_factor": 0.5}
         >>> transforms = {"input_factor": "log", "adjacency_factor": "log10"}
         >>> transform(params, transforms)
         {'input_factor': -0.6931471805599453,
          'adjacency_factor': -0.3010299956639812,
-         'bias': 0.5}
+         'bias_factor': 0.5}
     """
 
     transformed_params = params.copy()
@@ -96,12 +96,12 @@ def inverse_transform(transformed_params, transformations):
         transformed_params (dict): with updated parameters based on transformations, or untouched if not specified
 
     Example:
-        >>> params = {"input_factor": -0.69, "adjacency_factor": -0.3, "bias": 0.5}
+        >>> params = {"input_factor": -0.69, "adjacency_factor": -0.3, "bias_factor": 0.5}
         >>> transforms = {"input_factor": "log", "adjacency_factor": "log10"}
         >>> inverse_transform(params, transforms)
         {'input_factor': 0.5015760690660556,
          'adjacency_factor': 0.5011872336272722,
-         'bias': 0.5}
+         'bias_factor': 0.5}
     """
 
     params = transformed_params.copy()

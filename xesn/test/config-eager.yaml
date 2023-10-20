@@ -35,7 +35,7 @@ esn:
         is_sparse       : True
         random_seed     : 1
 #
-    bias                : 0.5
+    bias_factor         : 0.5
     bias_kwargs:
         distribution    : uniform
         normalization   : svd
@@ -58,7 +58,7 @@ macro_training:
     parameters:
         input_factor    : [1.e-2, 2.]
         adjacency_factor: [1.e-2, 2.]
-        bias            : [0.   , 2.]
+        bias_factor     : [0.   , 2.]
     transformations:
         input_factor    : log10
         adjacency_factor: log

@@ -10,7 +10,7 @@ def transform_params():
     params = {
             "input_factor"      : 0.5,
             "adjacency_factor"  : 0.5,
-            "bias"              : 0.5}
+            "bias_factor"       : 0.5}
 
     transforms ={
             "input_factor"      : "log10",
@@ -38,7 +38,7 @@ def test_transform(transform_inputs, request):
 
     assert_allclose(np.array(ptest["input_factor"]), np.log10(np.array(params["input_factor"])))
     assert_allclose(np.array(ptest["adjacency_factor"]), np.log(np.array(params["adjacency_factor"])))
-    assert_allclose(np.array(ptest["bias"]), np.array(params["bias"]))
+    assert_allclose(np.array(ptest["bias_factor"]), np.array(params["bias_factor"]))
 
 
 @pytest.mark.parametrize(
@@ -51,7 +51,7 @@ def test_inverse_transform(transform_inputs, request):
 
     assert_allclose(np.array(ptest["input_factor"]), 10.** np.array(params["input_factor"]))
     assert_allclose(np.array(ptest["adjacency_factor"]), np.exp(np.array(params["adjacency_factor"])))
-    assert_allclose(np.array(ptest["bias"]), np.array(params["bias"]))
+    assert_allclose(np.array(ptest["bias_factor"]), np.array(params["bias_factor"]))
 
 @pytest.mark.parametrize(
         "transformer", (transform, inverse_transform)
