@@ -19,6 +19,7 @@ else:
 from dask.array import zeros
 
 from .optim import inverse_transform
+from .psd import psd_1d, psd_2d
 
 class CostFunction():
     def __init__(self, ESN, train_data, macro_data, config):
@@ -72,7 +73,7 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
     n_macro = config["macro_training"]["forecast"]["n_samples"]
     n_spinup = config["macro_training"]["forecast"]["n_spinup"]
     n_steps = config["macro_training"]["forecast"]["n_steps"]
-    terms = config["macro_training"].get(["cost_terms"], {"nrmse": 1.})
+    terms = config["macro_training"].get("cost_terms", {"nrmse": 1.})
 
     cost = zeros(n_macro, chunks=(1,))
     for i, truth in enumerate(macro_data):
@@ -109,8 +110,8 @@ def nrmse(xds):
 
 
 def psd_nrmse(xds):
-    psd = psd_2d if xds.ndim > 2 else psd_1d
-    xds_hat = xr.Dataset()
+    psd = psd_2d if xds.truth.ndim > 2 else psd_1d
+    xds_hat = {}
     for key in ["prediction", "truth"]:
         xds_hat[key] = psd(xds[key])
 

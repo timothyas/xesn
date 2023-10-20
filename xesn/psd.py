@@ -16,11 +16,11 @@ def psd_1d(xda):
         xda_hat (xarray.DataArray): with 1D PSD along new, nondimensional 'k1d' dimension
     """
 
-    assert xda.dims[-1] == "time", "psd_1d requires 'time' to be on the last dimension"
+    assert xda.dims[-1] in ("time", "ftime"), "psd_1d requires 'time' to be on the last dimension"
     assert xda.ndim == 2
 
     n_x = xda.shape[0]
-    n_time = len(xda["time"])
+    n_time = xda.shape[-1]
 
     # transform and get amplitudes
     f_hat = fft(xda.values.T)
@@ -61,14 +61,15 @@ def psd_2d(xda):
         xda_hat (xarray.DataArray): with 1D PSD along new, nondimensional 'k1d' dimension
     """
 
-    assert xda.dims[-1] == "time", "psd_2d requires 'time' to be on the last dimension"
+    assert xda.dims[-1] in ("time", "ftime"), "psd_2d requires 'time' to be on the last dimension"
     try:
         assert xda.ndim < 5
     except AssertionError:
         raise NotImplementedError("psd_2d will only work for up to 3D time varying arrays (i.e., 4 dims total)")
 
+
     n_x = xda.shape[0]
-    n_time = len(xda["time"])
+    n_time = xda.shape[-1]
 
     # transform and get amplitudes
     f_hat = fft2(xda.values.T)
@@ -105,13 +106,15 @@ def _xpack(xda, k_vals, psd_1d):
     attrs = {}
     if "long_name" in xda.attrs:
         attrs["long_name"] = f"psd_of_"+xda.attrs["long_name"]
+
+    tdim = "time" if "time" in xda.dims else "ftime"
     xda_hat = xr.DataArray(
             psd_1d,
             coords={
                 "k1d": k_vals,
-                "time": xda["time"],
+                "time": xda[tdim],
                 },
-            dims=("k1d", "time"),
+            dims=("k1d", tdim),
             attrs=attrs,
         )
     xda_hat["k1d"].attrs={
