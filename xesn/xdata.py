@@ -99,7 +99,7 @@ class XData():
         return xda
 
 
-    def normalize(self, xda):
+    def normalize(self, xda, keep_attrs=False):
         """Very simple, this may eventually be hooked up with scikit learn for more advanced normalization.
         Right now, normalize with scalars :attr:`bias` and :attr:`scale` as
 
@@ -108,18 +108,44 @@ class XData():
 
         Args:
             xda (xarray.DataArray): with the field to be normalized
+            keep_attrs (bool): if True, keep attributes in xda
 
         Returns:
             xda (xarray.DataArray): normalized
         """
 
-        # good practice?
         if self.normalization is None:
             return xda
 
-        # TODO: not really clear how to handle other cases...
-        # is it worth handling what options should be here?
-        # assert self.normalization["type"] == "normal-scalar"
         bias = self.normalization.get("bias", 0.)
         scale= self.normalization.get("scale", 1.)
-        return (xda - bias)/scale
+
+        with xr.set_options(keep_attrs=keep_attrs):
+            result = (xda - bias)/scale
+
+        return result
+
+
+    def normalize_inverse(self, xda, keep_attrs=False):
+        """Do the inverse operation of :meth:`normalize`, i.e.,
+
+        .. math::
+            xda * scale + bias
+
+        Args:
+            xda (xarray.DataArray): with the normalized field to be re scaled
+            keep_attrs (bool): if True, keep attributes in xda
+
+        Returns:
+            xda (xarray.DataArray): scaled and biased like original data
+        """
+        if self.normalization is None:
+            return xda
+
+        bias = self.normalization.get("bias", 0.)
+        scale= self.normalization.get("scale", 1.)
+
+        with xr.set_options(keep_attrs=keep_attrs):
+            result = xda*scale + bias
+
+        return result
