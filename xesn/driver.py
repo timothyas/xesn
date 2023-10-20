@@ -243,7 +243,7 @@ class Driver():
         else:
             assert len(sample_indices) == n_samples, f"Driver.get_samples: found different values for len(sample_indices) and n_samples"
 
-        samples = [xda.isel(time=slice(ridx, ridx+n_steps+n_spinup+1))
+        samples = [xda.isel(time=slice(ridx-n_spinup, ridx+n_steps+1))
                    for ridx in sample_indices]
 
         return samples, sample_indices
@@ -265,7 +265,9 @@ class Driver():
         rstate = np.random.RandomState(seed=random_seed)
         n_valid = data_length - (n_steps + n_spinup)
         sample_indices = rstate.choice(n_valid, n_samples, replace=False)
-        sample_indices = list(int(x) for x in sample_indices)
+
+        # add spinup here to get initial condition of the prediction, not including spinup
+        sample_indices = list(int(x+n_spinup) for x in sample_indices)
         return sample_indices
 
 
