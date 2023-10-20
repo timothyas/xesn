@@ -1,6 +1,7 @@
 import numpy as np
+import xarray as xr
 from scipy.stats import binned_statistic
-from scipy.fft import fft2
+from scipy.fft import fft, fft2, fftfreq
 
 def psd_1d(xda):
     """Compute the 1D Power Spectral Density of a 1D array, varying in time.
@@ -15,7 +16,8 @@ def psd_1d(xda):
         xda_hat (xarray.DataArray): with 1D PSD along new, nondimensional 'k1d' dimension
     """
 
-    assert xda.dims(-1) == "time", "psd_1d requires 'time' to be on the last dimension"
+    assert xda.dims[-1] == "time", "psd_1d requires 'time' to be on the last dimension"
+    assert xda.ndim == 2
 
     n_x = xda.shape[0]
     n_time = len(xda["time"])
@@ -36,7 +38,7 @@ def psd_1d(xda):
     for n in range(n_time):
         tmp1d, *_ = binned_statistic(
             k,
-            psd,
+            psd[n],
             statistic="mean",
             bins=k_bins,
         )
@@ -46,7 +48,8 @@ def psd_1d(xda):
 
 
 def psd_2d(xda):
-    """Compute the 1D Power Spectral Density of a 2D or 3D array, varying in time. If 3D, then average over 3rd spatial dimension (e.g., depth).
+    """Compute the 1D Power Spectral Density of a 2D or 3D array, varying in time (so 3 or 4 axes total).
+    If there are 3 non-time dimensions, then average over 3rd spatial dimension (e.g., depth).
 
     Note:
         This function is not lazy, and will call the entire array into memory before computing the PSD.
@@ -58,7 +61,11 @@ def psd_2d(xda):
         xda_hat (xarray.DataArray): with 1D PSD along new, nondimensional 'k1d' dimension
     """
 
-    assert xda.dims(-1) == "time", "psd_2d requires 'time' to be on the last dimension"
+    assert xda.dims[-1] == "time", "psd_2d requires 'time' to be on the last dimension"
+    try:
+        assert xda.ndim < 5
+    except AssertionError:
+        raise NotImplementedError("psd_2d will only work for up to 3D time varying arrays (i.e., 4 dims total)")
 
     n_x = xda.shape[0]
     n_time = len(xda["time"])
@@ -97,7 +104,7 @@ def _xpack(xda, k_vals, psd_1d):
 
     attrs = {}
     if "long_name" in xda.attrs:
-        attrs["long_name"] = f"psd_of_"+xda.attrs["long_name"]}
+        attrs["long_name"] = f"psd_of_"+xda.attrs["long_name"]
     xda_hat = xr.DataArray(
             psd_1d,
             coords={
@@ -106,7 +113,7 @@ def _xpack(xda, k_vals, psd_1d):
                 },
             dims=("k1d", "time"),
             attrs=attrs,
-        }
+        )
     xda_hat["k1d"].attrs={
             "units": "",
             "description": "nondimensional 1D wavenumber",
