@@ -211,6 +211,7 @@ class Driver():
                     )
             xds["prediction"] = data.normalize_inverse(xds["prediction"], keep_attrs=True)
             xds["truth"] = data.normalize_inverse(xds["truth"], keep_attrs=True)
+            xds.attrs["initial_condition_index"] = indices[i]
             xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
 
         self.localtime.stop()

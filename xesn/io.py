@@ -1,4 +1,6 @@
 
+import inspect
+import warnings
 import xarray as xr
 
 from .esn import ESN
@@ -17,19 +19,27 @@ def from_zarr(store, **kwargs):
 
     xds = xr.open_zarr(store, **kwargs)
 
-    # Use dataset attributes to get __init__ arguments
-    args = {key: val for key, val in xds.attrs.items()}
-
     # Create ESN
-    is_lazy = "overlap" in args
-    esn = LazyESN(**args) if is_lazy else ESN(**args)
+    is_lazy = "overlap" in xds.attrs
+    ESNModel = LazyESN if is_lazy else ESN
+
+    # Only get __init__ arguments from dataset attributes
+    kw, *_ = inspect.getfullargspec(ESNModel.__init__)
+    kw.remove("self")
+    args = {key: xds.attrs[key] for key in kw}
+
+    esn = ESNModel(**args)
     esn.build()
-    Wout = xds["Wout"].data if is_lazy else xds["Wout"].values
 
-    # Need to re-append singleton dimension
-    if is_lazy:
-        for _ in range(esn.ndim_state - 2):
-            Wout = Wout[...,None]
+    if "Wout" in xds:
+        Wout = xds["Wout"].data if is_lazy else xds["Wout"].values
 
-    esn.Wout = Wout
+        # Need to re-append singleton dimension
+        if is_lazy:
+            for _ in range(esn.ndim_state - 2):
+                Wout = Wout[...,None]
+
+        esn.Wout = Wout
+    else:
+        warnings.warn(f"from_zarr: did not find 'Wout' in zarr store, returning an untrained network.")
     return esn
