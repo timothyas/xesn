@@ -316,6 +316,19 @@ class TestPrediction(TestESN):
 
         rmtree(self.path)
 
+
+    def test_storage_no_wout(self, test_data):
+        esn, u = self.custom_setup_method(test_data)
+        ds = esn.to_xds()
+        del ds["Wout"]
+        ds.to_zarr(self.path, mode="w")
+
+        with pytest.warns():
+            esn = from_zarr(self.path)
+
+        rmtree(self.path)
+
+
     def test_no_Wout(self):
         esn = ESN(**self.kw)
         with pytest.raises(Exception):

@@ -294,6 +294,9 @@ class ESN():
                 y.sel(time=xds.prediction.time).data,
                 coords=xds.prediction.coords,
                 dims=xds.prediction.dims)
+        xds.attrs.update(self._get_attrs())
+        xds.attrs["esn_type"] = self.__class__.__name__
+        xds.attrs["description"] = "Contains a test prediction and matching truth trajectory"
         return xds
 
 
@@ -326,13 +329,7 @@ class ESN():
         ds["Wout"] = xr.DataArray(Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
 
         # everything else
-        kw, *_ = inspect.getfullargspec(self.__init__)
-        kw.remove("self")
-
-        for key in kw:
-            val = getattr(self, key)
-            ds.attrs[key] = val
-
+        ds.attrs.update(self._get_attrs())
         return ds
 
 
@@ -381,6 +378,17 @@ class ESN():
         if "units" in time.attrs:
             xftime.attrs["units"] = time.attrs["units"]
         return xftime
+
+
+    def _get_attrs(self):
+        kw, *_ = inspect.getfullargspec(self.__init__)
+        kw.remove("self")
+
+        attrs = dict()
+        for key in kw:
+            val = getattr(self, key)
+            attrs[key] = val
+        return attrs
 
 
 def _update(r, u, W, Win, bias_vector, leak_rate):

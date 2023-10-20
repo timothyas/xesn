@@ -329,3 +329,19 @@ class TestPrediction(TestLazy):
         assert_allclose(v1, v2)
 
         rmtree(self.path)
+
+
+    def test_storage_no_wout(self, test_data, n_dim):
+        expected = test_data[n_dim]
+        esn = self.custom_setup_method(expected["chunks"], expected["overlap"])
+
+        u = expected["data"]
+        esn.train(u)
+        ds = esn.to_xds()
+        del ds["Wout"]
+        ds.to_zarr(self.path, mode="w")
+
+        with pytest.warns():
+            esn = from_zarr(self.path)
+
+        rmtree(self.path)
