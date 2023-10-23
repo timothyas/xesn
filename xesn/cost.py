@@ -19,7 +19,7 @@ else:
 from dask.array import zeros
 
 from .optim import inverse_transform
-from .psd import psd_1d, psd_2d
+from .psd import psd
 
 class CostFunction():
     def __init__(self, ESN, train_data, macro_data, config):
@@ -110,7 +110,6 @@ def nrmse(xds):
 
 
 def psd_nrmse(xds):
-    psd = psd_2d if xds.truth.ndim > 2 else psd_1d
     xds_hat = {}
     for key in ["prediction", "truth"]:
         xds_hat[key] = psd(xds[key])

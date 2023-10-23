@@ -12,36 +12,21 @@ from shutil import rmtree
 import dask.array as darray
 
 from xesn.test.xdata import test_data
-from xesn.psd import psd_1d, psd_2d
-
-def test_1d(test_data):
-    xda = psd_1d(test_data.isel(y=0, z=0))
-    assert xda.dims == ("k1d", "time")
-    assert xda.shape == (len(test_data.x)//2, len(test_data.time))
-
-
-def test_1d_timefirst(test_data):
-    with pytest.raises(AssertionError):
-        psd_1d(test_data.isel(y=0, z=0).transpose("time", "x"))
-
-def test_1d_multidim(test_data):
-    with pytest.raises(AssertionError):
-        psd_1d(test_data)
+from xesn.psd import psd
 
 @pytest.mark.parametrize(
-        "isel", ({}, {"z":0})
+        "isel", ({}, {"z":0}, {"y":0, "z":0})
     )
-def test_2d(test_data, isel):
-    xda = psd_2d(test_data.isel(**isel))
+def test_basic(test_data, isel):
+    xda = psd(test_data.isel(**isel))
     assert xda.dims == ("k1d", "time")
     assert xda.shape == (len(test_data.x)//2, len(test_data.time))
 
-
-def test_2d_timefirst(test_data):
+def test_timefirst(test_data):
     with pytest.raises(AssertionError):
-        psd_2d(test_data.transpose("time", "z", "y", "x"))
+        psd(test_data.transpose("time", "z", "y", "x"))
 
 def test_2d_dimlimit(test_data):
     xx = test_data.expand_dims({"m": np.arange(3)})
     with pytest.raises(NotImplementedError):
-        psd_2d(xx)
+        psd(xx)
