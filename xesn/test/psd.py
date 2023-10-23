@@ -1,15 +1,6 @@
 import pytest
 
-import os
-from os.path import join
-from glob import glob
-import yaml
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
-import xarray as xr
-from shutil import rmtree
-
-import dask.array as darray
 
 from xesn.test.xdata import test_data
 from xesn.psd import psd
