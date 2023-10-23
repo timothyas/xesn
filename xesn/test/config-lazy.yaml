@@ -90,3 +90,7 @@ macro_training:
         random_state    : 0
 
     cost_upper_bound    : 1e9
+    cost_terms:
+        nrmse           : 1.
+        psd_nrmse       : 1.
+

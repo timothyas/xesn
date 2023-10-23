@@ -19,6 +19,7 @@ else:
 from dask.array import zeros
 
 from .optim import inverse_transform
+from .psd import psd
 
 class CostFunction():
     def __init__(self, ESN, train_data, macro_data, config):
@@ -27,6 +28,12 @@ class CostFunction():
         self.train_data = train_data
         self.macro_data = macro_data
         self.config     = config
+        if "cost_terms" in config["macro_training"]:
+            for key in config["macro_training"]["cost_terms"]:
+                try:
+                    assert key in ("nrmse", "psd_nrmse")
+                except AssertionError:
+                    raise NotImplementedError(f"CostFunction.__init__: found '{key}' in config['macro_training']['cost_terms'], only 'nrmse' and 'psd_nrmse' are implemented")
 
 
     def __call__(self, macro_param_sets):
@@ -66,11 +73,19 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
     n_macro = config["macro_training"]["forecast"]["n_samples"]
     n_spinup = config["macro_training"]["forecast"]["n_spinup"]
     n_steps = config["macro_training"]["forecast"]["n_steps"]
+    terms = config["macro_training"].get("cost_terms", {"nrmse": 1.})
 
     cost = zeros(n_macro, chunks=(1,))
     for i, truth in enumerate(macro_data):
         xds = esn.test(truth, n_steps=n_steps, n_spinup=n_spinup)
-        cost[i] = nrmse(xds).data
+        all_costs = []
+        for key, factor in terms.items():
+            if key == "nrmse":
+                all_costs.append( factor * nrmse(xds).data )
+            elif key == "psd_nrmse":
+                all_costs.append( factor * psd_nrmse(xds).data )
+
+        cost[i] = xp.sum(all_costs)
 
     avg_cost = cost.mean()
 
@@ -92,3 +107,11 @@ def nrmse(xds):
     norm_error = (xds["prediction"] - xds["truth"]) * temporal_weights
     nmse = (norm_error**2).mean()
     return xp.sqrt(nmse)
+
+
+def psd_nrmse(xds):
+    xds_hat = {}
+    for key in ["prediction", "truth"]:
+        xds_hat[key] = psd(xds[key])
+
+    return nrmse(xds_hat)

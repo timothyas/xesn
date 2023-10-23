@@ -1,16 +1,12 @@
 import pytest
 
-import os
-from os.path import join
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
-import dask.array as darray
+from numpy.testing import assert_array_equal
 
 from smt.utils.design_space import DesignSpace
 
 from xesn.cost import CostFunction
 from xesn.xdata import XData
-from xesn.driver import Driver
 from xesn.test.xdata import test_data
 from xesn.test.driver import eager_driver, lazy_driver
 
