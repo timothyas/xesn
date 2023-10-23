@@ -62,9 +62,7 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
     params = inverse_transform(params_transformed, config["macro_training"]["transformations"])
 
     # update parameters, build, and train esn
-    esnc = config[ESN.__name__.lower()].copy()
-    esnc.update(params)
-
+    esnc = _update_esn_kwargs(params, config[ESN.__name__.lower()])
     esn = ESN(**esnc)
     esn.build()
     esn.train(train_data, **config["training"])
@@ -115,3 +113,24 @@ def psd_nrmse(xds):
         xds_hat[key] = psd(xds[key])
 
     return nrmse(xds_hat)
+
+
+def _update_esn_kwargs(params, original):
+    """update the arguments to create ESN based on new parameter dict"""
+
+    esnc = original.copy()
+
+    for key, val in params.items():
+        if "_" in key:
+            frontend = key[:key.find("_")]
+            backend = key[key.find("_")+1:]
+
+            if frontend in ["input", "adjacency", "bias"]:
+                esnc[f"{frontend}_kwargs"][backend] = val
+            else:
+                esnc[key] = val
+        else:
+            esnc[key] = val
+
+    print(esnc)
+    return esnc

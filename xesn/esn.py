@@ -23,14 +23,7 @@ class ESN():
     Wout                = None
     input_kwargs        = None
     adjacency_kwargs    = None
-
-    @property
-    def density(self):
-        return self.connectedness / self.n_reservoir
-
-    @property
-    def sparsity(self):
-        return 1. - self.density
+    bias_kwargs         = None
 
     @property
     def input_factor(self):
@@ -48,12 +41,8 @@ class ESN():
             n_input,
             n_output,
             n_reservoir,
-            input_factor,
-            adjacency_factor,
-            bias_factor,
             leak_rate,
             tikhonov_parameter,
-            connectedness,
             input_kwargs=None,
             adjacency_kwargs=None,
             bias_kwargs=None):
@@ -62,56 +51,37 @@ class ESN():
         self.n_input            = n_input
         self.n_output           = n_output
         self.n_reservoir        = n_reservoir
-        self.connectedness      = connectedness
         self.leak_rate          = leak_rate
         self.tikhonov_parameter = tikhonov_parameter
 
         # Handle input matrix options
-        self.input_kwargs = {
-            "factor"        : input_factor,
-            "distribution"  : "uniform",
-            "normalization" : "multiply",
-            "is_sparse"     : False,
-            "random_seed"   : None,
-            }
-        if input_kwargs is not None:
-            self.input_kwargs.update(input_kwargs)
+        default_input_kwargs = {
+                "factor"        : 1.0,
+                "distribution"  : "uniform",
+                "normalization" : "multiply",
+                "is_sparse"     : False,
+                "random_seed"   : None,
+                }
 
-        if self.input_kwargs["factor"] != input_factor:
-            raise ValueError(f"ESN.__init__: conflicting input factor given with options 'input_factor' and 'input_kwargs[''factor'']'")
+        default_adjacency_kwargs = {
+                "factor"        : 1.0,
+                "distribution"  : "uniform",
+                "normalization" : "eig",
+                "is_sparse"     : True,
+                "connectedness" : 5,
+                "format"        : "csr",
+                "random_seed"   : None,
+                }
 
-        # Handle adjacency matrix options
-        self.adjacency_kwargs = {
-            "factor"        : adjacency_factor,
-            "density"       : self.density,
-            "distribution"  : "uniform",
-            "normalization" : "eig",
-            "is_sparse"     : True,
-            "format"        : "csr",
-            "random_seed"   : None,
-            }
-        if adjacency_kwargs is not None:
-            self.adjacency_kwargs.update(adjacency_kwargs)
+        default_bias_kwargs = {
+                "factor"        : 1.0,
+                "distribution"  : "uniform",
+                "random_seed"   : None,
+                }
 
-        # If we are making dense, remove default stuff
-        for key in ["density", "format"]:
-            if not self.adjacency_kwargs["is_sparse"] and key in self.adjacency_kwargs:
-                self.adjacency_kwargs.pop(key)
-
-        if self.adjacency_kwargs["factor"] != adjacency_factor:
-            raise ValueError(f"ESN.__init__: conflicting adjacency factor given with options 'adjacency_factor' and 'adjacency_kwargs[''factor'']'")
-
-        # Handle bias vector options
-        self.bias_kwargs = {
-            "distribution"  : "uniform",
-            "factor"        : bias_factor,
-            "random_seed"   : None
-            }
-        if bias_kwargs is not None:
-            self.bias_kwargs.update(bias_kwargs)
-
-        if self.bias_kwargs["factor"] != bias_factor:
-            raise ValueError(f"ESN.__init__: conflicting bias factor given with options 'bias_factor' and 'bias_kwargs[''factor'']'")
+        self.input_kwargs = self._set_matrix_options(input_kwargs, default_input_kwargs, "input_kwargs")
+        self.adjacency_kwargs = self._set_matrix_options(adjacency_kwargs, default_adjacency_kwargs, "adjacency_kwargs")
+        self.bias_kwargs = self._set_matrix_options(bias_kwargs, default_bias_kwargs, "bias_kwargs")
 
         # Check inputs
         try:
@@ -119,13 +89,7 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
-        try:
-            assert self.connectedness < self.n_reservoir
-        except AssertionError:
-            raise ValueError(f"ESN.__init__: connectedness must be < n_reservoir, got {self.connectedness}")
 
-        if self.adjacency_kwargs["is_sparse"] and self.sparsity < 0.8:
-            warnings.warn(f"ESN.__init__: sparsity is below 80% but adjacency_kwargs['is_sparse'] = {self.adjacency_kwargs['is_sparse']}. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
         if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
@@ -137,8 +101,6 @@ class ESN():
                 f'    {"n_output:":<24s}{self.n_output}\n'+\
                 f'    {"n_reservoir:":<24s}{self.n_reservoir}\n'+\
                  '--- \n'+\
-                f'    {"connectedness:":<24s}{self.connectedness}\n'+\
-                f'    {"bias_factor:":<24s}{self.bias_factor}\n'+\
                 f'    {"leak_rate:":<24s}{self.leak_rate}\n'+\
                 f'    {"tikhonov_parameter:":<24s}{self.tikhonov_parameter}\n'+\
                  '--- \n'+\
@@ -150,6 +112,12 @@ class ESN():
                  '--- \n'+\
                 f'    Adjacency Matrix:\n'
         for key, val in self.adjacency_kwargs.items():
+            rstr += f'        {key:<20s}{val}\n'
+
+        rstr += \
+                 '--- \n'+\
+                f'    Bias Vector:\n'
+        for key, val in self.bias_kwargs.items():
             rstr += f'        {key:<20s}{val}\n'
 
         return rstr
@@ -178,6 +146,9 @@ class ESN():
                 n_cols=self.n_reservoir,
                 **self.adjacency_kwargs)
         self.W = WMaker()
+        if is_sparse and WMaker.density > 0.2:
+            warnings.warn(f"ESN.__init__: adjacency matrix density is >20% but adjacency_kwargs['is_sparse'] = True. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
+
 
         is_sparse = self.input_kwargs.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
@@ -331,6 +302,55 @@ class ESN():
         # everything else
         ds.attrs.update(self._get_attrs())
         return ds
+
+
+    @staticmethod
+    def _set_matrix_options(user, default, name):
+        """Handle variety of possible user provided matrix options"""
+
+        allowed = {
+                "input_kwargs": [
+                    "factor",
+                    "distribution",
+                    "normalization",
+                    "is_sparse",
+                    "density",
+                    "sparsity",
+                    "connectedness",
+                    "format",
+                    "random_seed",
+                    ],
+                "adjacency_kwargs": [
+                    "factor",
+                    "distribution",
+                    "normalization",
+                    "is_sparse",
+                    "density",
+                    "sparsity",
+                    "connectedness",
+                    "format",
+                    "random_seed",
+                    ],
+                "bias_kwargs": [
+                    "factor",
+                    "distribution",
+                    "random_seed",
+                    ],
+                }
+
+        result = {}
+        if user is None:
+            warnings.warn(f"ESN.__init__: Did not find '{name}' options, using default.")
+            result = default.copy()
+
+        else:
+            for key, val in user.items():
+                if key in allowed[name]:
+                    result[key] = val
+                else:
+                    warnings.warn(f"ESN.__init__: '{key}' not allowed for in {name}, ignoring.")
+
+        return result
 
 
     @staticmethod

@@ -21,7 +21,7 @@ class TestLazy(TestESN):
     overlap     = {"x": 1, "time": 0}
     persist     = True
     equal_list  = ("overlap", "esn_chunks", "persist", "overlap", "n_reservoir", "boundary")
-    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter")
+    close_list  = ("leak_rate", "tikhonov_parameter")
 
     @property
     def kw(self):
@@ -207,11 +207,7 @@ class TestPrediction(TestLazy):
         kw["esn_chunks"] = chunks
         kw["overlap"] = overlap
 
-        esn = LazyESN(
-                input_kwargs={"random_seed": 10},
-                adjacency_kwargs={"random_seed": 11},
-                bias_kwargs={"random_seed": 12},
-                **kw)
+        esn = LazyESN(**kw)
         esn.build()
         return esn
 

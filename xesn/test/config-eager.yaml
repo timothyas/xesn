@@ -17,28 +17,27 @@ esn:
     n_input             : 10
     n_output            : 10
     n_reservoir         : 500
-    connectedness       : 5
     leak_rate           : 0.5
     tikhonov_parameter  : 1.e-6
 #
-    input_factor        : 1.0
     input_kwargs:
+        factor          : 1.0
         distribution    : uniform
         normalization   : svd
         is_sparse       : False
         random_seed     : 0
 #
-    adjacency_factor    : 1.0
     adjacency_kwargs:
+        factor          : 1.0
         distribution    : uniform
         normalization   : svd
         is_sparse       : True
+        connectedness   : 5
         random_seed     : 1
 #
-    bias_factor         : 0.5
     bias_kwargs:
+        factor          : 1.0
         distribution    : uniform
-        normalization   : svd
         random_seed     : 2
 
 training:

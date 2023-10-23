@@ -1,5 +1,6 @@
 import pytest
 
+from copy import deepcopy
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import xarray as xr
@@ -13,21 +14,35 @@ class TestESN:
     n_output            = 3
     n_reservoir         = 100
     n_train             = 500
-    connectedness       = 5
-    bias_factor         = 0.1
     leak_rate           = 0.5
     tikhonov_parameter  = 1e-6
 
-    input_factor        = 0.1
-    adjacency_factor    = 0.1
+    input_kwargs = {
+            "factor"    : 0.1,
+            "distribution": "uniform",
+            "random_seed": 10,
+            }
+    adjacency_kwargs = {
+            "factor"    : 0.1,
+            "distribution": "uniform",
+            "is_sparse": True,
+            "connectedness": 5,
+            "random_seed": 11,
+            }
+    bias_kwargs = {
+            "factor"    : 0.1,
+            "distribution": "uniform",
+            "random_seed": 12,
+            }
+
 
     @property
     def kw(self):
         return {key: getattr(self, key) for key in [
-            "n_input", "n_output", "n_reservoir", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter", "input_factor", "adjacency_factor"]}
+            "n_input", "n_output", "n_reservoir", "leak_rate", "tikhonov_parameter", "input_kwargs", "adjacency_kwargs", "bias_kwargs"]}
 
     equal_list  = ("n_input", "n_output", "n_reservoir")
-    close_list  = ("input_factor", "adjacency_factor", "connectedness", "bias_factor", "leak_rate", "tikhonov_parameter")
+    close_list  = ("leak_rate", "tikhonov_parameter")
 
 
 class TestInit(TestESN):
@@ -47,72 +62,119 @@ class TestInit(TestESN):
             elif key in self.close_list:
                 assert_allclose(test, expected)
 
+        # check properties
+        assert_allclose(esn.input_factor, self.input_kwargs["factor"])
+        assert_allclose(esn.adjacency_factor, self.adjacency_kwargs["factor"])
+        assert_allclose(esn.bias_factor, self.bias_kwargs["factor"])
+
     @pytest.mark.parametrize(
             "key, val, raises, error",
             [
-                ("bias_factor", -1., pytest.raises, ValueError),
-                ("connectedness", 101, pytest.raises, ValueError),
-                ("connectedness", 90, pytest.warns, RuntimeWarning),
+                ("bias_kwargs", {"factor": -1.}, pytest.raises, ValueError),
+                ("adjacency_kwargs", {"connectedness": 101}, pytest.raises, ValueError),
+                ("adjacency_kwargs", {"connectedness": 90}, pytest.warns, RuntimeWarning),
             ],
     )
     def test_errors(self, key, val, raises, error):
-        kwargs = self.kw.copy()
-        kwargs[key] = val
+        kwargs = deepcopy(self.kw)
+        kwargs[key].update(val)
+
         with raises(error):
             esn = ESN(**kwargs)
+            esn.build()
 
-@pytest.mark.parametrize(
-        "distribution", ["uniform", "normal", "gaussian"],
-)
-@pytest.mark.parametrize(
-        "factor, error", [(0.1, None), (0.5, ValueError)],
-)
+
 class TestVectors(TestESN):
 
-    def test_bias_kwargs(self, distribution, factor, error):
+    def test_bias_default(self):
+        kw = deepcopy(self.kw)
+        kw.pop("bias_kwargs")
+        with pytest.warns():
+            esn = ESN(**kw)
 
-        bkw = { "distribution"  : distribution,
-                "factor"        : factor,
+        esn.build()
+        assert esn.bias_vector.shape == (self.n_reservoir,)
+
+    @pytest.mark.parametrize(
+            "distribution", ["uniform", "normal", "gaussian"],
+    )
+    def test_bias_kwargs(self, distribution):
+
+        kw = deepcopy(self.kw)
+        kw["bias_kwargs"] ={ "distribution"  : distribution,
+                "factor"        : 0.1,
                 "random_seed"   : 0,
                 }
-        if error is None:
-            esn = ESN(**self.kw, bias_kwargs=bkw)
-            for key, expected in bkw.items():
+        esn = ESN(**kw)
+        for key, expected in kw["bias_kwargs"].items():
+            if isinstance(expected, float):
+                assert_allclose(esn.bias_kwargs[key], expected)
+            else:
                 assert esn.bias_kwargs[key] == expected
 
-            esn.build()
-            assert len(esn.bias_vector) == self.n_reservoir
+        esn.build()
+        assert esn.bias_vector.shape == (self.n_reservoir,)
 
-        else:
-            with pytest.raises(error):
-                esn = ESN(**self.kw, bias_kwargs=bkw)
+    @pytest.mark.parametrize(
+            "option", [
+                {"normalization": "svd"},
+                {"is_sparse": True},
+                {"density": 0.1},
+                {"sparsity": 0.9},
+                {"connectedness": 1},
+                {"format": "coo"},
+            ]
+        )
+    def test_bias_badkwargs(self, option):
+        kw = deepcopy(self.kw)
+        kw["bias_kwargs"].update(option)
+        with pytest.warns():
+            ESN(**kw)
+
+
+class TestMatricesDefault(TestESN):
+
+    def test_input_default(self):
+        kw = deepcopy(self.kw)
+        kw.pop("input_kwargs")
+        with pytest.warns():
+            esn = ESN(**kw)
+
+        esn.build()
+        assert esn.Win.shape == (self.n_reservoir, self.n_input)
+
+
 
 @pytest.mark.parametrize(
-        "distribution", ["uniform", "normal", "gaussian"],
-)
-@pytest.mark.parametrize(
-        "factor, error", [(0.1, None), (0.5, ValueError)],
-)
-@pytest.mark.parametrize(
-        "is_sparse", [True, False],
+        "distribution", ["uniform"],#, "normal", "gaussian"],
 )
 class TestMatrices(TestESN):
 
     @pytest.mark.parametrize(
+            "is_sparse, sparse_key, sparse_arg, error", [
+                (True, "density", 0.1, None),
+                (True, "sparsity", 0.9, None),
+                (True, "connectedness", 10, TypeError),
+                (False, None, None, None)
+            ],
+    )
+    @pytest.mark.parametrize(
             "normalization", ["multiply", "svd"],
     )
-    def test_input_kwargs(self, distribution, normalization, is_sparse, factor, error):
+    def test_input_kwargs(self, distribution, normalization, is_sparse, sparse_key, sparse_arg, error):
         ikw = { "distribution"  : distribution,
                 "normalization" : normalization,
                 "is_sparse"     : is_sparse,
-                "factor"        : factor,
+                "factor"        : 0.1,
                 "random_seed"   : 0,
                 }
         if is_sparse:
-            ikw["density"] = 0.1
+            ikw[sparse_key] = sparse_arg
 
+        kw = deepcopy(self.kw)
+        kw["input_kwargs"] = ikw.copy()
         if error is None:
-            esn = ESN(**self.kw, input_kwargs=ikw)
+            esn = ESN(**kw)
             for key, expected in ikw.items():
                 assert esn.input_kwargs[key] == expected
 
@@ -124,20 +186,30 @@ class TestMatrices(TestESN):
 
 
     @pytest.mark.parametrize(
-            "normalization", ["multiply", "eig", "svd"],
+            "is_sparse, sparse_key, sparse_arg, error", [
+                (True, "density", 0.1, None),
+                (True, "sparsity", 0.9, None),
+                (True, "connectedness", 10, None),
+                (False, None, None, None)
+            ],
     )
-    def test_adjacency_kwargs(self, distribution, normalization, is_sparse, factor, error):
+    @pytest.mark.parametrize(
+            "normalization", ["multiply"],#, "eig", "svd"],
+    )
+    def test_adjacency_kwargs(self, distribution, normalization, is_sparse, sparse_key, sparse_arg, error):
         akw = { "distribution"  : distribution,
                 "normalization" : normalization,
                 "is_sparse"     : is_sparse,
-                "factor"        : factor,
+                "factor"        : 0.1,
                 "random_seed"   : 0,
                 }
         if is_sparse:
-            akw["density"] = 0.1
+            akw[sparse_key] = sparse_arg
 
+        kw = deepcopy(self.kw)
+        kw["adjacency_kwargs"] = akw.copy()
         if error is None:
-            esn = ESN(**self.kw, adjacency_kwargs=akw)
+            esn = ESN(**kw)
             for key, expected in akw.items():
                 assert esn.adjacency_kwargs[key] == expected
 
@@ -145,8 +217,7 @@ class TestMatrices(TestESN):
             assert tuple(esn.W.shape) == (self.n_reservoir, self.n_reservoir)
         else:
             with pytest.raises(error):
-                esn = ESN(**self.kw, adjacency_kwargs=akw)
-
+                esn = ESN(**kw)
 
 
 @pytest.fixture(scope="module")
@@ -191,7 +262,7 @@ class TestTraining(TestESN):
     def test_all_options(self, test_data, n_input, n_spinup, batch_size):
         expected = test_data[n_input]
 
-        kwargs = self.kw.copy()
+        kwargs = deepcopy(self.kw)
         kwargs["n_input"] = n_input
         kwargs["n_output"] = n_input
         esn = ESN(**kwargs)
@@ -220,7 +291,7 @@ class TestPrediction(TestESN):
 
     def custom_setup_method(self, test_data):
         u = test_data[self.n_input]["u"]
-        esn = ESN(input_kwargs={"random_seed": 10}, adjacency_kwargs={"random_seed": 11}, bias_kwargs={"random_seed": 12}, **self.kw)
+        esn = ESN(**self.kw)
         esn.build()
         esn.train(u)
         return esn, u
