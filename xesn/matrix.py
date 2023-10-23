@@ -88,9 +88,9 @@ class RandomMatrix():
             self,
             n_rows,
             n_cols,
-            distribution,
-            normalization,
             factor,
+            distribution,
+            normalization="multiply",
             random_seed=None):
 
         self.n_rows         = n_rows
@@ -234,10 +234,10 @@ class SparseRandomMatrix(RandomMatrix):
             n_cols,
             factor,
             distribution,
-            normalization,
-			density=None,
-			sparsity=None,
-			connectedness=None,
+            normalization="multiply",
+            density=None,
+            sparsity=None,
+            connectedness=None,
             format="coo",
             random_seed=None):
 
