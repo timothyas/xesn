@@ -6,3 +6,8 @@ and
 [dask](https://www.dask.org/).
 
 
+## License and Copyright
+
+xesn is licensed under version 3 of the Gnu Lesser General Public License.
+
+Development occurs on GitHub at <https://github.com/timothyas/xesn>.
