@@ -58,9 +58,11 @@ macro_training:
         input_factor    : [1.e-2, 2.]
         adjacency_factor: [1.e-2, 2.]
         bias_factor     : [0.   , 2.]
+        tikhonov_parameter : [1.e-8, 1.]
     transformations:
         input_factor    : log10
         adjacency_factor: log
+        tikhonov_parameter : log10
 
     forecast:
         n_spinup        : 10
