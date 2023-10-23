@@ -9,7 +9,7 @@ import re
 
 import numpy as np
 
-from .cost import CostFunction
+from .cost import CostFunction, _update_esn_kwargs
 from .esn import ESN
 from .io import from_zarr
 from .lazyesn import LazyESN
@@ -160,7 +160,7 @@ class Driver():
         self.localtime.stop()
 
         config_optim = self.config.copy()
-        config_optim[self.esn_name].update(config_optim)
+        config_optim[self.esn_name] = _update_esn_kwargs(p_opt, config_optim[self.esn_name])
         outname = os.path.join(self.output_directory, "config-optim.yaml")
         with open(outname, "w") as f:
             yaml.dump(config_optim, stream=f)

@@ -7,15 +7,12 @@ from scipy import linalg, sparse
 from xesn.matrix import RandomMatrix, SparseRandomMatrix
 
 class TestMatrix:
-    n_rows      = 10
-    n_cols      = 10
-    random_seed = 0
+    n_rows          = 10
+    n_cols          = 10
+    factor          = 1.0
+    normalization   = "multiply"
+    random_seed     = 0
 
-
-class TestInit(TestMatrix):
-    def test_init(self):
-        with pytest.raises(AttributeError):
-            RandomMatrix(n_rows=self.n_rows, n_cols=self.n_cols, distribution="uniform", blah="nope")
 
 # --- Test distributions from both Dense and Sparse matrices
 @pytest.mark.parametrize(
@@ -24,7 +21,7 @@ class TestInit(TestMatrix):
             ("uniform", None),
             ("gaussian", None),
             ("normal", None),
-            ("gamma", AssertionError),
+            ("gamma", NotImplementedError),
         ],
 )
 class TestDist(TestMatrix):
@@ -33,7 +30,7 @@ class TestDist(TestMatrix):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "normalization", "random_seed"]}
 
     def test_dist(self, distribution, error):
 
@@ -55,7 +52,7 @@ class TestSparseDist(TestDist):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "format", "density"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "normalization", "random_seed", "format", "density"]}
 
 
 # --- Test normalization
@@ -81,7 +78,7 @@ class TestSparseDist(TestDist):
                 lambda x: np.std(x.data),
                 1e-1,
                 None),
-            ("spectral_radius", None, None, None, AssertionError),
+            ("spectral_radius", None, None, None, NotImplementedError),
         ]
 )
 class TestNorm(TestMatrix):
@@ -91,7 +88,7 @@ class TestNorm(TestMatrix):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "factor"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "random_seed", "factor"]}
 
     def test_norm(self, distribution, normalization, dense_function, sparse_function, rtol, error):
 
@@ -119,3 +116,49 @@ class TestSparseNorm(TestNorm):
     @property
     def kw(self):
         return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "factor", "format", "density"]}
+
+@pytest.mark.parametrize(
+        "n_cols, density, sparsity, connectedness, error",
+        [
+            (10, 0.1, None, None, None),
+            (10, None, 0.9, None, None),
+            (10, None, None, 1, None),
+            (10, None, None, None, TypeError),
+            (10, 0.1, 0.9, None, TypeError),
+            (10, 0.1, None, 1, TypeError),
+            (10, None, 0.9, 1, TypeError),
+            (5,  0.1, None, None, None),
+            (5,  None, 0.9, None, None),
+            (5,  None, None, 1, TypeError),
+        ]
+    )
+def test_sparse_mat_inputs(n_cols, density, sparsity, connectedness, error):
+    """test the whole density, sparsity, connectivity stuff"""
+
+    if error is None:
+        sm = SparseRandomMatrix(
+                n_rows=10,
+                n_cols=n_cols,
+                factor=1.0,
+                distribution="normal",
+                normalization="multiply",
+                density=density,
+                sparsity=sparsity,
+                connectedness=connectedness,
+                )
+        sm()
+
+        if n_cols == 10:
+            assert_allclose(sm.density, 0.1)
+    else:
+        with pytest.raises(error):
+            sm = SparseRandomMatrix(
+                    n_rows=10,
+                    n_cols=n_cols,
+                    factor=1.0,
+                    distribution="normal",
+                    normalization="multiply",
+                    density=density,
+                    sparsity=sparsity,
+                    connectedness=connectedness,
+                    )
