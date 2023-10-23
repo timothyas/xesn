@@ -21,7 +21,7 @@ def psd(xda):
     try:
         assert xda.ndim < 5
     except AssertionError:
-        raise NotImplementedError("psd_2d will only work for up to 3D time varying arrays (i.e., 4 dims total)")
+        raise NotImplementedError("psd will only work for up to 3D time varying arrays (i.e., 4 dims total)")
 
     n_x = xda.shape[0]
     n_time = xda.shape[-1]
