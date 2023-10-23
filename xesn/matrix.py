@@ -21,7 +21,7 @@ class RandomMatrix():
         Create a 2x2 random matrix with entries from a uniform distribution ranging from -5 to 5
 
         >>> from xesn import RandomMatrix
-        >>> mat = RandomMatrix(2, 2, distribution="uniform", factor=5, random_seed=0)
+        >>> mat = RandomMatrix(2, 2, factor=5, distribution="uniform", random_seed=0)
         >>> A = mat()
         >>> A
         array([[0.48813504, 2.15189366],
@@ -38,11 +38,11 @@ class RandomMatrix():
         Create a 2x2 random matrix with entries from a Gaussian distribution with its spectral radius set to 0.9
 
         >>> from xesn import RandomMatrix ; from scipy.linalg import eigvals
-        >>> mat = RandomMatrix(2, 2, distribution="gaussian", normalization="eig", factor=0.9, random_seed=0)
+        >>> mat = RandomMatrix(2, 2, factor=0.9, distribution="gaussian", normalization="eig", random_seed=0)
 
         or equivalently...
 
-        >>> mat = RandomMatrix(2, 2, distribution="normal", normalization="eig", factor=0.9, random_seed=0)
+        >>> mat = RandomMatrix(2, 2, factor=0.9, distribution="normal", normalization="eig", random_seed=0)
         >>> A = mat()
         >>> A
         array([[0.59414168, 0.13477495],
@@ -54,7 +54,7 @@ class RandomMatrix():
         Create a 2x2 random matrix with entries from a Gaussian distribution with its induced 2-norm set to 1.0
 
         >>> from xesn import RandomMatrix ; from scipy.linalg import svd
-        >>> mat = RandomMatrix(2, 2, distribution="gaussian", normalization="svd", random_seed=0)
+        >>> mat = RandomMatrix(2, 2, factor=1.0, distribution="gaussian", normalization="svd", random_seed=0)
         >>> A = mat()
         >>> A
         array([[0.64082821, 0.14536532],
@@ -89,8 +89,8 @@ class RandomMatrix():
             n_rows,
             n_cols,
             distribution,
-            normalization="multiply",
-            factor=1.0,
+            normalization,
+            factor,
             random_seed=None):
 
         self.n_rows         = n_rows
@@ -203,7 +203,7 @@ class SparseRandomMatrix(RandomMatrix):
         Create a sparse 100x100 random matrix with entries from a Gaussian distribution with its spectral radius set to 0.9
 
         >>> from xesn import SparseRandomMatrix ; from scipy.sparse.linalg import eigs
-        >>> mat = SparseRandomMatrix(100, 100, distribution="normal", normalization="eig", factor=0.9, connectedness=1, random_seed=0)
+        >>> mat = SparseRandomMatrix(100, 100, factor=0.9, distribution="normal", normalization="eig", connectedness=1, random_seed=0)
         >>> A = mat()
         >>> A
         <100x100 sparse matrix of type '<class 'numpy.float64'>'
@@ -218,9 +218,9 @@ class SparseRandomMatrix(RandomMatrix):
     Args:
         n_rows (int): number of rows in the matrix
         n_cols (int): number of columns in the matrix
+        factor (float, optional): factor to rescale the matrix with after it's been normalized
         distribution (str): distribution to draw elements of the matrix from, either "uniform", or "gaussian" and "normal" are recognized
         normalization (str, optional): method used to rescale the matrix, see :meth:`normalize`
-        factor (float, optional): factor to rescale the matrix with after it's been normalized
         density, sparsity, connectedness (float): use 'density', 'sparsity' or 'connectedness' to specify the number of nonzero values in the matrix, where 'density' sets the fraction of nonzero values, ``sparsity=1 - density``, and ``density = connectedness / n_rows``, but note that 'connectedness' only makes sense for square matrices
         random_seed (int, optional): used to control the RNG for matrix generation
     """
@@ -232,9 +232,9 @@ class SparseRandomMatrix(RandomMatrix):
             self,
             n_rows,
             n_cols,
+            factor,
             distribution,
-            normalization="multiply",
-            factor=1.0,
+            normalization,
 			density=None,
 			sparsity=None,
 			connectedness=None,
@@ -244,9 +244,9 @@ class SparseRandomMatrix(RandomMatrix):
         super().__init__(
                 n_rows=n_rows,
                 n_cols=n_cols,
+                factor=factor,
                 distribution=distribution,
                 normalization=normalization,
-                factor=factor,
                 random_seed=random_seed)
 
         self.format = format

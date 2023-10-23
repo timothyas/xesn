@@ -7,9 +7,11 @@ from scipy import linalg, sparse
 from xesn.matrix import RandomMatrix, SparseRandomMatrix
 
 class TestMatrix:
-    n_rows      = 10
-    n_cols      = 10
-    random_seed = 0
+    n_rows          = 10
+    n_cols          = 10
+    factor          = 1.0
+    normalization   = "multiply"
+    random_seed     = 0
 
 
 # --- Test distributions from both Dense and Sparse matrices
@@ -28,7 +30,7 @@ class TestDist(TestMatrix):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "normalization", "random_seed"]}
 
     def test_dist(self, distribution, error):
 
@@ -50,7 +52,7 @@ class TestSparseDist(TestDist):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "format", "density"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "normalization", "random_seed", "format", "density"]}
 
 
 # --- Test normalization
@@ -86,7 +88,7 @@ class TestNorm(TestMatrix):
 
     @property
     def kw(self):
-        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "random_seed", "factor"]}
+        return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "random_seed", "factor"]}
 
     def test_norm(self, distribution, normalization, dense_function, sparse_function, rtol, error):
 
@@ -137,7 +139,9 @@ def test_sparse_mat_inputs(n_cols, density, sparsity, connectedness, error):
         sm = SparseRandomMatrix(
                 n_rows=10,
                 n_cols=n_cols,
+                factor=1.0,
                 distribution="normal",
+                normalization="multiply",
                 density=density,
                 sparsity=sparsity,
                 connectedness=connectedness,
@@ -151,7 +155,9 @@ def test_sparse_mat_inputs(n_cols, density, sparsity, connectedness, error):
             sm = SparseRandomMatrix(
                     n_rows=10,
                     n_cols=n_cols,
+                    factor=1.0,
                     distribution="normal",
+                    normalization="multiply",
                     density=density,
                     sparsity=sparsity,
                     connectedness=connectedness,
