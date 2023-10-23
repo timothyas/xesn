@@ -23,6 +23,12 @@ def config_dict():
             },
             "lazyesn": {
                 "n_reservoir": 500,
+                "input_kwargs": {
+                    "factor": 1.0,
+                    "distribution": "uniform",
+                    "normalization": "multiply",
+                    "is_sparse": False,
+                },
             },
             "testing": {
                 "n_samples": 5,
@@ -106,6 +112,26 @@ class TestDriverBasic():
                 },
                 "lazyesn": {
                     "n_reservoir": 100,
+                    "input_kwargs": {
+                        "factor": 0.5,
+                        "random_seed": 0,
+                    },
+                    "adjacency_kwargs": {
+                        "factor": 1.0,
+                        "distribution": "gaussian",
+                        "normalization": "svd",
+                        "is_sparse": True,
+                        "density": 0.1,
+                    },
+                },
+                "esn_weights": {
+                    "zstore_path": "path/to/weights.zarr",
+                },
+                "macro_training": {
+                    "parameters": {
+                        "input_factor": [1e-4, 1.0],
+                        "tikhonov_parameter": [1e-9, 1.0],
+                    },
                 },
             }
 
@@ -114,9 +140,15 @@ class TestDriverBasic():
         # make sure these changed
         assert driver.config["xdata"]["zstore_path"] == expected["xdata"]["zstore_path"]
         assert driver.config["lazyesn"]["n_reservoir"] == expected["lazyesn"]["n_reservoir"]
+        assert driver.config["lazyesn"]["input_kwargs"]["factor"] == expected["lazyesn"]["input_kwargs"]["factor"]
+        assert driver.config["lazyesn"]["input_kwargs"]["random_seed"] == expected["lazyesn"]["input_kwargs"]["random_seed"]
+        assert driver.config["esn_weights"]["zstore_path"] == expected["esn_weights"]["zstore_path"]
+        assert driver.config["macro_training"] == expected["macro_training"]
+        assert driver.config["lazyesn"]["adjacency_kwargs"] == expected["lazyesn"]["adjacency_kwargs"]
 
         # but make sure this one didn't
         assert driver.config["xdata"]["field_name"] == config_dict["xdata"]["field_name"]
+        assert driver.config["lazyesn"]["input_kwargs"]["distribution"] == config_dict["lazyesn"]["input_kwargs"]["distribution"]
 
     def test_config_type(self, test_driver):
         driver = test_driver
@@ -273,5 +305,6 @@ class TestDriverCompute():
             driver.config["macro_training"]["forecast"]["sample_indices"],
             nc["macro_training"]["forecast"]["sample_indices"]))
 
+        # make sure optim file is there
         config_optim = f"{driver.output_directory}/config-optim.yaml"
         assert os.path.isfile(config_optim)

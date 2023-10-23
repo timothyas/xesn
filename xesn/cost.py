@@ -121,16 +121,17 @@ def _update_esn_kwargs(params, original):
     esnc = original.copy()
 
     for key, val in params.items():
+        # do this for nicer yaml dumping
+        valnice = float(val) if isinstance(val, float) else val
         if "_" in key:
             frontend = key[:key.find("_")]
             backend = key[key.find("_")+1:]
 
             if frontend in ["input", "adjacency", "bias"]:
-                esnc[f"{frontend}_kwargs"][backend] = val
+                esnc[f"{frontend}_kwargs"][backend] = valnice
             else:
-                esnc[key] = val
+                esnc[key] = valnice
         else:
-            esnc[key] = val
+            esnc[key] = valnice
 
-    print(esnc)
     return esnc
