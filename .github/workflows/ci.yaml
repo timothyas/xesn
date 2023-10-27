@@ -42,7 +42,15 @@ jobs:
         shell: bash -l {0}
         run: |
           coverage run --rcfile=coverage.toml -m pytest --verbose xesn/test/matrix.py xesn/test/esn.py xesn/test/lazy.py xesn/test/xdata.py xesn/test/optim.py xesn/test/psd.py xesn/test/cost.py xesn/test/driver.py
-      - name: Show coverage report
+      - name: Get coverage report
         shell: bash -l {0}
         run: |
-          coverage report -m
+          coverage report -m ; coverage xml
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests # optional
+
+

@@ -8,4 +8,6 @@ References
 
 .. [Pathak_et_al_2018] Pathak, J., Hunt, B., Girvan, M., Lu, Z., & Ott, E. (2018). Model-Free Prediction of Large Spatiotemporally Chaotic Systems from Data: A Reservoir Computing Approach. Physical Review Letters, 120(2), 024102. https://doi.org/10.1103/PhysRevLett.120.024102
 
+.. [Platt_et_al_2022] Platt, J. A., Penny, S. G., Smith, T. A., Chen, T.-C., & Abarbanel, H. D. I. (2022). A systematic exploration of reservoir computing for forecasting complex spatiotemporal dynamics. Neural Networks, 153, 530–552. https://doi.org/10.1016/j.neunet.2022.06.025
+
 .. [Smith_et_al_2023] Smith, T. A., Penny, S. G., Platt, J. A., & Chen, T.-C. (2023, September 21). Temporal Subsampling Diminishes Small Spatial Scales in Recurrent Neural Network Emulators of Geophysical Turbulence. arXiv. Retrieved from http://arxiv.org/abs/2305.00100
