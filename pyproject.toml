@@ -1,0 +1,35 @@
+[project]
+name = "xesn"
+version = "0.1.0"
+description = "Echo State Networks powered by xarray"
+authors = [
+    {name="Timothy Smith", email="smith.timothy.andrew@gmail.com"},
+]
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy", "scipy", "xarray", "dask[complete]", "zarr", "smt>=2.0.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest", "coverage",
+]
+docs = [
+    "sphinx", "sphinx_rtd_theme", "nbsphinx"
+]
+gpus = [
+    "cupy"
+]
+
+[project.urls]
+source="https://github.com/timothyas/xesn"
+documentation="https://xesn.readthedocs.io/en/latest/"
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["xesn"]
