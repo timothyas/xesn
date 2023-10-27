@@ -12,14 +12,10 @@ and install it as follows::
     cd xesn
     pip install -e .
 
-Note that additional dependencies can be installed to run the unit test suite,::
+Note that additional dependencies can be installed to run the unit test suite::
 
     pip install -e .[test]
     pytest xesn/test/*.py
-
-or to install `cupy <https://cupy.dev/>`_ to run on GPUs::
-
-    pip install -e .[gpus]
 
 Alternatively, the package can be installed via pip::
 
@@ -43,3 +39,10 @@ there are a couple of additional dependencies required::
 
     conda env create -f docs/environment.yaml
     conda activate xesn
+
+Using GPUs
+==========
+
+In order to use this package on GPUs, please install cupy separately, following
+their installation instructions
+`here <https://docs.cupy.dev/en/stable/install.html>`_.
