@@ -10,9 +10,18 @@ and install it as follows::
 
     git clone https://github.com/timothyas/xesn.git
     cd xesn
-    python setup.py install
+    pip install -e .
 
-or alternatively via pip::
+Note that additional dependencies can be installed to run the unit test suite,::
+
+    pip install -e .[test]
+    pytest xesn/test/*.py
+
+or to install `cupy <https://cupy.dev/>`_ to run on GPUs::
+
+    pip install -e .[gpus]
+
+Alternatively, the package can be installed via pip::
 
     pip install git+https://github.com/timothyas/xesn.git
 
@@ -22,12 +31,15 @@ the project and submit
 and
 `pull requests <https://github.com/timothyas/xesn/pulls>`_.
 
-Running the Example Notebooks
-=============================
+Running Example Notebooks or Building the Documentation Locally
+===============================================================
 
-To run the example notebooks shown in this documentation, please first install a
-few additional dependencies::
-    
+Due to the way pandoc is installed via pip `as detailed here
+<https://stackoverflow.com/a/71585691>`_
+it is recommended to create an environment with conda in order to build the
+documentation locally.
+This is also recommended for running any of the example notebooks locally, since
+there are a couple of additional dependencies required::
+
     conda env create -f docs/environment.yaml
     conda activate xesn
-
