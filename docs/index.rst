@@ -29,8 +29,8 @@ for efficient CPU and GPU deployment.
    :maxdepth: 1
 
    installation
-   notebooks/basic_usage
-   notebooks/lazy_usage
+   basic_usage
+   lazy_usage
    references
    api
 
