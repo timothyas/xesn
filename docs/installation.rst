@@ -17,10 +17,6 @@ Note that additional dependencies can be installed to run the unit test suite::
     pip install -e .[test]
     pytest xesn/test/*.py
 
-Alternatively, the package can be installed via pip::
-
-    pip install git+https://github.com/timothyas/xesn.git
-
 Users are encourged to `fork <https://help.github.com/articles/fork-a-repo/>`_
 the project and submit 
 `issues <https://github.com/timothyas/xesn/issues>`_
