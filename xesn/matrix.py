@@ -71,18 +71,11 @@ class RandomMatrix():
         random_seed (int, optional): used to control the RNG for matrix generation
     """
 
-    # Set by user
-    n_rows          = None
-    n_cols          = None
-
-    distribution    = None
-    normalization   = "multiply"
-    factor          = 1.0
-
-    random_seed     = None
-
-    # Set automatically
-    dist_kw         = None
+    __slots__ = (
+        "n_rows", "n_cols",
+        "distribution", "normalization", "factor",
+        "random_seed", "random_state",
+    )
 
     def __init__(
             self,
@@ -225,8 +218,9 @@ class SparseRandomMatrix(RandomMatrix):
         random_seed (int, optional): used to control the RNG for matrix generation
     """
 
-    density         = None
-    format          = "coo" # scipy's default
+    __slots__ = (
+        "density", "format",
+    )
 
     def __init__(
             self,

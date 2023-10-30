@@ -30,16 +30,17 @@ class Driver():
         config (str or dict): either a path to a yaml file or dict containing experiment parameters
         output_directory (str, optional): directory to save results and write logs to
     """
-    name                    = "driver"
-    config                  = None
-    output_directory        = None
-    walltime                = None
-    localtime               = None
+
+    __slots__ = (
+        "config", "output_directory",
+        "walltime", "localtime",
+        "esn_name", "ESN",
+        "logfile", "logname", "logger",
+    )
 
     def __init__(self,
                  config,
                  output_directory=None):
-
 
         self._make_output_directory(output_directory)
         self._create_logger()
@@ -277,7 +278,7 @@ class Driver():
 
     def _make_output_directory(self, out_dir):
         """Make provided output directory. If none given, make a unique directory:
-        output-{self.name}-XX, where XX is 00->99
+        output-driver-XX, where XX is 00->99
 
         Args:
             out_dir (str or None): path to dump output, or None for default
@@ -289,11 +290,11 @@ class Driver():
 
             # make a unique default directory
             i=0
-            out_dir = f"output-{self.name}-{i:02d}"
+            out_dir = f"output-driver-{i:02d}"
             while os.path.isdir(out_dir):
                 if i>99:
                     raise ValueError("Hit max number of default output directories...")
-                out_dir = f"output-{self.name}-{i:02d}"
+                out_dir = f"output-driver-{i:02d}"
                 i = i+1
             os.makedirs(out_dir)
 
@@ -317,7 +318,7 @@ class Driver():
         self.logfile = os.path.join(self.output_directory, 'stdout.log')
 
         # create a logger
-        self.logname = f'{self.name}_logger'
+        self.logname = f'driver_logger'
         self.logger = logging.getLogger(self.logname)
         self.logger.setLevel(logging.DEBUG)
 

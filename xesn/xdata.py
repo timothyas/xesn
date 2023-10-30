@@ -8,6 +8,11 @@ class XData():
     See :meth:`setup` for the main usage.
     """
 
+    __slots__ = (
+        "field_name", "zstore_path",
+        "dimensions", "subsampling", "normalization",
+    )
+
     def __init__(self,
                  field_name,
                  zstore_path,
