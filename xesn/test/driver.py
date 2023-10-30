@@ -264,7 +264,7 @@ class TestDriverCompute():
     def test_micro_training(self, this_driver, request):
 
         driver, _ = request.getfixturevalue(this_driver)
-        driver.run_micro_calibration()
+        driver.run_training()
         assert len(glob(f"{driver.output_directory}/*esn-weights.zarr")) == 1
 
 
@@ -274,7 +274,7 @@ class TestDriverCompute():
     def test_testing(self, this_driver, request):
 
         driver, _ = request.getfixturevalue(this_driver)
-        driver.run_micro_calibration()
+        driver.run_training()
 
         driver.run_test()
 
@@ -294,7 +294,7 @@ class TestDriverCompute():
     def test_macro_training(self, this_driver, request):
 
         driver, _ = request.getfixturevalue(this_driver)
-        driver.run_macro_calibration()
+        driver.run_macro_training()
 
         # make sure sample indices got written out
         new_config = f"{driver.output_directory}/config.yaml"

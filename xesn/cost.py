@@ -1,8 +1,5 @@
 """Will need to generally do the following
 
-TODO
-2. First do NRMSE, spectral will follow.
-
 Questions
 - Do we need to _check_config like with driver? or assume it's coming from driver?
 - Right now, computing temporal normalization on the fly for each macro sample... not how we did it before... does this matter?
