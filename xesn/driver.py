@@ -19,7 +19,8 @@ from .xdata import XData
 
 class Driver():
     """This is intended to automate the ESN usage. The main methods to use are:
-        - :meth:`run_micro_calibration`: train ESN readout weights
+        - :meth:`run_training`: train ESN readout weights
+        - :meth:`run_macro_training`: use surrogate modeling toolbox to perform Bayesian optimization and learn macro-scale ESN parameters
         - :meth:`run_test`: test a trained ESN on a number of random samples from a test dataset
 
     The experiments are configured with a parameter dict, that can be created either
@@ -70,7 +71,7 @@ class Driver():
         return self.__str__()
 
 
-    def run_micro_calibration(self):
+    def run_training(self):
         """Perform ESN training, learn the readout matrix weights.
 
         Required Parameter Sections:
@@ -79,7 +80,7 @@ class Driver():
             - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
         """
 
-        self.walltime.start("Starting Micro Calibration")
+        self.walltime.start("Starting Training")
 
         # setup the data
         self.localtime.start("Setting up Data")
@@ -110,7 +111,7 @@ class Driver():
         self.walltime.stop("Total Walltime")
 
 
-    def run_macro_calibration(self):
+    def run_macro_training(self):
         """Perform Bayesian optimization on macro-scale ESN parameters using surrogate modeling toolbox.
 
         Required Parameter Sections:
@@ -124,7 +125,7 @@ class Driver():
                 - "ego" with parameters except for evaluation/cost function (which is defined by a :class:`CostFunction`) and surrogate (assumed to be ``smt.surrogate_models.KRG``) as passed to `smt.applications.EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
         """
 
-        self.walltime.start("Starting Macro Calibration")
+        self.walltime.start("Starting Macro Training")
 
         # setup the data
         self.localtime.start("Setting up Data")
