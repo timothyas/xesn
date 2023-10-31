@@ -23,6 +23,9 @@ class LazyESN(ESN):
         2. Non-global axes, i.e., axes which is chunked up or made up of patches, are first
         3. Can handle multi-dimensional data, but only 2D chunking
     """
+    __slots__ = (
+        "esn_chunks", "overlap", "persist", "boundary"
+    )
 
     @property
     def output_chunks(self):

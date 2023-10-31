@@ -18,12 +18,12 @@ class ESN():
     """A classic ESN architecture, with no distribution or parallelism.
     It is assumed that all data used with this architecture can fit into memory.
     """
-    W                   = None
-    Win                 = None
-    Wout                = None
-    input_kwargs        = None
-    adjacency_kwargs    = None
-    bias_kwargs         = None
+    __slots__ = (
+        "W", "Win", "Wout",
+        "n_input", "n_output", "n_reservoir",
+        "leak_rate", "tikhonov_parameter", "bias_vector",
+        "input_kwargs", "adjacency_kwargs", "bias_kwargs",
+    )
 
     @property
     def input_factor(self):

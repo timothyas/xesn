@@ -19,6 +19,9 @@ from .optim import inverse_transform
 from .psd import psd
 
 class CostFunction():
+
+    __slots__ = ("ESN", "train_data", "macro_data", "config")
+
     def __init__(self, ESN, train_data, macro_data, config):
 
         self.ESN        = ESN
