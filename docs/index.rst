@@ -29,8 +29,10 @@ for efficient CPU and GPU deployment.
    :maxdepth: 1
 
    installation
+   methods
    basic_usage
    lazy_usage
    references
    api
+   Source Code <https://github.com/timothyas/xesn>
 
