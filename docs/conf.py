@@ -22,6 +22,7 @@ extensions = [
         "sphinx.ext.autosummary",
         "sphinx.ext.napoleon",
         "nbsphinx",
+        "sphinxcontrib.bibtex",
         ]
 
 numpydoc_show_class_members = False
@@ -37,5 +38,8 @@ napoleon_custom_sections = [("Returns", "params_style"),
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_book_theme'
 html_static_path = ['_static']
+
+bibtex_bibfiles = ['references.bib']
+bibtex_reference_style = "author_year"

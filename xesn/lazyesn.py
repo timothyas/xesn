@@ -16,7 +16,8 @@ from .esn import ESN, _train_1d, _update
 
 class LazyESN(ESN):
     """A distributed/parallelized ESN network based on the multi-dimensional generalization of
-    [Pathak_et_al_2018]_ as used in [Smith_et_al_2023]_, similar to [Arcomano_et_al_2020]_.
+    the algorithm introduced by :cite:t:`pathak_model-free_2018`, as used in
+    :cite:t:`smith_temporal_2023`.
 
     Assumptions:
         1. Time axis is last

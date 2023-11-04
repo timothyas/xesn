@@ -8,13 +8,14 @@ xesn Documentation
 
 **xesn** is a python package for implementing Echo State Networks (ESNs), a
 particular form of Recurrent Neural Network originally discovered by
-[Jaeger_2001]_.
+:cite:t:`jaeger_echo_2001`.
 The main purpose of the package is to enable ESNs for relatively large scale
 weather and climate applications,
-for example as in [Smith_et_al_2023]_ and [Arcomano_et_al_2020]_.
+for example as by :cite:t:`smith_temporal_2023` and
+:cite:t:`arcomano_machine_2020`.
 The package is designed to strike the balance between simplicity and
 flexibility, with a focus on implementing features that were shown to matter
-most by [Platt_et_al_2022]_.
+most by :cite:t:`platt_systematic_2022`.
 
 xesn uses `xarray <https://docs.xarray.dev/en/stable/>`_ 
 to handle multi-dimensional data, relying on
@@ -23,6 +24,8 @@ At its core, xesn uses
 `numpy <https://numpy.org/>`_ 
 and `cupy <https://cupy.dev/>`_ 
 for efficient CPU and GPU deployment.
+
+
 
 
 .. toctree::
@@ -34,5 +37,5 @@ for efficient CPU and GPU deployment.
    lazy_usage
    references
    api
-   Source Code <https://github.com/timothyas/xesn>
+   Source Code <https://github.com/timothyas/xesn/>
 
