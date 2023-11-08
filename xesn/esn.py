@@ -139,23 +139,28 @@ class ESN():
                 reservoir input weight matrix
         """
 
-        is_sparse = self.adjacency_kwargs.pop("is_sparse", True)
+        # Note: this copy is necessary because we want to remove "is_sparse"
+        # before passing to either Matrix class, but we want to keep "is_sparse"
+        # in case the user stores the ESN to zarr
+        kw = self.adjacency_kwargs.copy()
+        is_sparse = kw.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
         WMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_reservoir,
-                **self.adjacency_kwargs)
+                **kw)
         self.W = WMaker()
         if is_sparse and WMaker.density > 0.2:
             warnings.warn(f"ESN.__init__: adjacency matrix density is >20% but adjacency_kwargs['is_sparse'] = True. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
 
-        is_sparse = self.input_kwargs.pop("is_sparse", False)
+        kw = self.input_kwargs.copy()
+        is_sparse = kw.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
         WinMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_input,
-                **self.input_kwargs)
+                **kw)
         self.Win = WinMaker()
 
         BiasMaker = RandomMatrix(
