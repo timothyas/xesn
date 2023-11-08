@@ -7,7 +7,7 @@ xesn Documentation
 ==================
 
 **xesn** is a python package for implementing Echo State Networks (ESNs), a
-particular form of Recurrent Neural Network originally discovered by
+particular form of Recurrent Neural Network originally introduced by
 :cite:t:`jaeger_echo_2001`.
 The main purpose of the package is to enable ESNs for relatively large scale
 weather and climate applications,
