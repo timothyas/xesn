@@ -63,8 +63,8 @@ class LazyESN(ESN):
             leak_rate,
             tikhonov_parameter,
             overlap,
-            persist,
-            boundary=xp.nan,
+            boundary,
+            persist=False,
             input_kwargs=None,
             adjacency_kwargs=None,
             bias_kwargs=None):

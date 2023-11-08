@@ -19,13 +19,14 @@ class TestLazy(TestESN):
     n_train     = 500
     esn_chunks  = {"x": 3, "time": 1_000}
     overlap     = {"x": 1, "time": 0}
+    boundary    = 0
     persist     = True
     equal_list  = ("overlap", "esn_chunks", "persist", "overlap", "n_reservoir", "boundary")
     close_list  = ("leak_rate", "tikhonov_parameter")
 
     @property
     def kw(self):
-        keys = ["esn_chunks", "overlap", "persist"]
+        keys = ["esn_chunks", "overlap", "persist", "boundary"]
         kw = super().kw.copy()
         kw.update({
             key: getattr(self, key) for key in keys})
