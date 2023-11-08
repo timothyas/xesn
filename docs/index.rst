@@ -33,7 +33,7 @@ for efficient CPU and GPU deployment.
 
    installation
    methods
-   basic_usage
+   example_esn_usage
    lazy_usage
    references
    api
