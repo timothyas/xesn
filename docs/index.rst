@@ -34,7 +34,7 @@ for efficient CPU and GPU deployment.
    installation
    methods
    example_esn_usage
-   lazy_usage
+   example_lazy_usage
    references
    api
    Source Code <https://github.com/timothyas/xesn/>

@@ -236,7 +236,7 @@ In the case of our example, the chunk size is
 and these chunks are denoted by the black lines across the domain in the figure
 above.
 Under the hood, :class:`xesn.LazyESN` assigns a local network to each chunk,
-where a single dask worker handles all the computations on each chunk.
+where each chunk becomes a separate dask task.
 Note that unlike :class:`xesn.ESN`, :class:`xesn.LazyESN` does not have
 ``n_input`` and ``n_output`` parameters, but these are instead inferred from the
 multi-dimensional chunksize, given by ``esn_chunks``.
