@@ -8,10 +8,12 @@
 
 import os
 import sys
+import datetime
 sys.path.insert(0, os.path.abspath("../"))
 
 project = 'xesn'
 copyright = '2023, xesn developers'
+copyright = f"2023-{datetime.datetime.now().year}, xesn developers"
 author = 'xesn developers'
 
 # -- General configuration ---------------------------------------------------
@@ -26,12 +28,15 @@ extensions = [
         ]
 
 numpydoc_show_class_members = False
+napolean_google_docstring = True
+napolean_numpy_docstring = False
 
 templates_path = ['_templates']
 exclude_patterns = []
 
 napoleon_custom_sections = [("Returns", "params_style"),
                             ("Sets Attributes", "params_style"),
+                            ("Assumptions", "notes_style"),
                             ]
 
 

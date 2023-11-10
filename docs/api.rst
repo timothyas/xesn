@@ -1,37 +1,36 @@
-API
-###
+API Reference
+#############
+
+
+ESN Models and Utilities
+------------------------
 
 .. autosummary::
-   xesn.Driver
+   :toctree: generated/
+
    xesn.ESN
    xesn.LazyESN
    xesn.from_zarr
 
-.. autoclass:: xesn.Driver
-   :members:
+Optimization Tools
+------------------
 
-.. autoclass:: xesn.ESN
-   :members:
+.. autosummary::
+   :toctree: generated/
 
-.. autoclass:: xesn.LazyESN
-   :members:
+   xesn.cost.CostFunction
+   xesn.optim.optimize
+   xesn.optim.transform
+   xesn.optim.inverse_transform
 
-.. autofunction:: xesn.from_zarr
 
-.. autoclass:: xesn.XData
-   :members:
+Everything Else
+---------------
 
-.. autoclass:: xesn.RandomMatrix
-   :members:
+.. autosummary::
+   :toctree: generated/
 
-.. autoclass:: xesn.SparseRandomMatrix
-   :members:
-
-.. autoclass:: xesn.cost.CostFunction
-   :members:
-
-.. autofunction:: xesn.optim.optimize
-
-.. autofunction:: xesn.optim.transform
-
-.. autofunction:: xesn.optim.inverse_transform
+   xesn.Driver
+   xesn.RandomMatrix
+   xesn.SparseRandomMatrix
+   xesn.XData
