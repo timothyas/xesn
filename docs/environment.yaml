@@ -21,8 +21,9 @@ dependencies:
     - coverage
 # docs stuff
     - sphinx
-    - sphinx_rtd_theme
     - nbsphinx
+    - sphinx-book-theme
+    - sphinxcontrib-bibtex
     - pip
     - pip:
       - smt>=2.0.1

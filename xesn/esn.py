@@ -15,9 +15,32 @@ else:
 from .matrix import RandomMatrix, SparseRandomMatrix
 
 class ESN():
-    """A classic ESN architecture, with no distribution or parallelism.
+    """A classic ESN architecture, as introduced by :cite:t:`jaeger_echo_2001`,
+    with no distribution or parallelism.
     It is assumed that all data used with this architecture can fit into memory.
+
+    Assumptions:
+        1. Time axis is last, and it is named "time"
+
+    Note:
+        The difference between what is expected for ``overlap`` and ``boundary``
+        and what is supplied to dask's overlap function is that here the
+        dimensions are labelled. This means we expect something like
+        ``{"x": 1, "y":1, "time": 0}`` rather than ``{0: 1, 1:1, 2:0}``, for
+        ``overlap`` and similar for ``boundary``.
+
+    Args:
+        n_input (int): size of the input vector to the ESN in state space
+        n_output (int): size of the ESN output vector in state space
+        n_reservoir (int): size of the reservoir or hidden state
+        leak_rate (float): fraction of current hidden state to use during timestepping, ``(1-leak_rate) r(n-1)`` is propagated forward
+        tikhonov_parameter (float): regularization parameter to prevent overfitting
+        persist (bool, optional): if True, bring the data into memory using all available computational resources. This is called after calling overlap in :meth:`train` and :meth:`predict`, as well as on the readout weights :attr:`Wout` after training and on the prediction result after computations are complete in :meth:`predict`
+        input_kwargs (dict, optional): the options to specify :attr:`Win`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        adjacency_kwargs (dict, optional): the options to specify :attr:`W`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        bias_kwargs (dict, optional): the options to specifying :attr:`bias_vector` generation. Only ``"distribution"``, ``"factor"``, and ``"random_seed"`` options are allowed.
     """
+
     __slots__ = (
         "W", "Win", "Wout",
         "n_input", "n_output", "n_reservoir",
@@ -89,10 +112,17 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
-
-
         if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+
+
+    @staticmethod
+    def _dictstr(mydict):
+        lefttab = "        "
+        dstr = ""
+        for key, val in mydict.items():
+            dstr += f"{lefttab}{key:<20s}{val}\n"
+        return dstr
 
 
     def __str__(self):
@@ -100,26 +130,15 @@ class ESN():
                 f'    {"n_input:":<24s}{self.n_input}\n'+\
                 f'    {"n_output:":<24s}{self.n_output}\n'+\
                 f'    {"n_reservoir:":<24s}{self.n_reservoir}\n'+\
-                 '--- \n'+\
+                 '---\n'+\
                 f'    {"leak_rate:":<24s}{self.leak_rate}\n'+\
                 f'    {"tikhonov_parameter:":<24s}{self.tikhonov_parameter}\n'+\
-                 '--- \n'+\
-                f'    Input Matrix:\n'
-        for key, val in self.input_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
-        rstr += \
-                 '--- \n'+\
-                f'    Adjacency Matrix:\n'
-        for key, val in self.adjacency_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
-        rstr += \
-                 '--- \n'+\
-                f'    Bias Vector:\n'
-        for key, val in self.bias_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
+                 '---\n'+\
+                f'    Input Matrix:\n{self._dictstr(self.input_kwargs)}'+\
+                 '---\n'+\
+                f'    Adjacency Matrix:\n{self._dictstr(self.adjacency_kwargs)}'+\
+                 '---\n'+\
+                f'    Bias Vector:\n{self._dictstr(self.bias_kwargs)}'
         return rstr
 
 
@@ -139,23 +158,28 @@ class ESN():
                 reservoir input weight matrix
         """
 
-        is_sparse = self.adjacency_kwargs.pop("is_sparse", True)
+        # Note: this copy is necessary because we want to remove "is_sparse"
+        # before passing to either Matrix class, but we want to keep "is_sparse"
+        # in case the user stores the ESN to zarr
+        kw = self.adjacency_kwargs.copy()
+        is_sparse = kw.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
         WMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_reservoir,
-                **self.adjacency_kwargs)
+                **kw)
         self.W = WMaker()
         if is_sparse and WMaker.density > 0.2:
             warnings.warn(f"ESN.__init__: adjacency matrix density is >20% but adjacency_kwargs['is_sparse'] = True. Performance could suffer from dense matrix operations with scipy.sparse.", RuntimeWarning)
 
 
-        is_sparse = self.input_kwargs.pop("is_sparse", False)
+        kw = self.input_kwargs.copy()
+        is_sparse = kw.pop("is_sparse", False)
         Matrix = SparseRandomMatrix if is_sparse else RandomMatrix
         WinMaker = Matrix(
                 n_rows=self.n_reservoir,
                 n_cols=self.n_input,
-                **self.input_kwargs)
+                **kw)
         self.Win = WinMaker()
 
         BiasMaker = RandomMatrix(

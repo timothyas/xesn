@@ -17,6 +17,14 @@ class RandomMatrix():
     Use input arguments to control the shape, generator distribution, normalization, and
     the random number generator seed.
 
+    Args:
+        n_rows (int): number of rows in the matrix
+        n_cols (int): number of columns in the matrix
+        distribution (str): distribution to draw elements of the matrix from, either "uniform", or "gaussian" and "normal" are recognized
+        normalization (str, optional): method used to rescale the matrix, see :meth:`normalize`
+        factor (float, optional): factor to rescale the matrix with after it's been normalized
+        random_seed (int, optional): used to control the RNG for matrix generation
+
     Example:
         Create a 2x2 random matrix with entries from a uniform distribution ranging from -5 to 5
 
@@ -62,13 +70,6 @@ class RandomMatrix():
         >>> max(abs(svd(A, compute_uv=False, full_matrices=False)))
         1.0
 
-    Args:
-        n_rows (int): number of rows in the matrix
-        n_cols (int): number of columns in the matrix
-        distribution (str): distribution to draw elements of the matrix from, either "uniform", or "gaussian" and "normal" are recognized
-        normalization (str, optional): method used to rescale the matrix, see :meth:`normalize`
-        factor (float, optional): factor to rescale the matrix with after it's been normalized
-        random_seed (int, optional): used to control the RNG for matrix generation
     """
 
     __slots__ = (
