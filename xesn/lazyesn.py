@@ -55,7 +55,6 @@ class LazyESN(ESN):
 
     @property
     def input_chunks(self):
-        """output chunks expanded to include overlap region"""
         return {k: self.output_chunks[k]+2*self.overlap[k] for k in self.output_chunks.keys()}
 
     @property
@@ -156,8 +155,7 @@ class LazyESN(ESN):
                 but note that all time data are still loaded into memory regardless of this parameter
 
         Sets Attributes:
-            Wout (array_like): (:attr:`n_ouput`, :attr:`n_reservoir`)
-                the readout matrix, mapping from reservoir to output space
+            Wout (array_like): the readout matrix, mapping from reservoir to output space
         """
 
         self._time_check(y, "LazyESN.train", "y")

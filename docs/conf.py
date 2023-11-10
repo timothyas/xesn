@@ -48,3 +48,8 @@ html_static_path = ['_static']
 
 bibtex_bibfiles = ['references.bib']
 bibtex_reference_style = "author_year"
+
+html_theme_options = {
+    "repository_url": "https://github.com/timothyas/xesn",
+    "use_repository_button": True,
+}

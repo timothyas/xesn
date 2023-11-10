@@ -112,10 +112,9 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
-
-
         if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+
 
     @staticmethod
     def _dictstr(mydict):
