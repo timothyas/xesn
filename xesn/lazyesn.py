@@ -1,3 +1,4 @@
+import json
 from functools import reduce
 import xarray as xr
 from dask.array import map_blocks, stack
@@ -110,21 +111,18 @@ class LazyESN(ESN):
 
 
     def __str__(self):
-        rstr = 'Lazy'+super().__str__()
-        rstr +=  '--- \n'+\
-                f'    {"overlap:"}\n'
-        for key, val in self.overlap.items():
-            rstr += f'        {key}{val}\n'
-        rstr +=  '--- \n'+\
-                f'    {"ndim_state:":<24s}{self.ndim_state}\n'+\
-                f'    {"input_chunks:":<24s}{self.input_chunks}\n'+\
-                f'    {"output_chunks:":<24s}{self.output_chunks}\n'+\
-                f'    {"r_chunks:":<24s}{self.r_chunks}\n'+\
-                f'    {"Wout_chunks:":<24s}{self.Wout_chunks}\n'+\
-                 '--- \n'+\
-                f'    {"boundary:":<24s}{self.boundary}\n'+\
-                f'    {"persist:":<24s}{self.persist}\n'
 
+        boundary = "\n"+self._dictstr(self.boundary) if isinstance(self.boundary, dict) else str(self.boundary)
+        rstr = 'LazyESN\n'+\
+                f'    input_chunks:\n{self._dictstr(self.input_chunks)}'+\
+                 '---\n'+\
+                f'    output_chunks:\n{self._dictstr(self.output_chunks)}'+\
+                 '---\n'+\
+                f'    overlap:\n{self._dictstr(self.overlap)}'+\
+                 '---\n'+\
+                f'    {"boundary:":<24s}{boundary}\n'+\
+                 '---\n'+\
+                 super().__str__().replace("ESN\n","")
         return rstr
 
 

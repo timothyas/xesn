@@ -94,32 +94,29 @@ class ESN():
         if _use_cupy and adjacency_kwargs["normalization"] == "eig":
             raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
 
+    @staticmethod
+    def _dictstr(mydict):
+        lefttab = "        "
+        dstr = ""
+        for key, val in mydict.items():
+            dstr += f"{lefttab}{key:<20s}{val}\n"
+        return dstr
+
 
     def __str__(self):
         rstr = 'ESN\n'+\
                 f'    {"n_input:":<24s}{self.n_input}\n'+\
                 f'    {"n_output:":<24s}{self.n_output}\n'+\
                 f'    {"n_reservoir:":<24s}{self.n_reservoir}\n'+\
-                 '--- \n'+\
+                 '---\n'+\
                 f'    {"leak_rate:":<24s}{self.leak_rate}\n'+\
                 f'    {"tikhonov_parameter:":<24s}{self.tikhonov_parameter}\n'+\
-                 '--- \n'+\
-                f'    Input Matrix:\n'
-        for key, val in self.input_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
-        rstr += \
-                 '--- \n'+\
-                f'    Adjacency Matrix:\n'
-        for key, val in self.adjacency_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
-        rstr += \
-                 '--- \n'+\
-                f'    Bias Vector:\n'
-        for key, val in self.bias_kwargs.items():
-            rstr += f'        {key:<20s}{val}\n'
-
+                 '---\n'+\
+                f'    Input Matrix:\n{self._dictstr(self.input_kwargs)}'+\
+                 '---\n'+\
+                f'    Adjacency Matrix:\n{self._dictstr(self.adjacency_kwargs)}'+\
+                 '---\n'+\
+                f'    Bias Vector:\n{self._dictstr(self.bias_kwargs)}'
         return rstr
 
 
