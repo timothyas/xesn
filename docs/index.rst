@@ -37,5 +37,4 @@ for efficient CPU and GPU deployment.
    example_lazy_usage
    references
    api
-   Source Code <https://github.com/timothyas/xesn/>
 
