@@ -38,4 +38,5 @@ for efficient CPU and GPU deployment.
    example_macro_training
    references
    api
+   contributing
 
