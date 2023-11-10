@@ -98,8 +98,8 @@ class TestInit(TestLazy):
         assert esn.esn_chunks == esn.output_chunks
         assert esn.input_chunks == {"x":self.n_input, "time": self.esn_chunks["time"]}
         assert esn.ndim_state == 1
-        assert esn.r_chunks == (self.n_reservoir,)
-        assert esn.Wout_chunks == (self.n_output, self.n_reservoir)
+        assert esn._r_chunks == (self.n_reservoir,)
+        assert esn._Wout_chunks == (self.n_output, self.n_reservoir)
 
 
     @pytest.mark.parametrize(
@@ -160,6 +160,10 @@ class TestTraining(TestLazy):
 
         u = expected["data"]
         kw = self.kw.copy()
+
+        # also test this form of boundary
+        if n_dim == 4:
+            kw["boundary"] = {"x": "periodic", "y": 0., "z": "reflect"}
         kw["esn_chunks"] = expected["chunks"]
         kw["overlap"] = expected["overlap"]
 
@@ -207,6 +211,8 @@ class TestPrediction(TestLazy):
         kw = self.kw.copy()
         kw["esn_chunks"] = chunks
         kw["overlap"] = overlap
+        if len(chunks) == 4:
+            kw["boundary"] = {"x": "periodic", "y": 0., "z": "reflect"}
 
         esn = LazyESN(**kw)
         esn.build()

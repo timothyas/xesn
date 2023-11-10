@@ -58,21 +58,21 @@ class LazyESN(ESN):
         return {k: self.output_chunks[k]+2*self.overlap[k] for k in self.output_chunks.keys()}
 
     @property
-    def _ndim_state(self):
+    def ndim_state(self):
         """Num. of non-time axes"""
         return len(self.overlap)-1
 
     @property
     def _r_chunks(self):
         """The number of dimensions needs to be the same as the original multi-dimensional data"""
-        c = tuple(1 for _ in range(self._ndim_state-1))
+        c = tuple(1 for _ in range(self.ndim_state-1))
         c += (self.n_reservoir,)
         return c
 
     @property
     def _Wout_chunks(self):
         chunks = (self.n_output, self.n_reservoir)
-        for _ in range(self._ndim_state - 2):
+        for _ in range(self.ndim_state - 2):
             chunks += (1,)
         return chunks
 
@@ -161,8 +161,9 @@ class LazyESN(ESN):
         self._time_check(y, "LazyESN.train", "y")
 
         doverlap = self._dask_overlap(y.dims)
+        dboundary= self._dask_boundary(y.dims)
         target_data = y.chunk(self.output_chunks).data
-        halo_data = overlap(target_data, depth=doverlap, boundary=self.boundary, allow_rechunk=False)
+        halo_data = overlap(target_data, depth=doverlap, boundary=dboundary, allow_rechunk=False)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         self.Wout = map_blocks(
@@ -193,8 +194,9 @@ class LazyESN(ESN):
 
         # Get overlapped data
         doverlap = self._dask_overlap(y.dims)
+        dboundary = self._dask_boundary(y.dims)
         target_data = y[..., :n_spinup+1].chunk(self.output_chunks).data
-        halo_data = overlap(target_data, depth=doverlap, boundary=self.boundary)
+        halo_data = overlap(target_data, depth=doverlap, boundary=dboundary)
         halo_data = halo_data.persist() if self.persist else halo_data
 
         ukw = { "W"             : self.W,
@@ -217,7 +219,7 @@ class LazyESN(ESN):
                 **ukw, **dkw)
 
         # Necessary for 1D output, since Wout is at least 2D
-        drop_axis = None if self._ndim_state > 1 else 0
+        drop_axis = None if self.ndim_state > 1 else 0
 
         # Setup and loop
         u0 = halo_data[..., n_spinup]
@@ -228,7 +230,7 @@ class LazyESN(ESN):
             r0 = map_blocks(_update_nd, r0, u0, chunks=self._r_chunks, **ukw, **dkw)
             v  = map_blocks(_readout, self.Wout, r0, chunks=chunksize, drop_axis=drop_axis, **dkw)
 
-            u0 = overlap(v, depth=doverlap, boundary=self.boundary)
+            u0 = overlap(v, depth=doverlap, boundary=dboundary)
             prediction.append(v)
 
         # Stack, rechunk, persist, return
@@ -248,6 +250,13 @@ class LazyESN(ESN):
         """To use dask.overlap, we need a dictionary referencing axis indices, not
         named dimensions as with xarray. Create that index based dict here"""
         return {dims.index(d): self.overlap[d] for d in self.overlap.keys()}
+
+
+    def _dask_boundary(self, dims):
+        if isinstance(self.boundary, dict):
+            return {dims.index(d): self.boundary[d] for d in self.boundary.keys()}
+        else:
+            return self.boundary
 
 
 def _train_nd(halo_data,
