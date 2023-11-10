@@ -21,10 +21,30 @@ class LazyESN(ESN):
     :cite:t:`smith_temporal_2023`.
 
     Assumptions:
-        1. Time axis is last
+        1. Time axis is last, and it is named "time"
         2. Non-global axes, i.e., axes which is chunked up or made up of patches, are first
         3. Can handle multi-dimensional data, but only 2D chunking
+
+    Note:
+        The difference between what is expected for ``overlap`` and ``boundary``
+        and what is supplied to dask's overlap function is that here the
+        dimensions are labelled. This means we expect something like
+        ``{"x": 1, "y":1, "time": 0}`` rather than ``{0: 1, 1:1, 2:0}``, for
+        ``overlap`` and similar for ``boundary``.
+
+    Args:
+        esn_chunks (dict): mapping the input data dimension names to its chunksize
+        overlap (dict): mapping the input data dimension names to the number of neighboring points in each dimension to include in each local input vector
+        boundary (dict, str, or float): indicate how to handle the domain boundaries during overlap. Available options are ``"periodic"``, ``"reflect"``, or ``value`` where ``value`` is a value to be filled into the domain, which could be ``np.nan`` for hard boundaries.
+        n_reservoir (int): size of the reservoir or hidden state for each local network
+        leak_rate (float): fraction of current hidden state to use during timestepping, ``(1-leak_rate) r(n-1)`` is propagated forward
+        tikhonov_parameter (float): regularization parameter to prevent overfitting
+        persist (bool, optional): if True, bring the data into memory using all available computational resources. This is called after calling overlap in :meth:`train` and :meth:`predict`, as well as on the readout weights :attr:`Wout` after training and on the prediction result after computations are complete in :meth:`predict`
+        input_kwargs (dict, optional): the options to specify :attr:`Win`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        adjacency_kwargs (dict, optional): the options to specify :attr:`W`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        bias_kwargs (dict, optional): the options to specifying :attr:`bias_vector` generation. Only ``"distribution"``, ``"factor"``, and ``"random_seed"`` options are allowed.
     """
+
     __slots__ = (
         "esn_chunks", "overlap", "persist", "boundary"
     )
@@ -39,32 +59,32 @@ class LazyESN(ESN):
         return {k: self.output_chunks[k]+2*self.overlap[k] for k in self.output_chunks.keys()}
 
     @property
-    def ndim_state(self):
+    def _ndim_state(self):
         """Num. of non-time axes"""
         return len(self.overlap)-1
 
     @property
-    def r_chunks(self):
+    def _r_chunks(self):
         """The number of dimensions needs to be the same as the original multi-dimensional data"""
-        c = tuple(1 for _ in range(self.ndim_state-1))
+        c = tuple(1 for _ in range(self._ndim_state-1))
         c += (self.n_reservoir,)
         return c
 
     @property
-    def Wout_chunks(self):
+    def _Wout_chunks(self):
         chunks = (self.n_output, self.n_reservoir)
-        for _ in range(self.ndim_state - 2):
+        for _ in range(self._ndim_state - 2):
             chunks += (1,)
         return chunks
 
 
     def __init__(self,
             esn_chunks,
+            overlap,
+            boundary,
             n_reservoir,
             leak_rate,
             tikhonov_parameter,
-            overlap,
-            boundary,
             persist=False,
             input_kwargs=None,
             adjacency_kwargs=None,
@@ -159,7 +179,7 @@ class LazyESN(ESN):
                 leak_rate=self.leak_rate,
                 tikhonov_parameter=self.tikhonov_parameter,
                 drop_axis=-1,
-                chunks=self.Wout_chunks,
+                chunks=self._Wout_chunks,
                 enforce_ndim=True,
                 dtype=xp.float64,
         )
@@ -194,12 +214,12 @@ class LazyESN(ESN):
                 _spinup,
                 halo_data,
                 n_spinup=n_spinup,
-                chunks=self.r_chunks,
+                chunks=self._r_chunks,
                 drop_axis=-1, # drop time axis
                 **ukw, **dkw)
 
         # Necessary for 1D output, since Wout is at least 2D
-        drop_axis = None if self.ndim_state > 1 else 0
+        drop_axis = None if self._ndim_state > 1 else 0
 
         # Setup and loop
         u0 = halo_data[..., n_spinup]
@@ -207,7 +227,7 @@ class LazyESN(ESN):
         chunksize = target_data[..., 0].chunksize
         for n in range(n_steps):
 
-            r0 = map_blocks(_update_nd, r0, u0, chunks=self.r_chunks, **ukw, **dkw)
+            r0 = map_blocks(_update_nd, r0, u0, chunks=self._r_chunks, **ukw, **dkw)
             v  = map_blocks(_readout, self.Wout, r0, chunks=chunksize, drop_axis=drop_axis, **dkw)
 
             u0 = overlap(v, depth=doverlap, boundary=self.boundary)

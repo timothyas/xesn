@@ -15,9 +15,32 @@ else:
 from .matrix import RandomMatrix, SparseRandomMatrix
 
 class ESN():
-    """A classic ESN architecture, with no distribution or parallelism.
+    """A classic ESN architecture, as introduced by :cite:t:`jaeger_echo_2001`,
+    with no distribution or parallelism.
     It is assumed that all data used with this architecture can fit into memory.
+
+    Assumptions:
+        1. Time axis is last, and it is named "time"
+
+    Note:
+        The difference between what is expected for ``overlap`` and ``boundary``
+        and what is supplied to dask's overlap function is that here the
+        dimensions are labelled. This means we expect something like
+        ``{"x": 1, "y":1, "time": 0}`` rather than ``{0: 1, 1:1, 2:0}``, for
+        ``overlap`` and similar for ``boundary``.
+
+    Args:
+        n_input (int): size of the input vector to the ESN in state space
+        n_output (int): size of the ESN output vector in state space
+        n_reservoir (int): size of the reservoir or hidden state
+        leak_rate (float): fraction of current hidden state to use during timestepping, ``(1-leak_rate) r(n-1)`` is propagated forward
+        tikhonov_parameter (float): regularization parameter to prevent overfitting
+        persist (bool, optional): if True, bring the data into memory using all available computational resources. This is called after calling overlap in :meth:`train` and :meth:`predict`, as well as on the readout weights :attr:`Wout` after training and on the prediction result after computations are complete in :meth:`predict`
+        input_kwargs (dict, optional): the options to specify :attr:`Win`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        adjacency_kwargs (dict, optional): the options to specify :attr:`W`, use boolean option ``"is_sparse"`` to determine if :class:`RandomMatrix` or :class:`SparseRandomMatrix` is used, then all other options are passed to either of those classes, see their description for available options noting that ``n_rows`` and ``n_cols`` are not necessary.
+        bias_kwargs (dict, optional): the options to specifying :attr:`bias_vector` generation. Only ``"distribution"``, ``"factor"``, and ``"random_seed"`` options are allowed.
     """
+
     __slots__ = (
         "W", "Win", "Wout",
         "n_input", "n_output", "n_reservoir",
