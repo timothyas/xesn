@@ -18,8 +18,9 @@ Optimization Tools
 .. autosummary::
    :toctree: generated/
 
-   xesn.cost.CostFunction
-   xesn.optim.optimize
+   xesn.CostFunction
+   xesn.optimize
+   xesn.utils.get_samples
    xesn.optim.transform
    xesn.optim.inverse_transform
 
@@ -33,4 +34,4 @@ Everything Else
    xesn.Driver
    xesn.RandomMatrix
    xesn.SparseRandomMatrix
-   xesn.XData
+   xesn.xdata.XData

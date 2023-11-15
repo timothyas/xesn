@@ -9,16 +9,16 @@ from smt.applications import EGO
 from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
-def optimize(macro_params, transformations, cost_function, **kwargs):
+def optimize(cost_function, **kwargs):
     """A simple interface with :class:`EGO`
 
     Args:
-        macro_params (dict): containing parameter name and bounds as key, val pairs
-        transformations (dict): containing parameter name and transformation (e.g., log10) as key, val pairs
         cost_function: a created CostFunction obect
         **kwargs: passed to EGO
     """
 
+    macro_params = cost_function.config["macro_training"]["parameters"]
+    transformations = cost_function.config["macro_training"]["transformations"]
     bounds_transformed  = transform(macro_params, transformations)
     design_space        = DesignSpace(list(bounds_transformed.values()))
     surrogate           = KRG(design_space=design_space, print_global=False)

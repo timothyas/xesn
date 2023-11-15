@@ -38,6 +38,8 @@ class CostFunction():
 
     def __call__(self, macro_param_sets):
 
+        macro_param_sets = xp.atleast_2d(macro_param_sets)
+
         n_parallel, n_params = macro_param_sets.shape
 
         cost = zeros(n_parallel, chunks=(1,))
