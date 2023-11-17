@@ -92,8 +92,7 @@ def test_evaluate(use_test_data, this_driver, request):
         "truth", "prediction", "nrmse",
         "psd_truth", "psd_prediction", "psd_nrmse"]:
         assert key in xds
-
-    assert "ftime" in xds["nrmse"].dims
-    assert "ftime" in xds["psd_nrmse"].dims
+        assert "ftime" in xds[key].dims
+        assert "sample" in xds[key].dims
 
     assert len(xds["sample"]) == driver.config["macro_training"]["forecast"]["n_samples"]

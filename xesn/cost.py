@@ -89,6 +89,9 @@ class CostFunction():
         for i, truth in enumerate(datasets):
             result = esn.test(truth, n_steps=n_steps, n_spinup=n_spinup)
 
+            if "nrmse" in self.config["macro_training"]["cost_terms"]:
+                result["nrmse"] = nrmse(result, drop_time=False)
+
             if "psd_nrmse" in self.config["macro_training"]["cost_terms"]:
                 result["psd_truth"] = psd(result["truth"])
                 result["psd_prediction"] = psd(result["prediction"])
@@ -101,7 +104,6 @@ class CostFunction():
             dslist.append(result)
 
         xds = xr.concat(dslist, dim="sample")
-        xds["nrmse"] = nrmse(xds, drop_time=False)
         return xds
 
 
