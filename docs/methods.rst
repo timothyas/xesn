@@ -179,7 +179,7 @@ specified by the user are the
 - Tikhonov parameter, :math:`\beta`, ``tikhonov_parameter``
 - leak rate, :math:`\alpha`, ``leak_rate``
 
-See ... for a discussion about using the
+See `this example <example_macro_training.ipynb>`_ for a demonstration of using the
 `surrogate modeling toolbox <https://smt.readthedocs.io/en/latest/index.html>`_
 to perform Bayesian optimization and find well performing parameter values.
 

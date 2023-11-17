@@ -21,6 +21,58 @@ from .psd import psd
 from .utils import update_esn_kwargs
 
 class CostFunction():
+    """A class used to evaluate an ESN architecture, which can be used in :func:`xesn.optimize`.
+    See `this page of the documentation  <https://xesn.readthedocs.io/en/latest/example_macro_training.html>`_ for example usage.
+    Currently the following generic cost function is implemented
+
+    .. math::
+	    \mathcal{J}_\\text{macro}(\mathbf{\\theta}) = \dfrac{1}{N_\\text{macro}}\sum_{j=1}^{N_\\text{macro}} \left\{\gamma_1\\text{NRMSE}(j) + \gamma_2 \\text{PSD}\_\\text{NRMSE}(j)\\right\}
+
+    .. math::
+        \\text{NRMSE}(j) = \sqrt{\dfrac{1}{N_v N_\\text{steps}}\sum_{n=1}^{N_\\text{steps}}\sum_{i=1}^{N_v}\left(\dfrac{\hat{v}_j(i, n) - v_j(i, n)}{SD_j}\\right)^2 }
+
+    .. math::
+	    \\text{PSD}\_\\text{NRMSE}(j) = \sqrt{\dfrac{1}{N_K N_\\text{steps}}\sum_{n=1}^{N_\\text{steps}}\sum_{i=1}^{N_K}\left(\dfrac{\hat{\psi}_j(k, n) - \psi_j(k, n)}{SD_j(k)}\\right)^2 }
+
+    where:
+
+    - :math:`\mathbf{\\theta}` is our vector of parameters to be optimized, defined by ``config["macro_training"]["parameters"]``
+
+    - :math:`N_\\text{macro}` = ``config["macro_training"]["forecast"]["n_samples"]`` is the number of sample forecasts
+
+    - :math:`\gamma_1` and :math:`\gamma_2` determine the overall weighting for the Normalized Root Mean Square Error (NRMSE) and Power Spectral Density NRMSE (PSD_NRMSE) terms, respectively. These are controlled with ``config["macro_training"]["cost_terms"]``
+
+    - :math:`i` is the index for each non-time index
+
+    - :math:`n` is the temporal index, and :math:`N_\\text{steps}` = ``config["macro_training"]["forecast"]["n_steps"]`` is the length of each sample forecast in terms of the number of time steps
+
+    - :math:`j` is the index for each sample forecast
+
+    - :math:`k` is the index for each spectral mode of the PSD
+
+    - :math:`\psi_j(k,n)` is the :math:`k^{th}` mode's amplitude, for sample :math:`j` at time step :math:`n`
+
+    - The standard deviation used in the NRMSE calculation is
+
+    .. math::
+        SD_j = \dfrac{1}{(N_{\\text{steps}}-1)(N_v-1)}\sqrt{\sum_{i=1}^{N_v}\sum_{n=1}^{N_{\\text{steps}}}\left(v_j(i, n) - \mu_j\\right)^2}
+
+    - :math:`SD_j(k)` used in the PSD_NRMSE calculation is defined similarly as above, but in spectral space, and note that each mode is normalized separately as different modes can vary by vastly different orders of magnitude
+
+    - :math:`\mu_j` is the average taken over space and time
+
+    .. math::
+        \mu_j = \dfrac{1}{N_v N_\\text{steps}} \sum_{n=1}^{N_\\text{steps}} \sum_{i=1}^{N_v} v_j(i,n)
+
+    - the average used for PSD_NRMSE :math:`\mu_j(k)` is similarly defined for PSD except the summation is only taken over time
+
+    Args:
+        ESN (:class:`ESN` or :class:`LazyESN`): the ESN class to be used
+        train_data (xarray.DataArray): containing the training data used train the readout weights :math:`\mathbf{W}_\\text{out}`
+        macro_data (List[xarray.DataArray]): containing the sample trajectories to compute the cost function with
+        config (dict): with sections ``"macro_training"``, ``"training"``, ``esn`` or ``lazyesn`` depending on which class is used, and optionally ``"testing"`` in order to use :meth:`evaluate` on the test data. See `here <https://xesn.readthedocs.io/en/latest/example_macro_training.html#CostFunction-and-Optimization-Configuration>`_ for an example on how to set this up.
+        test_data (xarray.DataArray, optional): separate test data passed here for convenience to be used with :meth:`evaluate`
+	"""
 
     __slots__ = ("ESN", "train_data", "macro_data", "config", "test_data")
 
@@ -40,6 +92,15 @@ class CostFunction():
 
 
     def __call__(self, macro_param_sets, is_transformed=True):
+        """Evaluate the cost function for a given set of parameter values
+
+        Args:
+            macro_param_sets (array_like): with shape ``n_sets x n_parameters``, where ``n_parameters`` is the number of scalar parameters being optimized, ``n_sets`` would be the number of examples to evaluate
+            is_transformed (bool, optional): if True, then any transformations specified by ``config["macro_training"]["transformations"]`` have been applied. See :func:`xesn.optimize.transform` for an example
+
+        Returns:
+            cost (array_like): with shape ``n_sets x 1``, cost evaluate for each parameter set
+        """
 
         macro_param_sets = xp.atleast_2d(macro_param_sets)
 
@@ -62,8 +123,12 @@ class CostFunction():
 
 
     def evaluate(self, parameters, use_test_data=False):
-        """
+        """Evaluate this parameter set by building an ESN and testing it on either the :attr:`macro_data` or :attr:`test_data`.
+        See `this page of the documentation  <https://xesn.readthedocs.io/en/latest/example_macro_training.html>`_ for example usage.
 
+        Args:
+            parameters (dict): with keys as the parameter names, and values as the parameter values
+            use_test_data (bool, optional): if True, use the :attr:`test_data`, otherwise use :attr:`macro_data` to evaluate this parameter set
         """
 
         # setup and train ESN
@@ -160,6 +225,15 @@ def _cost(x, ESN, train_data, macro_data, config, is_transformed=True):
 
 
 def nrmse(xds, drop_time=True):
+    """Compute the NRMSE between truth and prediction
+
+    Args:
+        xds (xarray.Dataset): with data_vars ``"prediction"`` and ``"truth"`` to be compared
+        drop_time (bool, optional): if True, take the average also over time, otherwise compute NRMSE evolving over time
+
+    Returns:
+        nrmse (xarray.DataArray): with the normalized root mean square error
+    """
 
     time = "ftime" if "ftime" in xds["truth"].dims else "time"
 
@@ -175,9 +249,19 @@ def nrmse(xds, drop_time=True):
     return xp.sqrt(nmse)
 
 
-def psd_nrmse(xds):
+def psd_nrmse(xds, drop_time=True):
+    """Compute the NRMSE of the PSD
+
+    Args:
+        xds (xarray.Dataset): with data_vars ``"prediction"`` and ``"truth"`` to be compared
+        drop_time (bool, optional): if True, take the average also over time, otherwise compute NRMSE evolving over time
+
+    Returns:
+        psd_nrmse (xarray.DataArray): with the normalized root mean square error of the power spectral density
+    """
+
     xds_hat = {}
     for key in ["prediction", "truth"]:
         xds_hat[key] = psd(xds[key])
 
-    return nrmse(xds_hat)
+    return nrmse(xds_hat, drop_time=drop_time)

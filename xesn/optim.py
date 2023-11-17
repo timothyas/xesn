@@ -10,11 +10,15 @@ from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
 def optimize(cost_function, **kwargs):
-    """A simple interface with :class:`EGO`
+    """A simple interface with `EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html>`_ to perform Bayesian Optimization and solve for an optimal parameter set.
+    See `this page of the documentation  <https://xesn.readthedocs.io/en/latest/example_macro_training.html>`_ for example usage.
 
     Args:
         cost_function: a created CostFunction obect
-        **kwargs: passed to EGO
+        **kwargs: passed to EGO, see possible options `here <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
+
+    Returns:
+        params_opt (dict): with keys as parameter names and values as the determined optimal parameter values
     """
 
     macro_params = cost_function.config["macro_training"]["parameters"]
