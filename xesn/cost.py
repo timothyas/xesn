@@ -38,7 +38,7 @@ class CostFunction():
                     raise NotImplementedError(f"CostFunction.__init__: found '{key}' in config['macro_training']['cost_terms'], only 'nrmse' and 'psd_nrmse' are implemented")
 
 
-    def __call__(self, macro_param_sets):
+    def __call__(self, macro_param_sets, is_transformed=True):
 
         macro_param_sets = xp.atleast_2d(macro_param_sets)
 
@@ -46,12 +46,14 @@ class CostFunction():
 
         cost = zeros(n_parallel, chunks=(1,))
         for i, macro_sample in enumerate(macro_param_sets):
+
             cost[i] = _cost(
                     macro_sample,
                     ESN=self.ESN,
                     train_data=self.train_data,
                     macro_data=self.macro_data,
-                    config=self.config)
+                    config=self.config,
+                    is_transformed=is_transformed)
 
         # TODO: should we call compute or let the user/driver do that?
         cost = cost.compute()
@@ -62,7 +64,6 @@ class CostFunction():
         """
 
         TODO:
-            1. deal with ftime computation
             2. let user decide macro_training or testing section of config
         """
 
@@ -97,12 +98,19 @@ class CostFunction():
         return xds
 
 
-def _cost(x_transformed, ESN, train_data, macro_data, config):
+def _cost(x, ESN, train_data, macro_data, config, is_transformed=True):
 
     # perform any inverse transformations e.g. of log/log10
     x_names = tuple(config["macro_training"]["parameters"].keys())
-    params_transformed = dict(zip(x_names, x_transformed))
-    params = inverse_transform(params_transformed, config["macro_training"]["transformations"])
+    if is_transformed:
+        params_transformed = dict(zip(x_names, x))
+        params = inverse_transform(
+            params_transformed,
+            config["macro_training"]["transformations"]
+        )
+
+    else:
+        params = dict(zip(x_names, x))
 
     # update parameters, build, and train esn
     esnc = update_esn_kwargs(params, config[ESN.__name__.lower()])
