@@ -9,13 +9,13 @@ import re
 
 import numpy as np
 
-from .cost import CostFunction, _update_esn_kwargs
+from .cost import CostFunction
 from .esn import ESN
 from .io import from_zarr
 from .lazyesn import LazyESN
 from .optim import optimize
 from .timer import Timer
-from .utils import get_samples
+from .utils import get_samples, update_esn_kwargs
 from .xdata import XData
 
 class Driver():
@@ -156,14 +156,11 @@ class Driver():
         self.localtime.start("Starting Bayesian Optimization")
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
-                p_opt = optimize(self.config["macro_training"]["parameters"],
-                                 self.config["macro_training"]["transformations"],
-                                 cf,
-                                 **self.config["macro_training"]["ego"])
+                p_opt = optimize(cf, **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
         config_optim = self.config.copy()
-        config_optim[self.esn_name] = _update_esn_kwargs(p_opt, config_optim[self.esn_name])
+        config_optim[self.esn_name] = update_esn_kwargs(p_opt, config_optim[self.esn_name])
         outname = os.path.join(self.output_directory, "config-optim.yaml")
         with open(outname, "w") as f:
             yaml.dump(config_optim, stream=f)

@@ -13,10 +13,12 @@ if _use_cupy:
 else:
     import numpy as xp
 
+import xarray as xr
 from dask.array import zeros
 
 from .optim import inverse_transform
 from .psd import psd
+from .utils import update_esn_kwargs
 
 class CostFunction():
 
@@ -56,6 +58,45 @@ class CostFunction():
         return cost.reshape(-1, 1)
 
 
+    def evaluate(self, parameters):
+        """
+
+        TODO:
+            1. deal with ftime computation
+            2. let user decide macro_training or testing section of config
+        """
+
+
+        # setup and train ESN
+        kwargs = update_esn_kwargs(parameters, self.config[self.ESN.__name__.lower()])
+        esn = self.ESN(**kwargs)
+        esn.build()
+        esn.train(self.train_data, **self.config["training"])
+
+        # run the forecasts
+        n_spinup = self.config["macro_training"]["forecast"]["n_spinup"]
+        n_steps = self.config["macro_training"]["forecast"]["n_steps"]
+
+        dslist = []
+        for i, truth in enumerate(self.macro_data):
+            result = esn.test(truth, n_steps=n_steps, n_spinup=n_spinup)
+
+            if "psd_nrmse" in self.config["macro_training"]["cost_terms"]:
+                result["psd_truth"] = psd(result["truth"])
+                result["psd_prediction"] = psd(result["prediction"])
+                result["psd_nrmse"] = nrmse({
+                    "truth": result["psd_truth"],
+                    "prediction": result["psd_prediction"],
+                }, drop_time=False)
+
+            result = result.expand_dims({"sample": [i]})
+            dslist.append(result)
+
+        xds = xr.concat(dslist, dim="sample")
+        xds["nrmse"] = nrmse(xds, drop_time=False)
+        return xds
+
+
 def _cost(x_transformed, ESN, train_data, macro_data, config):
 
     # perform any inverse transformations e.g. of log/log10
@@ -64,7 +105,7 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
     params = inverse_transform(params_transformed, config["macro_training"]["transformations"])
 
     # update parameters, build, and train esn
-    esnc = _update_esn_kwargs(params, config[ESN.__name__.lower()])
+    esnc = update_esn_kwargs(params, config[ESN.__name__.lower()])
     esn = ESN(**esnc)
     esn.build()
     esn.train(train_data, **config["training"])
@@ -101,11 +142,19 @@ def _cost(x_transformed, ESN, train_data, macro_data, config):
     return avg_cost
 
 
-def nrmse(xds):
+def nrmse(xds, drop_time=True):
 
-    temporal_weights = 1. / xds["truth"].std("ftime")
+    time = "ftime" if "ftime" in xds["truth"].dims else "time"
+
+    temporal_weights = 1. / xds["truth"].std(time)
     norm_error = (xds["prediction"] - xds["truth"]) * temporal_weights
-    nmse = (norm_error**2).mean()
+
+    if drop_time:
+        dims = norm_error.dims
+    else:
+        dims = tuple(d for d in norm_error.dims if d != time)
+
+    nmse = (norm_error**2).mean(dim=dims)
     return xp.sqrt(nmse)
 
 
@@ -115,25 +164,3 @@ def psd_nrmse(xds):
         xds_hat[key] = psd(xds[key])
 
     return nrmse(xds_hat)
-
-
-def _update_esn_kwargs(params, original):
-    """update the arguments to create ESN based on new parameter dict"""
-
-    esnc = original.copy()
-
-    for key, val in params.items():
-        # do this for nicer yaml dumping
-        valnice = float(val) if isinstance(val, float) else val
-        if "_" in key:
-            frontend = key[:key.find("_")]
-            backend = key[key.find("_")+1:]
-
-            if frontend in ["input", "adjacency", "bias"]:
-                esnc[f"{frontend}_kwargs"][backend] = valnice
-            else:
-                esnc[key] = valnice
-        else:
-            esnc[key] = valnice
-
-    return esnc

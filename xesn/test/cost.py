@@ -7,6 +7,7 @@ from smt.utils.design_space import DesignSpace
 
 from xesn.cost import CostFunction
 from xesn.xdata import XData
+from xesn.utils import get_samples
 from xesn.test.xdata import test_data
 from xesn.test.driver import eager_driver, lazy_driver
 
@@ -15,7 +16,7 @@ def eager_macro_driver(eager_driver):
     driver, eager_data = eager_driver
     data = XData(**driver.config["xdata"])
     xda = data.setup(mode="macro_training")
-    macro_data, indices = driver.get_samples(xda=xda, **driver.config["macro_training"]["forecast"])
+    macro_data, indices = get_samples(xda=xda, **driver.config["macro_training"]["forecast"])
     train_data = data.setup(mode="training")
     yield driver, train_data, macro_data
 
@@ -25,7 +26,7 @@ def lazy_macro_driver(lazy_driver, test_data):
     driver, test_data = lazy_driver
     data = XData(**driver.config["xdata"])
     xda = data.setup(mode="macro_training")
-    macro_data, indices = driver.get_samples(xda=xda, **driver.config["macro_training"]["forecast"])
+    macro_data, indices = get_samples(xda=xda, **driver.config["macro_training"]["forecast"])
 
     train_data = data.setup(mode="training")
     yield driver, train_data, macro_data
@@ -65,3 +66,31 @@ def test_eval(n_parallel, this_driver, request):
     x_macro, _ = design.sample_valid_x(n_parallel)
     assert x_macro.shape == (n_parallel, len(bounds))
     cf(x_macro)
+
+
+@pytest.mark.parametrize(
+        "this_driver", ("eager_macro_driver", "lazy_macro_driver"),
+    )
+def test_evaluate(this_driver, request):
+    driver, train_data, macro_data = request.getfixturevalue(this_driver)
+
+    cf = CostFunction(driver.ESN, train_data, macro_data, driver.config)
+
+    parameters = {
+        "input_factor": .5,
+        "adjacency_factor": .5,
+        "bias_factor": .5,
+        "tikhonov_parameter": 1e-6,
+    }
+
+    xds = cf.evaluate(parameters)
+
+    for key in [
+        "truth", "prediction", "nrmse",
+        "psd_truth", "psd_prediction", "psd_nrmse"]:
+        assert key in xds
+
+    assert "ftime" in xds["nrmse"].dims
+    assert "ftime" in xds["psd_nrmse"].dims
+
+    assert len(xds["sample"]) == driver.config["macro_training"]["forecast"]["n_samples"]

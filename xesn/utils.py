@@ -59,3 +59,36 @@ def get_sample_indices(data_length, n_samples, n_steps, n_spinup, random_seed):
     # add spinup here to get initial condition of the prediction, not including spinup
     sample_indices = list(int(x+n_spinup) for x in sample_indices)
     return sample_indices
+
+
+def update_esn_kwargs(params, original):
+    """Update a dictionary of keyword arguments used to create an
+    :class:`ESN` or :class:`LazyESN` with the values denoted by ``params``.
+
+    Note:
+        The ``params`` dict can have ``input_factor`` as its key to update ``original["input_kwargs"]["factor"]`` as is expected by either of the network classes. The same is true for ``adjacency_factor`` and ``bias_factor``.
+
+    Args:
+        params (dict): parameter names and values contain either array/list or value of parameter
+        original (dict): with options used to create an :class:`ESN` or :class:`LazyESN`
+    Returns:
+        esnc (dict): with the updated options based on ``params``
+    """
+
+    esnc = original.copy()
+
+    for key, val in params.items():
+        # do this for nicer yaml dumping
+        valnice = float(val) if isinstance(val, float) else val
+        if "_" in key:
+            frontend = key[:key.find("_")]
+            backend = key[key.find("_")+1:]
+
+            if frontend in ["input", "adjacency", "bias"]:
+                esnc[f"{frontend}_kwargs"][backend] = valnice
+            else:
+                esnc[key] = valnice
+        else:
+            esnc[key] = valnice
+
+    return esnc
