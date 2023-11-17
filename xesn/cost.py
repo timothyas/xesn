@@ -22,13 +22,14 @@ from .utils import update_esn_kwargs
 
 class CostFunction():
 
-    __slots__ = ("ESN", "train_data", "macro_data", "config")
+    __slots__ = ("ESN", "train_data", "macro_data", "config", "test_data")
 
-    def __init__(self, ESN, train_data, macro_data, config):
+    def __init__(self, ESN, train_data, macro_data, config, test_data=None):
 
         self.ESN        = ESN
         self.train_data = train_data
         self.macro_data = macro_data
+        self.test_data  = test_data
         self.config     = config
         if "cost_terms" in config["macro_training"]:
             for key in config["macro_training"]["cost_terms"]:
@@ -60,13 +61,10 @@ class CostFunction():
         return cost.reshape(-1, 1)
 
 
-    def evaluate(self, parameters):
+    def evaluate(self, parameters, use_test_data=False):
         """
 
-        TODO:
-            2. let user decide macro_training or testing section of config
         """
-
 
         # setup and train ESN
         kwargs = update_esn_kwargs(parameters, self.config[self.ESN.__name__.lower()])
@@ -75,11 +73,20 @@ class CostFunction():
         esn.train(self.train_data, **self.config["training"])
 
         # run the forecasts
-        n_spinup = self.config["macro_training"]["forecast"]["n_spinup"]
-        n_steps = self.config["macro_training"]["forecast"]["n_steps"]
+        if not use_test_data:
+            datasets = self.macro_data
+            n_spinup = self.config["macro_training"]["forecast"]["n_spinup"]
+            n_steps = self.config["macro_training"]["forecast"]["n_steps"]
+
+
+        else:
+            datasets = self.test_data
+            n_spinup = self.config["testing"]["n_spinup"]
+            n_steps = self.config["testing"]["n_steps"]
+
 
         dslist = []
-        for i, truth in enumerate(self.macro_data):
+        for i, truth in enumerate(datasets):
             result = esn.test(truth, n_steps=n_steps, n_spinup=n_spinup)
 
             if "psd_nrmse" in self.config["macro_training"]["cost_terms"]:

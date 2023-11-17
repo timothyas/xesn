@@ -69,12 +69,15 @@ def test_eval(n_parallel, this_driver, request):
 
 
 @pytest.mark.parametrize(
+        "use_test_data", (True, False),
+    )
+@pytest.mark.parametrize(
         "this_driver", ("eager_macro_driver", "lazy_macro_driver"),
     )
-def test_evaluate(this_driver, request):
+def test_evaluate(use_test_data, this_driver, request):
     driver, train_data, macro_data = request.getfixturevalue(this_driver)
 
-    cf = CostFunction(driver.ESN, train_data, macro_data, driver.config)
+    cf = CostFunction(driver.ESN, train_data, macro_data, driver.config, test_data=macro_data)
 
     parameters = {
         "input_factor": .5,
@@ -83,7 +86,7 @@ def test_evaluate(this_driver, request):
         "tikhonov_parameter": 1e-6,
     }
 
-    xds = cf.evaluate(parameters)
+    xds = cf.evaluate(parameters, use_test_data=use_test_data)
 
     for key in [
         "truth", "prediction", "nrmse",
