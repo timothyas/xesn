@@ -35,6 +35,7 @@ for efficient CPU and GPU deployment.
    methods
    example_esn_usage
    example_lazy_usage
+   example_macro_training
    references
    api
 

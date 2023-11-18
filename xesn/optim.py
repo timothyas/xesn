@@ -9,16 +9,20 @@ from smt.applications import EGO
 from smt.surrogate_models import KRG
 from smt.utils.design_space import DesignSpace
 
-def optimize(macro_params, transformations, cost_function, **kwargs):
-    """A simple interface with :class:`EGO`
+def optimize(cost_function, **kwargs):
+    """A simple interface with `EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html>`_ to perform Bayesian Optimization and solve for an optimal parameter set.
+    See `this page of the documentation  <https://xesn.readthedocs.io/en/latest/example_macro_training.html>`_ for example usage.
 
     Args:
-        macro_params (dict): containing parameter name and bounds as key, val pairs
-        transformations (dict): containing parameter name and transformation (e.g., log10) as key, val pairs
         cost_function: a created CostFunction obect
-        **kwargs: passed to EGO
+        **kwargs: passed to EGO, see possible options `here <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
+
+    Returns:
+        params_opt (dict): with keys as parameter names and values as the determined optimal parameter values
     """
 
+    macro_params = cost_function.config["macro_training"]["parameters"]
+    transformations = cost_function.config["macro_training"]["transformations"]
     bounds_transformed  = transform(macro_params, transformations)
     design_space        = DesignSpace(list(bounds_transformed.values()))
     surrogate           = KRG(design_space=design_space, print_global=False)

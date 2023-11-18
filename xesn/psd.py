@@ -28,7 +28,7 @@ def psd(xda):
 
     # transform and get amplitudes
     f_hat = fft(xda.values.T) if xda.ndim == 2 else fft2(xda.values.T)
-    psd = np.abs(f_hat)**2
+    psi = np.abs(f_hat)**2
 
     # get frequencies
     n_k = n_x//2 + 1
@@ -43,18 +43,18 @@ def psd(xda):
     k_bins = np.arange(.5, n_k, 1.)
     k_vals = 0.5 * (k_bins[1:] + k_bins[:-1])
 
-    psd_1d = np.zeros((n_x//2, n_time))
+    psi_1d = np.zeros((n_x//2, n_time))
     for n in range(n_time):
-        arr = psd[n].mean(axis=0) if psd.ndim > 3 else psd[n]
+        arr = psi[n].mean(axis=0) if psi.ndim > 3 else psi[n]
         tmp1d, *_ = binned_statistic(
             k_tot.flatten(),
             arr.flatten(),
             statistic="mean",
             bins=k_bins,
         )
-        psd_1d[...,n] = tmp1d * np.pi * (k_bins[1:]**2 - k_bins[:-1]**2)
+        psi_1d[...,n] = tmp1d * np.pi * (k_bins[1:]**2 - k_bins[:-1]**2)
 
-    xda_hat = _xpack(xda, k_vals, psd_1d)
+    xda_hat = _xpack(xda, k_vals, psi_1d)
     return xda_hat
 
 

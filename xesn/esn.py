@@ -1,5 +1,6 @@
 import warnings
 import inspect
+from decimal import Decimal
 import xarray as xr
 import dask.array as darray
 
@@ -221,6 +222,9 @@ class ESN():
     def predict(self, y, n_steps, n_spinup):
         """Use the ESN to make a prediction
 
+        Note:
+            This creates a new ``ftime`` dimension, indicating the time since prediction initial conditions (forecast time). The ``ftime`` vector is created by subtraction: ``y["time"].values - y["time"].values[n_spinup]``. If y["time"] is filled with floats, it is recommended to add the attribute: y["time"].attrs["delta_t"] indicating the finest increment to round ftime to. Otherwise, floating point arithmetic will make this vector have crazy values.
+
         Args:
             y (xarray.DataArray): the input data driving the reservoir during spinup, must have "time" as the last dimension,
                 and it needs to have at least ``n_spinup`` entries in time
@@ -271,6 +275,9 @@ class ESN():
     def test(self, y, n_steps, n_spinup):
         """Make a prediction to be compared to a truth. The only difference
         with :meth:`predict` is that this returns a dataset with both the prediction and truth.
+
+        Note:
+            This creates a new ``ftime`` dimension, indicating the time since prediction initial conditions (forecast time). The ``ftime`` vector is created by subtraction: ``y["time"].values - y["time"].values[n_spinup]``. If y["time"] is filled with floats, it is recommended to add the attribute: y["time"].attrs["delta_t"] indicating the finest increment to round ftime to. Otherwise, floating point arithmetic will make this vector have crazy values.
 
         Args:
             y (xarray.DataArray): the input data driving the reservoir during spinup, must have "time" as the last dimension,
@@ -409,7 +416,15 @@ class ESN():
     def _get_ftime(time):
         """input time should be sliced to only have initial conditions and prediction"""
 
-        ftime = time.values - time[0].values
+        ftime = time.values - time.values[0]
+
+        # handle floating point numbers
+        if isinstance(time.values[0], float) and "delta_t" in time.attrs:
+            decimals = xp.abs(
+                Decimal(str(time.delta_t)).as_tuple().exponent
+            )
+            ftime = xp.round(ftime, decimals)
+
         xftime = xr.DataArray(
                 ftime,
                 coords={"ftime": ftime},

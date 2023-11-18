@@ -12,7 +12,9 @@ from shutil import rmtree
 import dask.array as darray
 
 from xesn.driver import Driver
+from xesn.utils import get_samples, get_sample_indices
 from xesn.test.xdata import test_data
+
 
 @pytest.fixture(scope="function")
 def config_dict():
@@ -186,15 +188,15 @@ class TestDriverBasic():
 
     def test_samples(self, test_driver, test_data):
         driver = test_driver
-        indices = driver.get_sample_indices(len(test_data["time"]), **driver.config["testing"])
+        indices = get_sample_indices(len(test_data["time"]), **driver.config["testing"])
 
         # run it once
-        testers, new_indices = driver.get_samples(test_data, **driver.config["testing"])
+        testers, new_indices = get_samples(test_data, **driver.config["testing"])
         assert_array_equal(indices, new_indices)
         assert len(testers) == driver.config["testing"]["n_samples"]
 
         # make sure it's the same when we give the indices
-        testers2, _ = driver.get_samples(
+        testers2, _ = get_samples(
                 test_data,
                 driver.config["testing"]["n_samples"],
                 driver.config["testing"]["n_steps"],
@@ -205,7 +207,7 @@ class TestDriverBasic():
 
         # now raise a problem when different n_samples and len(indices)
         with pytest.raises(AssertionError):
-            driver.get_samples(
+            get_samples(
                     test_data,
                     driver.config["testing"]["n_samples"],
                     driver.config["testing"]["n_steps"],

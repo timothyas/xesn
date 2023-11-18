@@ -227,7 +227,14 @@ def test_data():
 
     datasets = {}
 
-    time = np.arange(tester.n_train)
+    time = np.arange(tester.n_train).astype(float)
+    time = xr.DataArray(
+        time,
+        coords={"time": time},
+        dims=("time",),
+        attrs={"delta_t": 1., "units": "hours"},
+    )
+
     for n_input in [3, 7]:
         datasets[n_input] = {
                 "u": xr.DataArray(

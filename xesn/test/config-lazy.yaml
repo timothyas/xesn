@@ -79,7 +79,7 @@ macro_training:
     forecast:
         n_spinup        : 10
         n_samples       : 2
-        n_steps         : 2
+        n_steps         : 5
         random_seed     : 1
 
     ego:

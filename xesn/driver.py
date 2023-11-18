@@ -9,12 +9,13 @@ import re
 
 import numpy as np
 
-from .cost import CostFunction, _update_esn_kwargs
+from .cost import CostFunction
 from .esn import ESN
 from .io import from_zarr
 from .lazyesn import LazyESN
 from .optim import optimize
 from .timer import Timer
+from .utils import get_samples, update_esn_kwargs
 from .xdata import XData
 
 class Driver():
@@ -122,7 +123,7 @@ class Driver():
             - "macro_training" with a variety of subsections:
                 - "parameters" (required) with key/value pairs as the parameters to be optimized, and their bounds as values
                 - "transformations" (optional) with any desired transformations on the input variables pre-optimization, see :func:`xesn.optim.transform` for example
-                - "forecast" with options for sample forecasts to optimize macro parameters with, see :meth:`get_samples` for a list of parameters (other than xda)
+                - "forecast" with options for sample forecasts to optimize macro parameters with, see :func:`get_samples` for a list of parameters (other than xda)
                 - "ego" with parameters except for evaluation/cost function (which is defined by a :class:`CostFunction`) and surrogate (assumed to be ``smt.surrogate_models.KRG``) as passed to `smt.applications.EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
         """
 
@@ -136,7 +137,7 @@ class Driver():
             with redirect_stdout(file):
                 xda = data.setup(mode="macro_training")
 
-        macro_data, indices = self.get_samples(xda=xda, **self.config["macro_training"]["forecast"])
+        macro_data, indices = get_samples(xda=xda, **self.config["macro_training"]["forecast"])
         if "sample_indices" not in self.config["macro_training"]["forecast"]:
             self.overwrite_config({"macro_training": {"forecast": {"sample_indices": indices}}})
 
@@ -155,14 +156,11 @@ class Driver():
         self.localtime.start("Starting Bayesian Optimization")
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
-                p_opt = optimize(self.config["macro_training"]["parameters"],
-                                 self.config["macro_training"]["transformations"],
-                                 cf,
-                                 **self.config["macro_training"]["ego"])
+                p_opt = optimize(cf, **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
         config_optim = self.config.copy()
-        config_optim[self.esn_name] = _update_esn_kwargs(p_opt, config_optim[self.esn_name])
+        config_optim[self.esn_name] = update_esn_kwargs(p_opt, config_optim[self.esn_name])
         outname = os.path.join(self.output_directory, "config-optim.yaml")
         with open(outname, "w") as f:
             yaml.dump(config_optim, stream=f)
@@ -178,7 +176,7 @@ class Driver():
         Required Parameter Sections:
             - "xdata" with options passed to :meth:`XData`
             - "esn_weights" with options passed to :func:`from_zarr`
-            - "testing" with options passed to :meth:`get_samples`, except "xda"
+            - "testing" with options passed to :func:`get_samples`, except "xda"
         """
 
         self.walltime.start("Starting Testing")
@@ -193,7 +191,7 @@ class Driver():
 
         # pull samples from data
         self.localtime.start("Get Test Samples")
-        test_data, indices = self.get_samples(xda=xda, **self.config["testing"])
+        test_data, indices = get_samples(xda=xda, **self.config["testing"])
         if "sample_indices" not in self.config["testing"]:
             self.overwrite_config({"testing": {"sample_indices": indices}})
         self.localtime.stop()
@@ -221,59 +219,7 @@ class Driver():
         self.walltime.stop()
 
 
-    def get_samples(self, xda, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
-        """Pull random samples from macro_training or test dataset
 
-        Args:
-            xda (xarray.DataArray): with the full chunk of data to pull samples from
-            n_samples (int): number of samples to grab
-            n_steps (int): number of steps to make in sample prediction
-            n_spinup (int): number of spinup steps before prediction
-            random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
-            samples_indices (list, optional): the temporal indices denoting the start of the prediction period (including spinup), if provided then do not get a random sample of indices first
-
-        Returns:
-            samples (list of xarray.DataArray): with each separate sample trajectory
-            sample_indices (list of int): with the initial conditions for the start of prediction phase, not the start of spinup
-        """
-
-        if sample_indices is None:
-            sample_indices = self.get_sample_indices(
-                    len(xda["time"]),
-                    n_samples,
-                    n_steps,
-                    n_spinup,
-                    random_seed)
-
-        else:
-            assert len(sample_indices) == n_samples, f"Driver.get_samples: found different values for len(sample_indices) and n_samples"
-
-        samples = [xda.isel(time=slice(ridx-n_spinup, ridx+n_steps+1))
-                   for ridx in sample_indices]
-
-        return samples, sample_indices
-
-
-    def get_sample_indices(self, data_length, n_samples, n_steps, n_spinup, random_seed):
-        """Get random sample indices from dataset (without replacement) denoting initial conditions for training, validation, or testing
-
-        Args:
-            data_length (int): length of the dataseries along the time dimension
-            n_samples (int): number of samples to grab
-            n_steps (int): number of steps to make in sample prediction
-            n_spinup (int): number of spinup steps before prediction
-            random_seed (int, optional): RNG seed for grabbing temporal indices of random samples
-
-        Returns:
-            sample_indices (list): with integer indices denoting prediction initial conditions, not start of spinup
-        """
-        rstate = np.random.RandomState(seed=random_seed)
-        n_valid = data_length - (n_steps + n_spinup)
-        sample_indices = rstate.choice(n_valid, n_samples, replace=False)
-
-        # add spinup here to get initial condition of the prediction, not including spinup
-        sample_indices = list(int(x+n_spinup) for x in sample_indices)
-        return sample_indices
 
 
     def _make_output_directory(self, out_dir):
@@ -453,7 +399,7 @@ class Driver():
                 "lazyesn": LazyESN,
                 "training": LazyESN.train,
                 "macro_training": None,
-                "testing": self.get_samples,
+                "testing": get_samples,
                 "esn_weights": None}
         bad_sections = []
         for key in config.keys():

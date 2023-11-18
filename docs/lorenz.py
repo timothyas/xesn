@@ -53,7 +53,7 @@ class Lorenz96():
         time = np.linspace(0., self.delta_t*n_steps, n_steps+1)
         values = odeint(self.rhs, x0, time)
 
-        return xr.DataArray(
+        xda = xr.DataArray(
             data=values.T,
             coords={"x":np.arange(self.N),
                     "time":time},
@@ -64,3 +64,5 @@ class Lorenz96():
                 "description": "Lorenz96 trajectory",
             }
         )
+        xda["time"].attrs["delta_t"] = self.delta_t
+        return xda

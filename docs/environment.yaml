@@ -20,6 +20,7 @@ dependencies:
     - pytest
     - coverage
 # docs stuff
+    - seaborn
     - nbsphinx
     - sphinx-book-theme
     - sphinxcontrib-bibtex
