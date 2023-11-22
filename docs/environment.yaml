@@ -26,4 +26,4 @@ dependencies:
     - sphinxcontrib-bibtex
     - pip
     - pip:
-      - smt>=2.0.1
+        - smt==2.1.0
