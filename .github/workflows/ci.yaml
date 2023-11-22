@@ -22,9 +22,9 @@ jobs:
         os: ["ubuntu-latest"]
         python-version: ["3.9", "3.10", "3.11"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache conda
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           # Increase this value to reset cache if ci/environment.yaml has not changed
           CACHE_NUMBER: 0
