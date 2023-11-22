@@ -21,6 +21,7 @@ gpus = [
 ]
 
 [project.urls]
+homepage="https://github.com/timothyas/xesn"
 source="https://github.com/timothyas/xesn"
 documentation="https://xesn.readthedocs.io/en/latest/"
 

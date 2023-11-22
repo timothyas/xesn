@@ -19,7 +19,8 @@ most by :cite:t:`platt_systematic_2022`.
 
 xesn uses `xarray <https://docs.xarray.dev/en/stable/>`_ 
 to handle multi-dimensional data, relying on
-`dask <https://www.dask.org/>`_ for parallelization.
+`dask <https://www.dask.org/>`_ for parallelization and
+to handle datasets/networks that are too large for a single compute node.
 At its core, xesn uses
 `numpy <https://numpy.org/>`_ 
 and `cupy <https://cupy.dev/>`_ 
@@ -27,15 +28,31 @@ for efficient CPU and GPU deployment.
 
 
 
-
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started
 
    installation
    methods
-   example_esn_usage
-   example_lazy_usage
-   example_macro_training
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   Using the Standard ESN <example_esn_usage>
+   Using the Parallel ESN <example_lazy_usage>
+   Macro Parameter Optimization <example_macro_training>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Community
+
+   contributing
+   support
+
+.. toctree::
+   :maxdepth: 1
+   :caption: References
+
    references
    api
-

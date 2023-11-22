@@ -12,7 +12,8 @@ and install it as follows::
     cd xesn
     pip install -e .
 
-Note that additional dependencies can be installed to run the unit test suite::
+Note that additional dependencies can be installed to run the unit test suite
+and ensure everything is working properly::
 
     pip install -e .[test]
     pytest xesn/test/*.py

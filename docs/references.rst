@@ -1,4 +1,4 @@
-References
-##########
+Scientific References
+#####################
 
 .. bibliography::
