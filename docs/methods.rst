@@ -167,21 +167,6 @@ each time step "column-wise":
 and similarly
 :math:`\mathbf{V} = (\mathbf{v}(1) \, \mathbf{v}(2) \, \cdots \, \mathbf{v}(N_{\text{train}}))`.
 
-Macro-Scale Parameters
-----------------------
-
-From our experience, the most important macro-scale parameters that must be
-specified by the user are the
-
-- input matrix scaling, :math:`\sigma`, ``input_kwargs["factor"]``
-- adjacency matrix scaling, :math:`\rho`, ``adjacency_kwargs["factor"]``
-- bias vector scaling, :math:`\sigma_b`, ``bias_kwargs["factor"]``
-- Tikhonov parameter, :math:`\beta`, ``tikhonov_parameter``
-- leak rate, :math:`\alpha`, ``leak_rate``
-
-See `this example <example_macro_training.ipynb>`_ for a demonstration of using the
-`surrogate modeling toolbox <https://smt.readthedocs.io/en/latest/index.html>`_
-to perform Bayesian optimization and find well performing parameter values.
 
 Distributed ESN Architecture
 ############################
@@ -354,3 +339,19 @@ Note that the various macro-scale paramaters
 Therefore the only components that drive unique hidden states on each chunk are
 the different input states :math:`\mathbf{u}_k` and the readout matrices
 :math:`\mathbf{W}_\text{out}^k`.
+
+Macro-Scale Parameters
+######################
+
+From our experience, the most important macro-scale parameters that must be
+specified by the user are the
+
+- input matrix scaling, :math:`\sigma`, ``input_kwargs["factor"]``
+- adjacency matrix scaling, :math:`\rho`, ``adjacency_kwargs["factor"]``
+- bias vector scaling, :math:`\sigma_b`, ``bias_kwargs["factor"]``
+- Tikhonov parameter, :math:`\beta`, ``tikhonov_parameter``
+- leak rate, :math:`\alpha`, ``leak_rate``
+
+See `this example <example_macro_training.ipynb>`_ for a demonstration of using the
+`surrogate modeling toolbox <https://smt.readthedocs.io/en/latest/index.html>`_
+to perform Bayesian optimization and find well performing parameter values.

@@ -23,7 +23,8 @@ most by [Platt et al., (2022)](https://doi.org/10.1016/j.neunet.2022.06.025).
 
 xesn uses [xarray](https://docs.xarray.dev/en/stable/)
 to handle multi-dimensional data, relying on
-[dask](https://www.dask.org/) for parallelization.
+[dask](https://www.dask.org/) for parallelization and
+to handle datasets/networks that are too large for a single compute node.
 At its core, xesn uses
 [numpy](https://numpy.org/)
 and [cupy](https://cupy.dev/)
