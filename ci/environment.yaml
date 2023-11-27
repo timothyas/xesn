@@ -13,11 +13,10 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
+# surrogate modeling toolbox
+    - smt>=2.2.1
 # jupyter etc
     - jupyter
 # Testing
     - pytest
     - coverage
-    - pip
-    - pip:
-        - smt>=2.2.1

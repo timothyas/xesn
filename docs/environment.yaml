@@ -14,6 +14,8 @@ dependencies:
     - bottleneck
     - dask[complete]
     - zarr
+# surrogate modeling toolbox
+    - smt>=2.2.1
 # jupyter etc
     - jupyter
 # Testing
@@ -24,6 +26,3 @@ dependencies:
     - nbsphinx
     - sphinx-book-theme
     - sphinxcontrib-bibtex
-    - pip
-    - pip:
-        - smt>=2.2.1
