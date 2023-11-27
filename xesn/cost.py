@@ -55,7 +55,7 @@ class CostFunction():
     - The standard deviation used in the NRMSE calculation is
 
     .. math::
-        SD_j = \dfrac{1}{(N_{\\text{steps}}-1)(N_v-1)}\sqrt{\sum_{i=1}^{N_v}\sum_{n=1}^{N_{\\text{steps}}}\left(v_j(i, n) - \mu_j\\right)^2}
+        SD_j = \sqrt{\dfrac{\sum_{i=1}^{N_v}\sum_{n=1}^{N_{\\text{steps}}}\left(v_j(i, n) - \mu_j\\right)^2}{(N_{\\text{steps}}-1)(N_v-1)}}
 
     - :math:`SD_j(k)` used in the PSD_NRMSE calculation is defined similarly as above, but in spectral space, and note that each mode is normalized separately as different modes can vary by vastly different orders of magnitude
 
