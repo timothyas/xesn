@@ -9,7 +9,7 @@ license = {file = "LICENSE.txt"}
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "numpy", "scipy", "xarray", "dask[complete]", "zarr", "smt==2.1.0", "matplotlib"
+    "numpy", "scipy", "xarray", "dask[complete]", "zarr", "smt==2.2.1", "matplotlib"
 ]
 
 [project.optional-dependencies]
