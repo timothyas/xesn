@@ -31,7 +31,8 @@ jobs:
         with:
           path: ~/conda_pkgs_dir
           key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yaml') }}
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
+        name: Setup Miniconda
         with:
           activate-environment: xesn # Defined in ci/environment*.yml
           auto-update-conda: false
