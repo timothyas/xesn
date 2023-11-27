@@ -1,6 +1,6 @@
 [project]
 name = "xesn"
-version = "0.1.1"
+version = "0.1.2"
 description = "Echo State Networks powered by xarray"
 authors = [
     {name="Timothy Smith", email="smith.timothy.andrew@gmail.com"},
