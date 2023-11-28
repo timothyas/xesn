@@ -30,13 +30,11 @@ jobs:
       - name: Create conda environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          cache-downloads: false
-          cache-environment: false
-          micromamba-version: "1.3.1-0"
+          cache-downloads: true
+          cache-environment: true
+          micromamba-version: "latest"
           environment-file: ci/environment.yaml
-          environment-name: xesn
           create-args: python=${{ matrix.python-version }}
-          log-level: debug
       - name: Install xesn
         shell: micromamba-shell {0}
         run: |
