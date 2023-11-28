@@ -29,5 +29,8 @@ documentation="https://xesn.readthedocs.io/en/latest/"
 requires = ["setuptools>=64.0.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["xesn"]
+
 [tool.setuptools.packages.find]
 where = ["xesn"]
