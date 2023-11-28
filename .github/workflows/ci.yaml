@@ -38,6 +38,7 @@ jobs:
           create-args: python=${{ matrix.python-version }}
           log-level: debug
       - name: Install xesn
+        shell: micromamba-shell {0}
         run: |
           python -V
           python -c "import setuptools; print(setuptools.__version__)"
