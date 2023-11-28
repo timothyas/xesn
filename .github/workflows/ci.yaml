@@ -39,7 +39,6 @@ jobs:
           create-args: python=${{ matrix.python-version }}
       - name: Install xesn
         run: |
-          conda activate xesn
           conda list
           pip install -e . --no-deps
       - name: Run Unit Tests
