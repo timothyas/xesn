@@ -35,10 +35,12 @@ jobs:
           micromamba-version: "latest"
           environment-file: ci/environment.yaml
           environment-name: xesn
-          extra-specs: |
-            python=${{ matrix.python-version }}
+          init-shell: bash
+          create-args: python=${{ matrix.python-version }}
       - name: Install xesn
         run: |
+          echo $PWD
+          ls
           pip install -e . --no-deps
           conda list
       - name: Run Unit Tests
