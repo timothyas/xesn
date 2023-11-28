@@ -40,6 +40,8 @@ jobs:
       - name: Install xesn
         run: |
           conda list
+          python -V
+          python -c "import setuptools; print(setuptools.__version__)"
           python -m pip install -e . --no-deps
       - name: Run Unit Tests
         shell: bash -l {0}
