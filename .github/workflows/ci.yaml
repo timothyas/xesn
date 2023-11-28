@@ -29,6 +29,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Create conda environment
         uses: mamba-org/setup-micromamba@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
         with:
           cache-downloads: true
           cache-environment: true
@@ -37,12 +39,13 @@ jobs:
           environment-name: xesn
           init-shell: bash
           create-args: python=${{ matrix.python-version }}
+          log-level: debug
       - name: Install xesn
         run: |
           conda list
-          python${{ matrix.python-version }} -V
-          python${{ matrix.python-version }} -c "import setuptools; print(setuptools.__version__)"
-          python${{ matrix.python-version }} -m pip install -e . --no-deps
+          python -V
+          python -c "import setuptools; print(setuptools.__version__)"
+          python -m pip --upgrade install -e . --no-deps
       - name: Run Unit Tests
         shell: bash -l {0}
         run: |
