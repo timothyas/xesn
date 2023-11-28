@@ -32,8 +32,8 @@ jobs:
         env:
           ACTIONS_STEP_DEBUG: true
         with:
-          cache-downloads: true
-          cache-environment: true
+          cache-downloads: false
+          cache-environment: false
           micromamba-version: "latest"
           environment-file: ci/environment.yaml
           environment-name: xesn
@@ -45,7 +45,7 @@ jobs:
           conda list
           python -V
           python -c "import setuptools; print(setuptools.__version__)"
-          python -m pip --upgrade install -e . --no-deps
+          python -m pip install -e . --no-deps
       - name: Run Unit Tests
         shell: bash -l {0}
         run: |
