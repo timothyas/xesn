@@ -39,7 +39,7 @@ jobs:
           create-args: python=${{ matrix.python-version }}
       - name: Install xesn
         run: |
-          echo $PWD
+          touch setup.cfg
           ls
           pip install -e . --no-deps
           conda list
