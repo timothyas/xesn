@@ -16,7 +16,7 @@ jobs:
           cache-downloads: true
           cache-environment: true
           micromamba-version: "latest"
-          environment-file: ci/environment.yaml
+          environment-file: docs/environment.yaml
           create-args: python=${{ matrix.python-version }}
       - name: Install xesn
         shell: micromamba-shell {0}
