@@ -12,6 +12,10 @@ on:
     branches:
       - "*"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build (${{ matrix.python-version }} | ${{ matrix.os }})
@@ -23,24 +27,24 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
-      - name: Cache conda
-        uses: actions/cache@v3
-        env:
-          # Increase this value to reset cache if ci/environment.yaml has not changed
-          CACHE_NUMBER: 0
+      - name: Create conda environment
+        uses: mamba-org/setup-micromamba@v1
         with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yaml') }}
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: xesn # Defined in ci/environment*.yml
-          auto-update-conda: false
-          python-version: ${{ matrix.python-version }}
+          cache-downloads: true
+          cache-environment: true
+          micromamba-version: "latest"
           environment-file: ci/environment.yaml
-          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+          create-args: python=${{ matrix.python-version }}
+      - name: Install xesn
+        shell: micromamba-shell {0}
+        run: |
+          python -V
+          python -c "import setuptools; print(setuptools.__version__)"
+          python -m pip install -e . --no-deps
       - name: Run Unit Tests
         shell: bash -l {0}
         run: |
+          python -V
           coverage run --rcfile=coverage.toml -m pytest --verbose xesn/test/matrix.py xesn/test/esn.py xesn/test/lazy.py xesn/test/xdata.py xesn/test/optim.py xesn/test/psd.py xesn/test/cost.py xesn/test/driver.py
       - name: Get coverage report
         shell: bash -l {0}
@@ -52,5 +56,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           flags: unittests # optional
-
-
