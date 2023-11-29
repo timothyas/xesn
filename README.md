@@ -32,7 +32,20 @@ for efficient CPU and GPU deployment.
 
 ## Installation
 
-To install from source
+We recommend to install from
+[conda-forge](https://anaconda.org/conda-forge/xesn)
+
+```shell
+conda install -c conda-forge xesn
+```
+
+Alternatively one can install from pip
+
+```shell
+pip install xesn
+```
+
+or to install from source
 
 ```shell
 git clone https://github.com/timothyas/xesn.git

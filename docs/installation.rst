@@ -1,6 +1,22 @@
 Installation
 ############
 
+Installation from conda forge
+=============================
+
+xesn can be installed from conda-forge::
+
+    conda install -c conda-forge xesn
+
+
+Installation from pip
+=====================
+
+Alternatively, xesn can be installed using pip::
+
+    pip install xesn
+
+
 Installation from GitHub
 ========================
 
