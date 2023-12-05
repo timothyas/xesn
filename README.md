@@ -2,6 +2,8 @@
 
 [![codecov](https://codecov.io/gh/timothyas/xesn/graph/badge.svg?token=X1Z9BZB5XS)](https://codecov.io/gh/timothyas/xesn)
 [![Documentation Status](https://readthedocs.org/projects/xesn/badge/?version=latest)](https://xesn.readthedocs.io/en/latest/?badge=latest)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/xesn.svg)](https://anaconda.org/conda-forge/xesn)
+[![PyPI version](https://badge.fury.io/py/xesn.svg)](https://badge.fury.io/py/xesn)
 
 Echo State Networks powered by
 [xarray](https://docs.xarray.dev/en/stable/)
@@ -32,7 +34,20 @@ for efficient CPU and GPU deployment.
 
 ## Installation
 
-To install from source
+Installation from
+[conda-forge](https://anaconda.org/conda-forge/xesn)
+
+```shell
+conda install -c conda-forge xesn
+```
+
+Installation from pip
+
+```shell
+pip install xesn
+```
+
+Installation from source
 
 ```shell
 git clone https://github.com/timothyas/xesn.git
