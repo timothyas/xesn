@@ -9,7 +9,7 @@ import re
 
 import numpy as np
 
-from .cost import CostFunction
+from .cost import CostFunction, nrmse, psd
 from .esn import ESN
 from .io import from_zarr
 from .lazyesn import LazyESN
@@ -189,9 +189,13 @@ class Driver():
                 xda = data.setup(mode="testing")
         self.localtime.stop()
 
+        # first get cost_terms, so we can unpack config conveniently in get_samples
+        cfg = self.config.copy()
+        cost_terms = cfg["testing"].pop("cost_terms", {})
+
         # pull samples from data
         self.localtime.start("Get Test Samples")
-        test_data, indices = get_samples(xda=xda, **self.config["testing"])
+        test_data, indices = get_samples(xda=xda, **cfg["testing"])
         if "sample_indices" not in self.config["testing"]:
             self.overwrite_config({"testing": {"sample_indices": indices}})
         self.localtime.stop()
@@ -205,13 +209,27 @@ class Driver():
         self.localtime.start("Make Test Predictions")
         for i, tester in enumerate(test_data):
             xds = esn.test(
-                    tester,
-                    n_steps=self.config["testing"]["n_steps"],
-                    n_spinup=self.config["testing"]["n_spinup"]
-                    )
+                tester,
+                n_steps=self.config["testing"]["n_steps"],
+                n_spinup=self.config["testing"]["n_spinup"]
+            )
             xds["prediction"] = data.normalize_inverse(xds["prediction"], keep_attrs=True)
             xds["truth"] = data.normalize_inverse(xds["truth"], keep_attrs=True)
             xds.attrs["initial_condition_index"] = indices[i]
+
+            # evaluate cost, if applicable
+            if "nrmse" in cost_terms:
+                xds["nrmse"] = nrmse(xds, drop_time=False)
+
+            if "psd_nrmse" in cost_terms:
+                xds["psd_truth"] = psd(xds["truth"])
+                xds["psd_prediction"] = psd(xds["prediction"])
+                xds["psd_nrmse"] = nrmse({
+                    "truth": xds["psd_truth"],
+                    "prediction": xds["psd_prediction"],
+                    }, drop_time=False)
+
+            xds = xds.expand_dims({"sample": [i]})
             xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
 
         self.localtime.stop()
@@ -399,7 +417,7 @@ class Driver():
                 "lazyesn": LazyESN,
                 "training": LazyESN.train,
                 "macro_training": None,
-                "testing": get_samples,
+                "testing": None,
                 "esn_weights": None}
         bad_sections = []
         for key in config.keys():

@@ -52,6 +52,9 @@ testing:
     n_samples           : 2
     n_steps             : 5
     random_seed         : 0
+    cost_terms:
+        nrmse           : 1.
+        psd_nrmse       : 1.
 
 macro_training:
     parameters:
