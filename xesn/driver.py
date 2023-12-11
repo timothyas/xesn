@@ -5,6 +5,7 @@ import yaml
 import logging
 import inspect
 from contextlib import redirect_stdout
+from copy import deepcopy
 import re
 
 import numpy as np
@@ -159,11 +160,11 @@ class Driver():
                 p_opt = optimize(cf, **self.config["macro_training"]["ego"])
         self.localtime.stop()
 
-        config_optim = self.config.copy()
-        config_optim[self.esn_name] = update_esn_kwargs(p_opt, config_optim[self.esn_name])
+        config_optim = {self.esn_name: update_esn_kwargs(p_opt)}
+        self.overwrite_config(config_optim)
         outname = os.path.join(self.output_directory, "config-optim.yaml")
         with open(outname, "w") as f:
-            yaml.dump(config_optim, stream=f)
+            yaml.dump(self.config, stream=f)
 
         self.print_log(f"Optimal configuration written to {outname}")
 
