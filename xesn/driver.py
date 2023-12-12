@@ -9,6 +9,8 @@ from copy import deepcopy
 import re
 
 import numpy as np
+import xarray as xr
+import dask.array as darray
 
 from .cost import CostFunction, nrmse, psd
 from .esn import ESN
@@ -208,6 +210,7 @@ class Driver():
 
         # make predictions
         self.localtime.start("Make Test Predictions")
+        zpath = join(self.output_directory, "test-results.zarr")
         for i, tester in enumerate(test_data):
             xds = esn.test(
                 tester,
@@ -230,15 +233,52 @@ class Driver():
                     "prediction": xds["psd_prediction"],
                     }, drop_time=False)
 
+            # Make container and store this sample
+            if i == 0:
+                self._make_container(zpath, xds, n_samples=len(test_data))
+
             xds = xds.expand_dims({"sample": [i]})
-            xds.to_zarr(join(self.output_directory, f"test-{i}.zarr"), mode="w")
+            region = {d: slice(None, None) for d in xds.dims}
+            region["sample"] = slice(i, i+1)
+            xds.to_zarr(zpath, region=region)
 
         self.localtime.stop()
 
         self.walltime.stop()
 
 
+    def _make_container(self, zstore_path, xds, n_samples, **kwargs):
+        """Create a container zarr store with empty values for the test results"""
 
+        cds = xr.Dataset()
+        cds["sample"] = xr.DataArray(
+            np.arange(n_samples),
+            coords={"sample": np.arange(n_samples)},
+            dims="sample",
+            attrs={"description": "test sample index"},
+        )
+        for d in xds.dims:
+            cds[d] = xds[d]
+
+        for key in xds.data_vars:
+            dims = ("sample",) + xds[key].dims
+            chunks = xds[key].data.chunksize if isinstance(xds[key].data, darray.Array) else \
+                     tuple(-1 for _ in xds[key].dims)
+            chunks = (1,) + chunks
+            shape = (n_samples,) + xds[key].shape
+
+            cds[key] = xr.DataArray(
+                data=darray.zeros(
+                    shape=shape,
+                    chunks=chunks,
+                    dtype=xds[key].dtype,
+                ),
+                coords={"sample": cds["sample"], **{d: xds[d] for d in xds[key].dims}},
+                dims=dims,
+                attrs=xds[key].attrs.copy(),
+            )
+
+        cds.to_zarr(zstore_path, compute=False, **kwargs)
 
 
     def _make_output_directory(self, out_dir):
