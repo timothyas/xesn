@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 class XData():
-    """A class to open a zarr store into xarray and do very simple preprocessing operations.
+    """A class for very simple processing routines for xarray.DataArrays.
     See :meth:`setup` for the main usage.
     """
 
@@ -29,7 +29,12 @@ class XData():
 
 
     def setup(self, mode):
-        """Open up a zarr store, and as desired/necessary: transpose, subsample, and normalize it.
+        """Main data processing routine, consisting of the following steps:
+
+        1. Open a dataset with xarray.open_zarr, and select the field
+        2. Potentially transpose the data to the order of :attr:`dimensions`
+        3. Use :meth:`subsample` to select the data, based on the ``mode`` argument
+        4. Use :meth:`normalize` to perform very simple normalization
 
         Args:
             mode (str): either "training", "validation", or "testing"
@@ -105,7 +110,7 @@ class XData():
 
 
     def normalize(self, xda, keep_attrs=False):
-        """Very simple, this may eventually be hooked up with scikit learn for more advanced normalization.
+        """Very simple, this may eventually be hooked up with e.g., scikit-learn for more advanced normalization.
         Right now, normalize with scalars :attr:`bias` and :attr:`scale` as
 
         .. math::

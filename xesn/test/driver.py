@@ -243,7 +243,7 @@ def eager_driver(test_data):
     driver = Driver(join(os.path.dirname(__file__), "config-eager.yaml"),
                     output_directory="test-eager-driver")
     fname = "eager-xdata.zarr"
-    edata = test_data.isel(y=0, z=0).chunk({"x":-1}).to_dataset().to_zarr(fname)
+    edata = test_data.isel(y=0, z=0).drop_vars(["y", "z"]).chunk({"x":-1}).to_dataset().to_zarr(fname)
     yield driver, edata
     rmtree(driver.output_directory)
     rmtree(fname)

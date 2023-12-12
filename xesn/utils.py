@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 def get_samples(xda, n_samples, n_steps, n_spinup, random_seed=None, sample_indices=None):
     """Pull random samples from macro_training or test dataset
@@ -61,8 +62,8 @@ def get_sample_indices(data_length, n_samples, n_steps, n_spinup, random_seed):
     return sample_indices
 
 
-def update_esn_kwargs(params, original):
-    """Update a dictionary of keyword arguments used to create an
+def update_esn_kwargs(params, original=None):
+    """Update or create a dictionary of keyword arguments used to create an
     :class:`ESN` or :class:`LazyESN` with the values denoted by ``params``.
 
     Note:
@@ -70,12 +71,12 @@ def update_esn_kwargs(params, original):
 
     Args:
         params (dict): parameter names and values contain either array/list or value of parameter
-        original (dict): with options used to create an :class:`ESN` or :class:`LazyESN`
+        original (dict, optional): with options used to create an :class:`ESN` or :class:`LazyESN`, if not provided then create a new dictionary
     Returns:
-        esnc (dict): with the updated options based on ``params``
+        esnc (dict): with the updated or new options based on ``params``
     """
 
-    esnc = original.copy()
+    esnc = dict() if original is None else deepcopy(original)
 
     for key, val in params.items():
         # do this for nicer yaml dumping
@@ -85,7 +86,12 @@ def update_esn_kwargs(params, original):
             backend = key[key.find("_")+1:]
 
             if frontend in ["input", "adjacency", "bias"]:
-                esnc[f"{frontend}_kwargs"][backend] = valnice
+                fkw = f"{frontend}_kwargs"
+                if fkw in esnc:
+                    esnc[fkw][backend] = valnice
+                else:
+                    esnc[fkw] = {backend: valnice}
+
             else:
                 esnc[key] = valnice
         else:
