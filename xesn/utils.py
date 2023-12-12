@@ -63,7 +63,7 @@ def get_sample_indices(data_length, n_samples, n_steps, n_spinup, random_seed):
 
 
 def update_esn_kwargs(params, original=None):
-    """Update a dictionary of keyword arguments used to create an
+    """Update or create a dictionary of keyword arguments used to create an
     :class:`ESN` or :class:`LazyESN` with the values denoted by ``params``.
 
     Note:
@@ -71,9 +71,9 @@ def update_esn_kwargs(params, original=None):
 
     Args:
         params (dict): parameter names and values contain either array/list or value of parameter
-        original (dict): with options used to create an :class:`ESN` or :class:`LazyESN`
+        original (dict, optional): with options used to create an :class:`ESN` or :class:`LazyESN`, if not provided then create a new dictionary
     Returns:
-        esnc (dict): with the updated options based on ``params``
+        esnc (dict): with the updated or new options based on ``params``
     """
 
     esnc = dict() if original is None else deepcopy(original)

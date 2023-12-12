@@ -1,2 +1,5 @@
 source/xesn
 generated/
+output-guess/
+output-optim/
+lorenz96-12d.zarr/

@@ -36,7 +36,9 @@ exclude_patterns = []
 
 napoleon_custom_sections = [("Returns", "params_style"),
                             ("Sets Attributes", "params_style"),
+                            ("Required Parameter Sections", "params_style"),
                             ("Assumptions", "notes_style"),
+                            ("Example Config YAML File", "example"),
                             ]
 
 

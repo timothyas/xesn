@@ -22,13 +22,17 @@ from .utils import get_samples, update_esn_kwargs
 from .xdata import XData
 
 class Driver():
-    """This is intended to automate the ESN usage. The main methods to use are:
-        - :meth:`run_training`: train ESN readout weights
-        - :meth:`run_macro_training`: use surrogate modeling toolbox to perform Bayesian optimization and learn macro-scale ESN parameters
-        - :meth:`run_test`: test a trained ESN on a number of random samples from a test dataset
+    """This is intended to automate :class:`ESN` and :class:`LazyESN` usage. The main methods to use are:
 
-    The experiments are configured with a parameter dict, that can be created either
-    with a yaml file or by explicitly passing the dict itself.
+    - :meth:`run_training`: train readout weights
+
+    - :meth:`run_macro_training`: use the `surrogate modeling toolbox <https://smt.readthedocs.io/>`_ to perform Bayesian optimization and learn macro-scale network parameters
+
+    - :meth:`run_test`: test a trained network on a number of random samples from a test dataset
+
+    Please see `this page of the documentation <https://xesn.readthedocs.io/en/latest/example_driver.html>`_ for examples of all of these, and an example configuration file.
+    The experiments are configured with the parameter dict :attr:`config`.
+    This can be created either by specifying the path to a yaml file or by explicitly passing the dict itself, see :meth:`set_config`.
 
     Args:
         config (str or dict): either a path to a yaml file or dict containing experiment parameters
@@ -77,12 +81,21 @@ class Driver():
 
 
     def run_training(self):
-        """Perform ESN training, learn the readout matrix weights.
+        """Perform :class:`ESN` or :class:`LazyESN` training, learn the readout matrix weights.
+        Resulting readout weights are stored in the :attr:`output_directory` in the zarr store ``esn-weights.zarr`` or ``lazyesn-weights.zarr``, depending on which model is used. See :meth:`ESN.to_xds` for what is stored in this dataset.
 
         Required Parameter Sections:
-            - "xdata" with options passed to :meth:`XData`, and expected time slices for "training"
-            - "esn" or "lazyesn" with options passed to :meth:`ESN` or :meth:`LazyESN`
-            - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
+            xdata: all options are used to create an :class:`XData` object. If ``subsampling`` is provided, it must have slicing options labelled "training".
+            esn or lazyesn: all options are used to create a :class:`ESN` or :class:`LazyESN` object, depending on the name of the section, case does not matter
+            training: all options are passed to :meth:`ESN.train` or :meth:`LazyESN.train`
+
+        Example Config YAML File:
+
+            Highlighted regions are used by this routine, other options are ignored.
+
+            .. literalinclude:: ../config.yaml
+                :language: yaml
+                :emphasize-lines: 1-8, 12-45
         """
 
         self.walltime.start("Starting Training")
@@ -118,16 +131,33 @@ class Driver():
 
     def run_macro_training(self):
         """Perform Bayesian optimization on macro-scale ESN parameters using surrogate modeling toolbox.
+        Resulting optimized parameters are written to ``config-optim.yaml`` and to the log file ``stdout.log`` in the :attr:`output_directory`
 
         Required Parameter Sections:
-            - "xdata" with options passed to :meth:`XData`, and expected time slices "macro_training" and "training"
-            - "esn" or "lazyesn" with options passed to :meth:`ESN` or :meth:`LazyESN`
-            - "training" with options passed to :meth:`ESN.train` or :meth:`LazyESN.train`
-            - "macro_training" with a variety of subsections:
-                - "parameters" (required) with key/value pairs as the parameters to be optimized, and their bounds as values
-                - "transformations" (optional) with any desired transformations on the input variables pre-optimization, see :func:`xesn.optim.transform` for example
-                - "forecast" with options for sample forecasts to optimize macro parameters with, see :func:`get_samples` for a list of parameters (other than xda)
-                - "ego" with parameters except for evaluation/cost function (which is defined by a :class:`CostFunction`) and surrogate (assumed to be ``smt.surrogate_models.KRG``) as passed to `smt.applications.EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
+            xdata: all options are used to create an :class:`XData` object. If ``subsampling`` is provided, it must have slicing options labelled "training" and "macro_training".
+            esn or lazyesn: all options are used to create a :class:`ESN` or :class:`LazyESN` object, depending on the name of the section, case does not matter
+            training: all options are passed to :meth:`ESN.train` or :meth:`LazyESN.train`
+            macro_training: with the following subsections
+
+                - "parameters" (required): with key/value pairs as the parameters to be optimized, and their bounds as values
+
+                - "transformations" (optional): with any desired transformations on the input variables pre-optimization, see :func:`xesn.optim.transform` for example
+
+                - "forecast" (required): with options for sample forecasts to optimize macro parameters with, see :func:`get_samples` for a list of parameters (other than xda)
+
+                - "ego" (required): with parameters except for evaluation/cost function (which is defined by a :class:`CostFunction`) and surrogate (assumed to be ``smt.surrogate_models.KRG``) as passed to `smt.applications.EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html#options>`_
+
+                - "cost_terms" (optional): forms the cost function defined in :class:`CostFunction` by determining the weights for the NRMSE and PSD\_NRMSE cost terms (default: ``{"nrmse": 1}``)
+
+                - "cost_upper_bound" (optional): remove sensitivity to values larger than this number by setting all ``numpy.inf``, ``numpy.nan``, and any value greater than this threshold to this number (default: ``1.e9``)
+
+        Example Config YAML File:
+
+            Highlighted regions are used by this method, other options are ignored.
+
+            .. literalinclude:: ../config.yaml
+                :language: yaml
+                :emphasize-lines: 1-9, 12-45, 59-85
         """
 
         self.walltime.start("Starting Macro Training")
@@ -175,11 +205,20 @@ class Driver():
 
     def run_test(self):
         """Make test predictions using a pre-trained ESN.
+        Results are stored in a zarr store in the :attr:`output_directory` as ``test-results.zarr``.
 
         Required Parameter Sections:
-            - "xdata" with options passed to :meth:`XData`
-            - "esn_weights" with options passed to :func:`from_zarr`
-            - "testing" with options passed to :func:`get_samples`, except "xda"
+            xdata: all options are used to create an :class:`XData` object. If ``subsampling`` is provided, it must have slicing options labelled "testing".
+            esn_weights: all options are passed to :func:`from_zarr` to create the :class:`ESN` or :class:`LazyESN` object
+            testing: all options passed to :func:`get_samples`, except the required "xda" parameter for that function.  In this section the user can also optionally provide the ``"cost_terms"`` dict similar to what is used in :meth:`run_macro_training`. If this is included, it adds NRMSE and/or PSD_NRMSE metrics to the ``test-results.zarr`` store, based on what is included in this dictionary. Note that the values in ``"cost_terms"`` in this section are ignored - weighting can be done offline.
+
+        Example Config YAML File:
+
+            Highlighted regions are used by this method, other options are ignored.
+
+            .. literalinclude:: ../config.yaml
+                :language: yaml
+                :emphasize-lines: 1-7, 10-14, 47-57
         """
 
         self.walltime.start("Starting Testing")
@@ -335,7 +374,7 @@ class Driver():
 
     def set_config(self, config):
         """Read the nested parameter dictionary or take it directly, and write a copy for
-        reference in the output_directory.
+        reference in the :attr:`output_directory`.
 
         Args:
             config (str or dict): filename (path) to the configuration yaml file, or nested dictionary with parameters
@@ -364,18 +403,31 @@ class Driver():
 
 
     def overwrite_config(self, new_config):
-        """Overwrite specific parameters with the values in the nested dict new_config, e.g.
-
-        new_config = {'esn':{'n_reservoir':1000}}
-
-        will overwrite driver.config['esn']['n_reservoir'] with 1000, without having
-        to recreate the big gigantic dictionary again.
+        """Overwrite specific parameters with the values in the nested dict new_config.
 
         Args:
             new_config (dict): nested dictionary with values to overwrite object's parameters with
 
         Sets Attribute:
             config (dict): with the nested dictionary based on the input config file
+
+        Example:
+            >>> driver = Driver("config.yaml")
+            >>> print(driver.config)
+            {'xdata': {'dimensions': ['x', 'time'],
+             'zstore_path': 'lorenz96-12d.zarr', ...},
+             'esn': {'n_input': 12,
+             'n_output': 12,
+             'n_reservoir': 1000, ...}}
+            >>> new_config = {'esn':{'n_reservoir':2000}, 'xdata': {'zstore_path': 'new_data.zarr'}}
+            >>>
+            >>> driver.overwrite_params(new_config)
+            >>> print(driver.config)
+            {'xdata': {'dimensions': ['x', 'time'],
+             'zstore_path': 'new_data.zarr', ...},
+             'esn': {'n_input': 12,
+             'n_output': 12,
+             'n_reservoir': 2000, ...}}
         """
 
         config = self.config.copy()
