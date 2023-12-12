@@ -42,6 +42,7 @@ for efficient CPU and GPU deployment.
    Using the Standard ESN <example_esn_usage>
    Using the Parallel ESN <example_lazy_usage>
    Macro Parameter Optimization <example_macro_training>
+   Writing Less Code with the Driver Class <example_driver>
 
 .. toctree::
    :maxdepth: 1
