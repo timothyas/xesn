@@ -19,3 +19,4 @@ from .matrix import RandomMatrix, SparseRandomMatrix
 from .cost import CostFunction
 from .optim import optimize
 from .psd import psd
+from .xdata import XData

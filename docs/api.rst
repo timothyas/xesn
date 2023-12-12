@@ -34,4 +34,4 @@ Everything Else
    xesn.Driver
    xesn.RandomMatrix
    xesn.SparseRandomMatrix
-   xesn.xdata.XData
+   xesn.XData
