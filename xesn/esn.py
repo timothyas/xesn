@@ -105,8 +105,10 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
-        if _use_cupy and adjacency_kwargs["normalization"] == "eig":
-            raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+        if _use_cupy:
+            normalization = adjacency_kwargs.get("normalization", "multiply")
+            if normalization == "eig":
+                raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
 
 
     @staticmethod
@@ -206,7 +208,7 @@ class ESN():
         assert n_time >= n_spinup
 
         self.Wout = _train_1d(
-                u.values, y.values, n_spinup, batch_size,
+                u.data, y.data, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
                 self.tikhonov_parameter)
 
@@ -231,7 +233,7 @@ class ESN():
 
         self._time_check(y, "ESN.predict", "y")
 
-        yT = y.values.T
+        yT = y.data.T
         _, n_time = y.shape
         assert n_time >= n_spinup
 
@@ -395,12 +397,15 @@ class ESN():
         tslice = slice(n_spinup, n_spinup+n_steps+1)
         fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
         fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
+
+        tvals = coords["time"].isel(time=tslice).get() if coords["time"].cupy.is_cupy else \
+                coords["time"].isel(time=tslice).values
         fcoords["time"] = xr.DataArray(
-                coords["time"].isel(time=tslice).values,
-                coords={"ftime": fcoords["ftime"]},
-                dims="ftime",
-                attrs=coords["time"].attrs.copy(),
-                )
+            tvals,
+            coords={"ftime": fcoords["ftime"]},
+            dims="ftime",
+            attrs=coords["time"].attrs.copy(),
+        )
         return fdims, fcoords
 
 
@@ -408,15 +413,16 @@ class ESN():
     def _get_ftime(time):
         """input time should be sliced to only have initial conditions and prediction"""
 
-        ftime = time.values - time.values[0]
+        ftime = time.data - time.data[0]
 
         # handle floating point numbers
-        if isinstance(time.values[0], float) and "delta_t" in time.attrs:
+        if isinstance(time.data[0], float) and "delta_t" in time.attrs:
             decimals = xp.abs(
                 Decimal(str(time.delta_t)).as_tuple().exponent
             )
             ftime = xp.round(ftime, decimals)
 
+        ftime = ftime.get() if _use_cupy else ftime
         xftime = xr.DataArray(
                 ftime,
                 coords={"ftime": ftime},

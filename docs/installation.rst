@@ -56,6 +56,8 @@ there are a couple of additional dependencies required::
 Using GPUs
 ==========
 
-In order to use this package on GPUs, please install cupy separately, following
+In order to use this package on GPUs, please install cupy and cupy-xarray as well, following
 their installation instructions
-`here <https://docs.cupy.dev/en/stable/install.html>`_.
+`here <https://docs.cupy.dev/en/stable/install.html>`_
+and 
+`here <https://cupy-xarray.readthedocs.io/>`_
