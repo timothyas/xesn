@@ -6,7 +6,6 @@ import xarray as xr
 from shutil import rmtree
 
 import dask.array as darray
-import cupy_xarray
 
 from xesn import _use_cupy
 from xesn.lazyesn import LazyESN
@@ -16,6 +15,7 @@ from xesn.test.esn import TestESN
 
 if _use_cupy:
     from cupy.testing import assert_allclose, assert_array_equal
+    import cupy_xarray
 else:
     from numpy.testing import assert_allclose, assert_array_equal
 

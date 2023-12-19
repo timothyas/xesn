@@ -2,19 +2,17 @@ import pytest
 
 from copy import deepcopy
 import numpy as np
-
 import xarray as xr
 from shutil import rmtree
 
+from xesn import _use_cupy
 from xesn.esn import ESN
 from xesn.io import from_zarr
-
-from xesn import _use_cupy
-import cupy_xarray
 
 if _use_cupy:
     from cupy.testing import assert_allclose, assert_array_equal
     import cupy as xp
+    import cupy_xarray
 else:
     from numpy.testing import assert_allclose, assert_array_equal
     import numpy as xp
