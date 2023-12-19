@@ -2,12 +2,22 @@ import pytest
 
 from copy import deepcopy
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
+
 import xarray as xr
 from shutil import rmtree
 
 from xesn.esn import ESN
 from xesn.io import from_zarr
+
+from xesn import _use_cupy
+import cupy_xarray
+
+if _use_cupy:
+    from cupy.testing import assert_allclose, assert_array_equal
+    import cupy as xp
+else:
+    from numpy.testing import assert_allclose, assert_array_equal
+    import numpy as xp
 
 class TestESN:
     n_input             = 3
@@ -246,6 +256,10 @@ def test_data():
                     coords={"x": np.arange(tester.n_output), "time": time},
                     dims=("x", "time"))
                 }
+        if _use_cupy:
+            datasets[n_input]["u"] = datasets[n_input]["u"].as_cupy()
+            datasets[n_input]["y"] = datasets[n_input]["y"].as_cupy()
+
     yield datasets
 
 class TestTraining(TestESN):
@@ -310,7 +324,7 @@ class TestPrediction(TestESN):
         v = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
 
         # With zero spinup, these arrays actually should be equal
-        assert_array_equal(v[:, 0], u[:, 0])
+        assert_array_equal(v[:, 0].data, u[:, 0].data)
         assert v.shape == (esn.n_output, self.n_steps+1)
 
     @pytest.mark.parametrize(
@@ -343,7 +357,7 @@ class TestPrediction(TestESN):
             assert xds["prediction"].shape == (esn.n_output, self.n_steps+1)
             assert xds["prediction"].shape == xds["truth"].shape
             assert xds["prediction"].dims == xds["truth"].dims
-            assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+            assert_array_equal(xds["prediction"].isel(ftime=0).data, xds["truth"].isel(ftime=0).data)
 
 
     def test_time_is_last(self, test_data):
@@ -385,12 +399,12 @@ class TestPrediction(TestESN):
 
         assert_allclose(esn.W.data, esn2.W.data)
 
-        # make sure Wout is a numpy array
-        assert isinstance(esn2.Wout, np.ndarray)
+        # make sure Wout is a numpy or cupy (not dask) array
+        assert isinstance(esn2.Wout, xp.ndarray)
 
         v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=1)
         v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=1)
-        assert_allclose(v1, v2)
+        assert_allclose(v1.data, v2.data)
 
         rmtree(self.path)
 

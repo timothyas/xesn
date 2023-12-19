@@ -1,5 +1,6 @@
 
 from scipy import stats
+from scipy.sparse.linalg import svds as scipy_svds
 
 from . import _use_cupy
 if _use_cupy:
@@ -293,7 +294,15 @@ class SparseRandomMatrix(RandomMatrix):
 
         denominator = 1.0
         if self.normalization == "svd":
-            s = sparse.linalg.svds(A, k=1, which="LM", return_singular_vectors=False)
+            # cupy.sparse.linalge.svds and cupy.sparse.linalg.eigsh fail when k is close to
+            # the shape of A, and seems like when min(A.shape) == k+2
+            # see here https://github.com/cupy/cupy/issues/6863
+            # so for 3x3 systems compute with numpy
+            if _use_cupy and min(A.shape) == 3:
+                s = scipy_svds(A.get(), k=1, which="LM", return_singular_vectors=False)
+                s = xp.float64(s)
+            else:
+                s = sparse.linalg.svds(A, k=1, which="LM", return_singular_vectors=False)
             denominator = xp.max(xp.abs(s))
 
         elif self.normalization == "eig":

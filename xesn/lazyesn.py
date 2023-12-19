@@ -181,6 +181,7 @@ class LazyESN(ESN):
                 chunks=self._Wout_chunks,
                 enforce_ndim=True,
                 dtype=xp.float64,
+                meta=xp.array((), dtype=xp.float64),
         )
 
         self.Wout = self.Wout.persist() if self.persist else self.Wout
@@ -207,6 +208,7 @@ class LazyESN(ESN):
 
         dkw = { "enforce_ndim"  : True,
                 "dtype"         : xp.float64,
+                "meta"          : xp.ndarray((), xp.float64),
                 }
 
         # Spinup
