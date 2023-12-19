@@ -156,7 +156,7 @@ class TestMatricesDefault(TestESN):
 
 
 @pytest.mark.parametrize(
-        "distribution", ["uniform"],#, "normal", "gaussian"],
+        "distribution", ["uniform", "normal", "gaussian"],
 )
 class TestMatrices(TestESN):
 

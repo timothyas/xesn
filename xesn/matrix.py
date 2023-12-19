@@ -300,7 +300,7 @@ class SparseRandomMatrix(RandomMatrix):
             # so for 3x3 systems compute with numpy
             if _use_cupy and min(A.shape) == 3:
                 s = scipy_svds(A.get(), k=1, which="LM", return_singular_vectors=False)
-                s = xp.float64(s)
+                s = xp.float64(s[0])
             else:
                 s = sparse.linalg.svds(A, k=1, which="LM", return_singular_vectors=False)
             denominator = xp.max(xp.abs(s))
