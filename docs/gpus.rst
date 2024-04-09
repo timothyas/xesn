@@ -5,8 +5,8 @@ The eager and lazy ESN frameworks are currently implemented using
 `cupy <https://cupy.dev/>`_, with the
 `cupy-xarray <https://cupy-xarray.readthedocs.io/>`_
 API.
-With this update there are only small changes that need to be made to the
-CPU-based examples.
+There are only small changes that need to be made to the
+CPU-based examples in order to run them on a GPU.
 
 Required Changes and Tips Using Standard and Parallel ESNs
 ----------------------------------------------------------
@@ -21,6 +21,8 @@ Required Changes and Tips Using Standard and Parallel ESNs
       tester = tester.as_cupy()
 
    after these datasets have been created.
+   Note that this is taken care of automatically by using the
+   :class:`xesn.Driver` class.
 
 2. The eigenvalue-based ESN adjacency matrix normalization method (i.e.,
    spectral radius) can no longer be used, so this option must be set to
