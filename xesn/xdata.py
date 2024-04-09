@@ -2,6 +2,9 @@
 
 import numpy as np
 import xarray as xr
+import cupy_xarray
+
+from . import _use_cupy
 
 class XData():
     """A class for very simple processing routines for xarray.DataArrays.
@@ -46,6 +49,9 @@ class XData():
         # get lazy data, return xarray dataset
         ds = xr.open_zarr(self.zstore_path)
         xda = ds[self.field_name]
+
+        if _use_cupy:
+            xda = xda.as_cupy()
 
         dims = self.dimensions if self.dimensions is not None else xda.dims
         if tuple(dims) != xda.dims:

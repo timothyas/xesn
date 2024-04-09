@@ -12,6 +12,7 @@ import numpy as np
 import xarray as xr
 import dask.array as darray
 
+from . import _use_cupy
 from .cost import CostFunction, nrmse, psd
 from .esn import ESN
 from .io import from_zarr
@@ -106,6 +107,9 @@ class Driver():
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
                 xda = data.setup(mode="training")
+
+        if "lazy" not in self.esn_name:
+            xda = xda.load()
         self.localtime.stop()
 
         # setup ESN
@@ -170,6 +174,9 @@ class Driver():
             with redirect_stdout(file):
                 xda = data.setup(mode="macro_training")
 
+        if "lazy" not in self.esn_name:
+            xda = xda.load()
+
         macro_data, indices = get_samples(xda=xda, **self.config["macro_training"]["forecast"])
         if "sample_indices" not in self.config["macro_training"]["forecast"]:
             self.overwrite_config({"macro_training": {"forecast": {"sample_indices": indices}}})
@@ -178,6 +185,8 @@ class Driver():
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
                 xda = data.setup(mode="training")
+        if "lazy" not in self.esn_name:
+            xda = xda.load()
         self.localtime.stop()
 
         # create cost function
@@ -229,6 +238,9 @@ class Driver():
         with open(self.logfile, 'a') as file:
             with redirect_stdout(file):
                 xda = data.setup(mode="testing")
+
+        if "lazy" not in self.esn_name:
+            xda = xda.load()
         self.localtime.stop()
 
         # first get cost_terms, so we can unpack config conveniently in get_samples
@@ -279,6 +291,8 @@ class Driver():
             xds = xds.expand_dims({"sample": [i]})
             region = {d: slice(None, None) for d in xds.dims}
             region["sample"] = slice(i, i+1)
+            if _use_cupy:
+                xds = xds.as_numpy()
             xds.to_zarr(zpath, region=region)
 
         self.localtime.stop()

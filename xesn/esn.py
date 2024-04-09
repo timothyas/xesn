@@ -208,6 +208,10 @@ class ESN():
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
+        # load the data
+        u = u.load()
+        y = y.load()
+
         self.Wout = _train_1d(
                 u.data, y.data, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
@@ -233,6 +237,9 @@ class ESN():
         """
 
         self._time_check(y, "ESN.predict", "y")
+
+        # load the data
+        y = y.load()
 
         yT = y.data.T
         _, n_time = y.shape
