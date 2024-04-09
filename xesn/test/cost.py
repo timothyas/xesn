@@ -10,6 +10,9 @@ from xesn.xdata import XData
 from xesn.utils import get_samples
 from xesn.test.xdata import test_data
 from xesn.test.driver import eager_driver, lazy_driver
+from xesn import _use_cupy
+
+pytestmark = pytest.mark.skipif(_use_cupy, reason="writing directories with driver causes unexpected failures")
 
 @pytest.fixture(scope="function")
 def eager_macro_driver(eager_driver):

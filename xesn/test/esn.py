@@ -380,6 +380,8 @@ class TestPrediction(TestESN):
             elif key in self.close_list:
                 assert_allclose(test, expected)
 
+        if _use_cupy:
+            ds = ds.as_numpy()
         ds.to_zarr(self.path, mode="w")
         esn2 = from_zarr(self.path)
         for key in self.kw.keys():
@@ -411,6 +413,8 @@ class TestPrediction(TestESN):
         esn, u = self.custom_setup_method(test_data)
         ds = esn.to_xds()
         del ds["Wout"]
+        if _use_cupy:
+            ds = ds.as_numpy()
         ds.to_zarr(self.path, mode="w")
 
         with pytest.warns():

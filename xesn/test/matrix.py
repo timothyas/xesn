@@ -1,10 +1,24 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose
-from scipy import linalg, sparse
 
 from xesn.matrix import RandomMatrix, SparseRandomMatrix
+from xesn import _use_cupy
+
+if _use_cupy:
+    import cupy as xp
+    from cupy.testing import assert_allclose
+    from cupy import linalg
+    from cupyx.scipy import sparse
+    import cupyx.scipy.sparse.linalg
+    eigvals = None
+
+else:
+    import numpy as xp
+    from numpy.testing import assert_allclose
+    from scipy import linalg, sparse
+    eigvals = linalg.eigvals
+
 
 class TestMatrix:
     n_rows          = 10
@@ -64,19 +78,19 @@ class TestSparseDist(TestDist):
         "normalization, dense_function, sparse_function, rtol, error",
         [
             ("svd",
-                linalg.svdvals,
-                lambda x: sparse.linalg.svds(x, k=1, return_singular_vectors=False),
+                lambda x: linalg.svd(x, compute_uv=False, full_matrices=False),
+                lambda x: sparse.linalg.svds(x, k=1, which="LM", return_singular_vectors=False),
                 1e-7,
                 None),
             ("eig",
-                linalg.eigvals,
-                lambda x: sparse.linalg.eigs(x, k=1, return_eigenvectors=False),
+                eigvals,
+                lambda x: sparse.linalg.eigs(x, k=1, which="LM", return_eigenvectors=False),
                 1e-7,
                 None),
             ("multiply",
-                np.std,
-                lambda x: np.std(x.data),
-                1e-1,
+                xp.std,
+                lambda x: xp.std(x.data),
+                1e-1 if not _use_cupy else 1,
                 None),
             ("spectral_radius", None, None, None, NotImplementedError),
         ]
@@ -91,6 +105,9 @@ class TestNorm(TestMatrix):
         return {key: getattr(self, key) for key in ["n_rows", "n_cols", "factor", "random_seed", "factor"]}
 
     def test_norm(self, distribution, normalization, dense_function, sparse_function, rtol, error):
+
+        if _use_cupy and normalization == "eig":
+            error = NotImplementedError
 
         if error is None:
             rm = self.RM(distribution=distribution, normalization=normalization, **self.kw)

@@ -1,13 +1,17 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
 import xarray as xr
 from shutil import rmtree
 
 import dask.array as darray
 
 from xesn.xdata import XData
+from xesn import _use_cupy
+if _use_cupy:
+    from cupy.testing import assert_allclose, assert_array_equal
+else:
+    from numpy.testing import assert_allclose, assert_array_equal
 
 
 class TestXData:
@@ -106,6 +110,9 @@ class TestSetup(TestXData):
         else:
             slc = slice(*self.value_sampling[dim]) if dim != "time" else slice(*self.value_sampling[dim][mode])
             expected = test_data.sel({dim: slc})
+
+        if _use_cupy:
+            expected = expected.as_cupy()
         return expected
 
     def test_pass(self, test_data):
@@ -223,7 +230,7 @@ class TestSetup(TestXData):
             assert_allclose(test[dim], expected[dim])
 
         expected = (expected - self.normalization["bias"]) / self.normalization["scale"]
-        assert_allclose(test, expected)
+        assert_allclose(test.compute().data, expected.compute().data)
 
     def test_transpose(self, test_data):
         dimsT = ("x","z","y","time")

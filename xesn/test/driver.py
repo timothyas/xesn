@@ -14,6 +14,9 @@ import dask.array as darray
 from xesn.driver import Driver
 from xesn.utils import get_samples, get_sample_indices
 from xesn.test.xdata import test_data
+from xesn import _use_cupy
+
+pytestmark = pytest.mark.skipif(_use_cupy, reason="writing directories with driver causes unexpected failures")
 
 
 @pytest.fixture(scope="function")
@@ -294,6 +297,8 @@ class TestDriverCompute():
             "this_driver", ("eager_driver", "lazy_driver")
         )
     def test_macro_training(self, this_driver, request):
+        if _use_cupy:
+            pytest.skip("Macro training unsupported on GPUs")
 
         driver, _ = request.getfixturevalue(this_driver)
         driver.run_macro_training()

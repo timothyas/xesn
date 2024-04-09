@@ -1,8 +1,17 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
+
 
 from xesn.optim import transform, inverse_transform
+from xesn import _use_cupy
+
+if _use_cupy:
+    import cupy as xp
+    from cupy.testing import assert_allclose, assert_array_equal
+else:
+    import numpy as xp
+    from numpy.testing import assert_allclose, assert_array_equal
+
 
 @pytest.fixture(scope="function")
 def transform_params():
@@ -36,9 +45,9 @@ def test_transform(transform_inputs, request):
     params, transforms = request.getfixturevalue(transform_inputs)
     ptest = transform(params, transforms)
 
-    assert_allclose(np.array(ptest["input_factor"]), np.log10(np.array(params["input_factor"])))
-    assert_allclose(np.array(ptest["adjacency_factor"]), np.log(np.array(params["adjacency_factor"])))
-    assert_allclose(np.array(ptest["bias_factor"]), np.array(params["bias_factor"]))
+    assert_allclose(xp.array(ptest["input_factor"]), xp.log10(xp.array(params["input_factor"])))
+    assert_allclose(xp.array(ptest["adjacency_factor"]), xp.log(xp.array(params["adjacency_factor"])))
+    assert_allclose(xp.array(ptest["bias_factor"]), xp.array(params["bias_factor"]))
 
 
 @pytest.mark.parametrize(
@@ -49,9 +58,9 @@ def test_inverse_transform(transform_inputs, request):
     params, transforms = request.getfixturevalue(transform_inputs)
     ptest = inverse_transform(params, transforms)
 
-    assert_allclose(np.array(ptest["input_factor"]), 10.** np.array(params["input_factor"]))
-    assert_allclose(np.array(ptest["adjacency_factor"]), np.exp(np.array(params["adjacency_factor"])))
-    assert_allclose(np.array(ptest["bias_factor"]), np.array(params["bias_factor"]))
+    assert_allclose(xp.array(ptest["input_factor"]), 10.** xp.array(params["input_factor"]))
+    assert_allclose(xp.array(ptest["adjacency_factor"]), xp.exp(xp.array(params["adjacency_factor"])))
+    assert_allclose(xp.array(ptest["bias_factor"]), xp.array(params["bias_factor"]))
 
 @pytest.mark.parametrize(
         "transformer", (transform, inverse_transform)

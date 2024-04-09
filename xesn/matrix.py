@@ -105,6 +105,9 @@ class RandomMatrix():
             assert self.normalization in ("svd", "eig", "multiply")
         except AssertionError:
             raise NotImplementedError(f"RandomMatrix.__init__: '{self.normalization}' not recgonized, only 'svd', 'eig', and 'multiply' are implemented")
+
+        if _use_cupy and self.normalization == "eig":
+            raise NotImplementedError(f"RandomMatrix.__init__: '{self.normalization}' not available with CuPy.")
         # Create random state
         self.random_state = xp.random.RandomState(self.random_seed)
 
