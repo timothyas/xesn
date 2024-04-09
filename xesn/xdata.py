@@ -2,9 +2,12 @@
 
 import numpy as np
 import xarray as xr
-import cupy_xarray
+
 
 from . import _use_cupy
+
+if _use_cupy:
+    import cupy_xarray
 
 class XData():
     """A class for very simple processing routines for xarray.DataArrays.

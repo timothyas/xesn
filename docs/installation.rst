@@ -45,8 +45,11 @@ Running Example Notebooks or Building the Documentation Locally
 
 Due to the way pandoc is installed via pip `as detailed here
 <https://stackoverflow.com/a/71585691>`_
-it is recommended to create an environment with conda in order to build the
-documentation locally.
+it is recommended to create an environment with conda
+using
+`this environment file
+<https://github.com/timothyas/xesn/blob/main/ci/environment.yaml>`_
+in order to build the documentation locally.
 This is also recommended for running any of the example notebooks locally, since
 there are a couple of additional dependencies required::
 
@@ -61,3 +64,10 @@ their installation instructions
 `here <https://docs.cupy.dev/en/stable/install.html>`_
 and 
 `here <https://cupy-xarray.readthedocs.io/>`_
+The environment can also be created by uncommenting the following two lines of
+`this environment file
+<https://github.com/timothyas/xesn/blob/main/ci/environment.yaml>`_
+and creating the environment as follows::
+
+    conda env create -f docs/environment.yaml
+    conda activate xesn

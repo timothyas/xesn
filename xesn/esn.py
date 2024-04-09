@@ -4,12 +4,13 @@ from decimal import Decimal
 import xarray as xr
 import dask.array as darray
 import numpy as np
-import cupy_xarray
+
 
 from . import _use_cupy
 if _use_cupy:
     import cupy as xp
     from cupy.linalg import solve
+    import cupy_xarray
 
 else:
     import numpy as xp
