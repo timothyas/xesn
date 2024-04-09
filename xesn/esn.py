@@ -4,6 +4,7 @@ from decimal import Decimal
 import xarray as xr
 import dask.array as darray
 import numpy as np
+import cupy_xarray
 
 from . import _use_cupy
 if _use_cupy:
@@ -327,11 +328,9 @@ class ESN():
 
         # the main stuff
         dims = ("iy", "ir")
-        if isinstance(self.Wout, darray.Array):
-            Wout = self.Wout
-        else:
-            Wout = self.Wout.get() if _use_cupy else self.Wout
-        ds["Wout"] = xr.DataArray(Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
+        ds["Wout"] = xr.DataArray(self.Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
+
+
 
         # everything else
         ds.attrs.update(self._get_attrs())
