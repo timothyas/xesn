@@ -35,61 +35,120 @@ bibliography: docs/references.bib
 
 # Summary
 
-Xesn is a python package that
-* allows scientists to easily develop Echo State Networks (ESNs) for a variety of
-  forecasting problems
-* ESNs are a particular form of RNN originally introduced by ...
-  which have been shown to be performant in forecasting chaotic dynamics,
-  and are therefore a powerful network choice for a variety of problems
-* however, due to the relative simplicity of the ESN architecture, many
-  scientists implement the network from scratch
-* xesn provides a straightforward and standard implementation of ESNs, which can
-  flexibly handle multi dimensional forecasting tasks
-* xesn aims to strike the balance between simplicity and flexibility, so
-  that users have the tools options necessary to design powerful networks in a
-  standardized, trimmed down, performant framework.
-* the package does this by providing design options
-  based on network design aspects that were shown to be most impactful by
-  [@platt_systematic_2022]
-* xesn was initially developed to tackle the problem of forecasting weather
-  dynamics, and so it integrates with Python packages familiar to weather and
-  climate scientists
-* however, the package is ultimately general, and could be utilized in other
-  domains where ESNs have been useful such as ... economics, signal processing,
-  and biomedical applications.
+Xesn is a python package that allows scientists to easily design
+Echo State Networks (ESNs) for forecasting problems.
+ESNs are a Recurrent Neural Network architecture introduced by [@jaeger_echo_2001]
+that are part of a class of techniques termed Reservoir Computing.
+One defining characteristic of these techniques is that all internal weights are
+determined by a handful of global, scalar parameters, thereby avoiding problems
+during backpropagation and reducing training time significantly.
+Because this architecture is relatively simple, many scientists implement ESNs
+from scratch, leading to questions about .
+Xesn offers a straightforward, standard implementation of ESNs that operates
+efficiently on CPU and GPU hardware.
+The package leverages optimization tools to automate the parameter selection
+process, so that scientists can reduce the time finding a good architecture and
+focus on using ESNs for their domain application.
+Importantly, the package flexibly handles forecasting tasks for multi-dimensional datasets,
+eliminating the need to write parallel programming code.
+Xesn was initially develoepd to handle the problem of forecasting weather
+dynamics, and so it integrates naturally with Python packages that have become
+familiar to weather and climate scientists.
+However, the software is ultimately general enough to be utilized in other
+domains where ESNs have been useful, such as in economics, signal processing,
+and biological applications.
 
 
 # Statement of need
 
-1. ESNs are simple, but self implementation leaves
-    * lots of room for unnecessary experimentation
-    * lots of room for code efficiency
+ESNs are a conceptually simple recurrent neural network architecture.
+As shown in section ??
+they are defined by a simple set of equations, a single hidden layer, and a
+handful of parameters.
+Because of the architecture's simplicity, many scientists who use ESNs implement
+it from scratch.
+While this approach can work well for low dimensional problems, the situation
+quickly becomes more complicated when:
 
-   Addressed with
-    * relatively standardized approach, (for example don't do the different
-      readout options) which streamlines the code and interacts
-      with NumPy/SciPy or CuPy for compute and memory efficiency
-    * xarray allows for efficient I/O with zarr
-    * parameter optimization, to automate the architecture tuning process
+1. deploying the code on GPUs,
+2. interacting with a parameter optimization algorithm in order to tune the
+   model, and
+3. parallelizing the architecture for higher dimensional applications.
 
-2. Multi dimensional applications:
-    * most ESN implementations make forecasts of 1D state vectors, but many
-      forecasting applications, such as weather, are multi dimensional
-    * multi dimensional architecture used in Arcomano et al in Fortran, and is
-      more designed for hybrid physics-ML applications
-    * we provide this in Python in an easy to use interface
-    * In multi dimensional applications, the size of the reservoir will usually
-      need to increase in order to
+Xesn is designed to address all of these points.
+Additionally, while there are some design flexibilities for the ESN
+architectures, the overall interface is streamlined, based on the parameter and
+design impact study shown by [@platt_systematic_2022].
+Users who require a more general Reservoir Computing framework may prefer to use
+ReservoirPy CITE (see discussion below).
+
+## GPU Deployment
+
+At its core, xesn uses NumPy CITE and SciPy [@scipy_2020] to perform array based
+operations on CPUs, and it uses CuPy [@cupy_learningsys2017] to operate on GPUs.
+
+## Parameter Optimization
+
+Although ESNs do not employ backpropagation to train the internal weights of the
+input matrix, adjacency matrix, or bias vector
+their behavior and performance is highly sensitive to a set of
+5 hyperparameters
+(see section XX for math and ).
+Moreover, the interaction of these parameters is often not straightforward, and
+it is therefore advantageous to optimize these parameter values
+[@platt_systematic_2022].
+Xesn enables parameter optimization by integrating with the Surrogate Modeling
+Toolbox [@bouhlel_scalable_2020].
+
+The parameter optimization process is somewhat complex, requiring the user to
+specify a variety of hyperparameters (e.g., the optimization bounds for each
+parameter and the maximum number of optimization steps to take).
+Additionally, for large problems, the process can have heavy compute
+requirements and therefore necessitate HPC or cloud resources.
+Xesn provides a simple interface so that the user can specify all of the
+settings for training, parameter optimization, and testing with a single yaml
+file.
+By doing so, all parts of the experiment are more easily reproducible and easier to manage
+with scheduling systems like SLURM on HPC environments or in the cloud.
+
+## Scaling to Higher Dimensions
+
+It is typical for ESNs to use a hidden layer that is $\mathcal{O}(10-100)$ times
+larger than the input and target space.
+Forecasting large target spaces (e.g., $>\mathcal{O}(10^6)$ in weather and
+climate modeling) quickly becomes intractable with a single reservoir.
+To address this, [@pathak_model-free_2018] developed a parallelization strategy
+so that multiple reservoirs can make predictions of a single, high dimensional
+system.
+This parallelization was generalized for multi dimensions in
+[@arcomano_machine_2020] and [@smith_temporal_2023], the latter of which served
+as the basis for xesn.
+
+Xesn enables prediction for multi dimensional systems by integrating its high
+level operations with xarray CITE.
+As with xarray, users refer to dimensions based on their named axis (e.g., "x",
+"y", or "time" instead of logical indices 0, 1, 2).
+Xesn parallelizes the core array based operations by using dask [@dask_2016]
+to map them across available resources, which can include a multi threaded
+environment on a laptop or single node, or a distributed computing resource
+(either traditional HPC or in the cloud).
 
 
-   Addressed with:
-    * leans on xarray, which handles multidimensional data easily via
-      named axes
-    * uses dask to parallelize multiple reservoirs in whatever parallel
-      computing environment is available (e.g., multiple threads on a single
-      laptop or multiple processes across many nodes in the cloud or in a
-      traditional HPC environment)
+## Existing Reservoir Computing Software
 
+It is important to note that there is already an existing software package in
+Python for Reservor Computing, called reservoirpy.
+To our knowledge, the purpose of this package is distinctly different.
+The focus of reservoirpy is to develop a highly generic framework for Reservoir
+Computing, for example, allowing one to change the network node type and graph structure
+underlying the reservoir, and allowing for delayed connections.
+On the other hand, xesn is focused specifically on implementing ESN
+architectures that can scale to high dimensional forecasting tasks.
+Additionally, while reservoirpy enables hyperparameter grid search capabilities,
+xesn enables parameter optimization as noted above.
+
+Finally, we note the code base for CITE Arcomano, which implements ESNs in
+Fortran, which can be used for hybrid physics-ML modeling.
 
 # Background
 
@@ -115,18 +174,46 @@ is defined as follows:
     \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
    \mathbf{b})
 \end{equation}
+
 **TODO** Align these two eqns
+
 \begin{equation}
    \hat{\mathbf{v}}(n + 1) = \mathbf{W}_\text{out} \mathbf{r}(n+1)
 \end{equation}
-
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
 $u(n)\in\mathbb{R}^{N_\text{in}}$ is the input system state, and
 $\hat{\mathbf{v}}(n)\in\mathbb{R}^{N_\text{out}}$ is the estimated target or output system state, all at
 timestep $n$.
 
-* linear readout becasue Platt et al
+The input matrix, adjacency matrix, and bias vector are generally defined as
+follows:
+
+\begin{equation}
+   \mathbf{W} = \dfrac{\rho}{f(\hat{\mathbf{W}})}
+   \hat{\mathbf{W}}
+\end{equation}
+
+\begin{equation}
+   \mathbf{W}_\text{in} = \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
+   \hat{\mathbf{W}}_\text{in}
+\end{equation}
+
+\begin{equation}
+   \mathbf{b} = \sigma_b\hat{\mathbf{b}}
+\end{equation}
+
+where $\rho$, $\sigma$, and $\sigma_b$ are scaling factors that are chosen or
+optimized by the user.
+The denominators $f(\hat{\mathbf{W}})$ and $g(\hat{\mathbf{W}}_\text{in})$ are normalization factors,
+based on the user's specification (e.g., largest singular value).
+The matrices $\hat{\mathbf{W}}$ and $\hat{\mathbf{W}}_\text{in}$ and vector
+$\hat{\mathbf{b}}$ are generated randomly, and the user can specify the
+underlying distribution used.
+
+We note that this ESN definition assumes a linear readout, and xesn specifically does
+not employ more complicated readout operators because it was shown to not matter
+when the ESN parameters in Section XX are optimized in [@platt_systematic_2022]
 
 ## Training
 
