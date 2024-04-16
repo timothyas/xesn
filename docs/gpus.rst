@@ -5,6 +5,8 @@ The eager and lazy ESN frameworks are currently implemented using
 `cupy <https://cupy.dev/>`_, with the
 `cupy-xarray <https://cupy-xarray.readthedocs.io/>`_
 API.
+See `these installation instructions <installation.rst#Using-GPUs>`_
+for setting up to use GPUs.
 There are only small changes that need to be made to the
 CPU-based examples in order to run them on a GPU.
 

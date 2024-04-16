@@ -63,7 +63,7 @@ In order to use this package on GPUs, please install cupy and cupy-xarray as wel
 their installation instructions
 `here <https://docs.cupy.dev/en/stable/install.html>`_
 and 
-`here <https://cupy-xarray.readthedocs.io/>`_
+`there <https://cupy-xarray.readthedocs.io/>`_
 An appropriate conda environment can also be created by uncommenting the following two lines of
 `this environment file
 <https://github.com/timothyas/xesn/blob/main/ci/environment.yaml>`_
