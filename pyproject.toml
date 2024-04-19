@@ -17,7 +17,7 @@ test = [
     "pytest", "coverage",
 ]
 gpus = [
-    "cupy"
+    "cupy", "cupy-xarray",
 ]
 
 [project.urls]
