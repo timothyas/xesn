@@ -5,7 +5,6 @@ dependencies:
 # Basics
     - numpy
     - scipy
-      #- cupy
     - matplotlib
 # xarray et al
     - xarray
@@ -20,3 +19,6 @@ dependencies:
 # Testing
     - pytest
     - coverage
+# GPUs
+#    - cupy
+#    - cupy-xarray

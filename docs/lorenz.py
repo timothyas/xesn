@@ -1,5 +1,17 @@
+try:
+    import cupy as xp
+    xp.cuda.runtime.getDeviceCount()
+    _use_cupy = True
+
+except ImportError:
+    _use_cupy = False
+
+except xp.cuda.runtime.CUDARuntimeError:
+    _use_cupy = False
+
 import numpy as np
 import xarray as xr
+import cupy_xarray
 from scipy.integrate import odeint
 
 class Lorenz96():
@@ -65,4 +77,7 @@ class Lorenz96():
             }
         )
         xda["time"].attrs["delta_t"] = self.delta_t
+
+        if _use_cupy:
+            xda = xda.as_cupy()
         return xda

@@ -21,6 +21,9 @@ def optimize(cost_function, **kwargs):
         params_opt (dict): with keys as parameter names and values as the determined optimal parameter values
     """
 
+    if _use_cupy:
+        raise NotImplementedError(f"optimization uses smt, which does not support GPUs/cupy")
+
     macro_params = cost_function.config["macro_training"]["parameters"]
     transformations = cost_function.config["macro_training"]["transformations"]
     bounds_transformed  = transform(macro_params, transformations)

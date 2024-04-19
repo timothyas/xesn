@@ -1,7 +1,13 @@
 import numpy as np
 import xarray as xr
+
+from . import _use_cupy
 from scipy.stats import binned_statistic
-from scipy.fft import fft, fft2, fftfreq
+from scipy.fft import fftfreq
+if _use_cupy:
+    from cupyx.scipy.fft import fft, fft2
+else:
+    from scipy.fft import fft, fft2
 
 def psd(xda):
     """Compute the 1D Power Spectral Density of a 1D, 2D, or 3D array, varying in time (so 2-4 axes total).
@@ -9,6 +15,7 @@ def psd(xda):
 
     Note:
         This function is not lazy, and will call the entire array into memory before computing the PSD.
+        Additionally, the final binning does not run on the GPU, so it will pull FFT data to the CPU, and put it back on the device.
 
     Args:
         xda (xarray.DataArray): with "time" as final dimension
@@ -27,7 +34,10 @@ def psd(xda):
     n_time = xda.shape[-1]
 
     # transform and get amplitudes
-    f_hat = fft(xda.values.T) if xda.ndim == 2 else fft2(xda.values.T)
+    xda = xda.load()
+    f_hat = fft(xda.data.T) if xda.ndim == 2 else fft2(xda.data.T)
+    if _use_cupy:
+        f_hat = f_hat.get()
     psi = np.abs(f_hat)**2
 
     # get frequencies
@@ -55,6 +65,8 @@ def psd(xda):
         psi_1d[...,n] = tmp1d * np.pi * (k_bins[1:]**2 - k_bins[:-1]**2)
 
     xda_hat = _xpack(xda, k_vals, psi_1d)
+    if _use_cupy:
+        xda_hat = xda_hat.as_cupy()
     return xda_hat
 
 

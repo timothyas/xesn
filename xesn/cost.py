@@ -246,7 +246,12 @@ def nrmse(xds, drop_time=True):
         dims = tuple(d for d in norm_error.dims if d != time)
 
     nmse = (norm_error**2).mean(dim=dims)
-    return xp.sqrt(nmse)
+    return xr.DataArray(
+        xp.sqrt(nmse.data),
+        coords=nmse.coords,
+        dims=nmse.dims,
+        attrs=nmse.attrs.copy(),
+    )
 
 
 def psd_nrmse(xds, drop_time=True):

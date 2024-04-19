@@ -3,8 +3,12 @@ import inspect
 import warnings
 import xarray as xr
 
+from . import _use_cupy
 from .esn import ESN
 from .lazyesn import LazyESN
+
+if _use_cupy:
+    import cupy_xarray
 
 def from_zarr(store, **kwargs):
     """Create an ESN or LazyESN from a zarr store.
@@ -32,7 +36,11 @@ def from_zarr(store, **kwargs):
     esn.build()
 
     if "Wout" in xds:
-        Wout = xds["Wout"].data if is_lazy else xds["Wout"].values
+        if _use_cupy:
+            Wout = xds["Wout"].as_cupy().data
+            Wout = Wout if is_lazy else Wout.compute()
+        else:
+            Wout = xds["Wout"].data if is_lazy else xds["Wout"].values
 
         # Need to re-append singleton dimension
         if is_lazy:

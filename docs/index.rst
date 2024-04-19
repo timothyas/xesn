@@ -34,6 +34,7 @@ for efficient CPU and GPU deployment.
 
    installation
    methods
+   gpus
 
 .. toctree::
    :maxdepth: 1

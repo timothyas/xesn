@@ -1,16 +1,24 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
+
 import xarray as xr
 from shutil import rmtree
 
 import dask.array as darray
 
+from xesn import _use_cupy
 from xesn.lazyesn import LazyESN
 from xesn.io import from_zarr
 
 from xesn.test.esn import TestESN
+
+if _use_cupy:
+    from cupy.testing import assert_allclose, assert_array_equal
+    import cupy_xarray
+else:
+    from numpy.testing import assert_allclose, assert_array_equal
+
 
 class TestLazy(TestESN):
 
@@ -62,10 +70,14 @@ def test_data():
         Wout_chunks[1] = tester.n_reservoir
         Wout_shape[1]  = tester.n_reservoir*2
 
+        data = xr.DataArray(
+            rs.normal(size=shape, chunks=zchunks),
+            dims=dims
+        )
+        if _use_cupy:
+            data = data.as_cupy()
         datasets[nd] = {
-                "data": xr.DataArray(
-                    rs.normal(size=shape, chunks=zchunks),
-                    dims=dims),
+                "data": data,
                 "shape": shape,
                 "chunks": dict(zip(dims, chunks)),
                 "overlap": dict(zip(dims, overlap)),
@@ -230,7 +242,7 @@ class TestPrediction(TestLazy):
         v = esn.predict(u, n_steps=self.n_steps, n_spinup=0)
 
         # With zero spinup, these arrays actually should be equal
-        assert_array_equal(v[..., 0], u[..., 0])
+        assert_array_equal(v[..., 0].compute().data, u[..., 0].compute().data)
         assert v.shape == expected["shape"][:-1] + (self.n_steps+1,)
 
 
@@ -274,7 +286,10 @@ class TestPrediction(TestLazy):
             assert xds["prediction"].shape == xds["truth"].shape
             assert xds["prediction"].data.chunksize[:-1] == tuple(esn.output_chunks.values())[:-1]
             assert xds["prediction"].dims == xds["truth"].dims
-            assert_array_equal(xds["prediction"].isel(ftime=0), xds["truth"].isel(ftime=0))
+            assert_array_equal(
+                xds["prediction"].isel(ftime=0).compute().data,
+                xds["truth"].isel(ftime=0).compute().data
+            )
 
     def test_time_is_last(self, test_data, n_dim):
         expected = test_data[n_dim]
@@ -307,6 +322,9 @@ class TestPrediction(TestLazy):
                 assert_allclose(test, expected)
 
         # Now store & read to make a second ESN
+        if _use_cupy:
+            ds = ds.compute().as_numpy()
+            ds["Wout"] = ds["Wout"].chunk({"iy": esn.n_output, "ir": esn.n_reservoir})
         ds.to_zarr(self.path, mode="w")
         esn2 = from_zarr(self.path)
         for key in self.kw.keys():
@@ -319,9 +337,10 @@ class TestPrediction(TestLazy):
             elif key in self.close_list:
                 assert_allclose(test, expected)
 
-        for key in ["Win", "bias_vector", "Wout"]:
+        for key in ["Win", "bias_vector"]:
             assert_allclose(getattr(esn, key), getattr(esn2, key))
 
+        assert_allclose(esn.Wout.compute(), esn2.Wout.compute())
         assert_allclose(esn.W.data, esn2.W.data)
 
         # make sure Wout is a dask array
@@ -329,7 +348,7 @@ class TestPrediction(TestLazy):
 
         v1 = esn.predict(u, n_steps=self.n_steps, n_spinup=1)
         v2= esn2.predict(u, n_steps=self.n_steps, n_spinup=1)
-        assert_allclose(v1, v2)
+        assert_allclose(v1.data.compute(), v2.data.compute())
 
         rmtree(self.path)
 

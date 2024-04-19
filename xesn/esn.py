@@ -3,11 +3,14 @@ import inspect
 from decimal import Decimal
 import xarray as xr
 import dask.array as darray
+import numpy as np
+
 
 from . import _use_cupy
 if _use_cupy:
     import cupy as xp
     from cupy.linalg import solve
+    import cupy_xarray
 
 else:
     import numpy as xp
@@ -105,8 +108,10 @@ class ESN():
         except AssertionError:
             raise ValueError(f"ESN.__init__: bias_factor must be non-negative, got {self.bias_factor}")
 
-        if _use_cupy and adjacency_kwargs["normalization"] == "eig":
-            raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
+        if _use_cupy:
+            normalization = adjacency_kwargs.get("normalization", "multiply")
+            if normalization == "eig":
+                raise ValueError(f"ESN.__init__: with cupy, cannot use eigenvalues to normalize matrices, use 'svd'")
 
 
     @staticmethod
@@ -205,8 +210,12 @@ class ESN():
         n_time = y.shape[1]
         assert n_time >= n_spinup
 
+        # load the data
+        u = u.load()
+        y = y.load()
+
         self.Wout = _train_1d(
-                u.values, y.values, n_spinup, batch_size,
+                u.data, y.data, n_spinup, batch_size,
                 self.W, self.Win, self.bias_vector, self.leak_rate,
                 self.tikhonov_parameter)
 
@@ -231,7 +240,10 @@ class ESN():
 
         self._time_check(y, "ESN.predict", "y")
 
-        yT = y.values.T
+        # load the data
+        y = y.load()
+
+        yT = y.data.T
         _, n_time = y.shape
         assert n_time >= n_spinup
 
@@ -309,18 +321,17 @@ class ESN():
             raise Exception("ESN.to_xds: Wout has not been computed yet, so it's not worth storing this model")
 
         ds = xr.Dataset()
-        ir = xp.arange(self.Wout.squeeze().shape[-1])
-        ir = ir.get() if _use_cupy else ir
+        ir = np.arange(self.Wout.squeeze().shape[-1])
         ds['ir'] = xr.DataArray(ir, coords={'ir': ir}, dims=('ir',), attrs={'description': 'logical index for reservoir coordinate'})
 
-        iy = xp.arange(self.Wout.squeeze().shape[0])
-        iy = iy.get() if _use_cupy else iy
+        iy = np.arange(self.Wout.squeeze().shape[0])
         ds['iy'] = xr.DataArray(iy, coords={'iy': iy}, dims=('iy',), attrs={'description': 'logical index for flattened output axis'})
 
         # the main stuff
         dims = ("iy", "ir")
-        Wout = self.Wout.get() if _use_cupy else self.Wout
-        ds["Wout"] = xr.DataArray(Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
+        ds["Wout"] = xr.DataArray(self.Wout.squeeze(), coords={k: ds[k] for k in dims}, dims=dims)
+
+
 
         # everything else
         ds.attrs.update(self._get_attrs())
@@ -395,12 +406,14 @@ class ESN():
         tslice = slice(n_spinup, n_spinup+n_steps+1)
         fcoords = {key: coords[key] for key in coords.keys() if key != "time"}
         fcoords["ftime"]= self._get_ftime(coords["time"].isel(time=tslice))
+
+        tvals = coords["time"].isel(time=tslice).values
         fcoords["time"] = xr.DataArray(
-                coords["time"].isel(time=tslice).values,
-                coords={"ftime": fcoords["ftime"]},
-                dims="ftime",
-                attrs=coords["time"].attrs.copy(),
-                )
+            tvals,
+            coords={"ftime": fcoords["ftime"]},
+            dims="ftime",
+            attrs=coords["time"].attrs.copy(),
+        )
         return fdims, fcoords
 
 
@@ -411,11 +424,11 @@ class ESN():
         ftime = time.values - time.values[0]
 
         # handle floating point numbers
-        if isinstance(time.values[0], float) and "delta_t" in time.attrs:
-            decimals = xp.abs(
+        if isinstance(time.data[0], float) and "delta_t" in time.attrs:
+            decimals = np.abs(
                 Decimal(str(time.delta_t)).as_tuple().exponent
             )
-            ftime = xp.round(ftime, decimals)
+            ftime = np.round(ftime, decimals)
 
         xftime = xr.DataArray(
                 ftime,
