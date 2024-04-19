@@ -71,3 +71,7 @@ and creating the environment as follows::
 
     conda env create -f docs/environment.yaml
     conda activate xesn
+
+Additionally, it may be necessary to require ``xarray<2024.02.0`` until
+`this issue <https://github.com/xarray-contrib/cupy-xarray/issues/41>`_
+is resolved.
