@@ -44,8 +44,8 @@ Required Changes and Tips Using Standard and Parallel ESNs
 
 
 
-NotImplemented: Macro Optimization
-----------------------------------
+Not Implemented: Macro Optimization
+-----------------------------------
 
 Unfortunately, GPU/cupy integration is not currently implemented in the
 `Surrogate Modeling Toolbox <https://smt.readthedocs.io/en/latest>`_
