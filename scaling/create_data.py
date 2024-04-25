@@ -12,6 +12,7 @@ def create_dataset(n_input, n_spinup, n_train, n_transient, n_test, random_seed=
     x0[0] = 0.01
     trajectory = model.generate(n_steps=n_total, x0=x0)
 
+    trajectory = trajectory.to_dataset(name="trajectory")
     trainer = trajectory.isel(time=slice(n_spinup, n_spinup+n_train+1))
     tester = trajectory.isel(time=slice(-n_test-1, None))
     bias = trainer.mean()
