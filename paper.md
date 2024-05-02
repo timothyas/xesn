@@ -216,7 +216,7 @@ $\hat{\mathbf{b}}$ are generated randomly, and the user can specify the
 underlying distribution used.
 
 We note that this ESN definition assumes a linear readout, and xesn specifically does
-not employ more complicated readout operators because [@platt_systematic_2022]
+not employ more complicated readout operators because @platt_systematic_2022
 showed that this does not matter
 when the ESN parameters in Section XX are optimized.
 
