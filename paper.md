@@ -190,7 +190,7 @@ $u(n)\in\mathbb{R}^{N_\text{in}}$ is the input system state, and
 $\hat{\mathbf{v}}(n)\in\mathbb{R}^{N_\text{out}}$ is the estimated target or output system state, all at
 timestep $n$.
 During training, $\mathbf{u}$ is the input data, but for inference mode the
-prediction $\hat{\mathbf{v}} \rightarrow $\mathbf{u}$ takes its place.
+prediction $\hat{\mathbf{v}} \rightarrow \mathbf{u}$ takes its place.
 
 The input matrix, adjacency matrix, and bias vector are generally defined as
 follows:
