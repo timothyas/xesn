@@ -222,11 +222,73 @@ when the ESN parameters in Section XX are optimized.
 
 ## Training
 
-* simple, use linsolve from scipy, shown to be fastest
+The weights in the readout matrix $\mathbf{W}_\text{out}$ are learned
+during training,
+which aims to minimize the following loss function
+
+\begin{equation}
+    \mathcal{J}(\mathbf{W}_\text{out}) =
+        \dfrac{1}{2}\sum_{n=1}^{N_{\text{train}}} ||\mathbf{W}_\text{out}\mathbf{r}(n) -
+        \mathbf{v}(n)||_2^2
+        +
+        \dfrac{\beta}{2}||\mathbf{W}_\text{out}||_F^2 \, .
+\end{equation}
+
+Here $\mathbf{v}(n)$ is the training data at timestep $n$,
+$||\mathbf{A}||_F = \sqrt{Tr(\mathbf{A}\mathbf{A}^T)}$ is the Frobenius
+norm, $N_{\text{train}}$ is the number of timesteps used for training,
+and $\beta$ is a Tikhonov regularization parameter chosen to improve
+numerical stability and prevent overfitting.
+
+Due to the fact that the weights in the adjacency matrix, input matrix, and bias
+vector are fixed, the readout matrix weights can be compactly written as the
+solution to the linear ridge regression problem
+
+\begin{equation}
+    \mathbf{W}_\text{out} = \mathbf{V}\mathbf{R}^T
+        \left(\mathbf{R}\mathbf{R}^T + \beta\mathbf{I}\right)^{-1}
+\end{equation}
+
+where we obtain the solution from `scipy.linalg.solve`
+on CPUs
+or `cupy.linalg.solve`
+on GPUs.
+Here $\mathbf{I}$ is the identity matrix and
+the hidden and target states are expressed in matrix form by concatenating
+each time step "column-wise":
+$\mathbf{R} = (\mathbf{r}(1) \, \mathbf{r}(2) \, \cdots \, \mathbf{r}(N_{\text{train}}))$
+and similarly
+$\mathbf{V} = (\mathbf{v}(1) \, \mathbf{v}(2) \, \cdots \, \mathbf{v}(N_{\text{train}}))$.
 
 ## Parallel ESN Architecture
 
-...
+The parallelization is achieved by subdividing the domain into $N_g$ chunks, and
+assigning individual ESNs to each chunk.
+That is, we generate the sets
+$\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$, and
+where each local input vector $\mathbf{u}_k$ includes the overlap region
+discussed above.
+The distributed ESN equations are
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{r}_k(n + 1) &= (1 - \alpha) \mathbf{r}_k(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
+            \mathbf{b}) \\
+        \hat{\mathbf{v}}_k(n + 1) &= \mathbf{W}_\text{out}^k \mathbf{r}_k(n+1)
+    \end{aligned}
+\end{equation}
+
+Here $\mathbf{r}_k, \, \mathbf{u}_k \, \mathbf{W}_\text{out}^k, \, \hat{\mathbf{v}}_k$
+are the hidden state, input state, readout matrix, and estimated output state
+associated with the $k^{th}$ data chunk.
+The local output state $\hat{\mathbf{v}}_k$ does not include the
+overlap region.
+Note that the various macro-scale paramaters
+$\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all chunks.
+Therefore the only components that drive unique hidden states on each chunk are
+the different input states $\mathbf{u}_k$ and the readout matrices
+$\mathbf{W}_\text{out}^k$.
 
 ## Parameter optimization
 
