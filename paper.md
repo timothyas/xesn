@@ -33,6 +33,11 @@ bibliography: docs/references.bib
 
 ---
 
+# TODO
+
+- [ ] add missing citations
+- [ ] change parenthetical citations to inline
+
 # Summary
 
 Xesn is a python package that allows scientists to easily design
@@ -42,16 +47,17 @@ that are part of a class of techniques termed Reservoir Computing.
 One defining characteristic of these techniques is that all internal weights are
 determined by a handful of global, scalar parameters, thereby avoiding problems
 during backpropagation and reducing training time significantly.
-Because this architecture is relatively simple, many scientists implement ESNs
-from scratch, leading to questions about .
+Because this architecture is conceptually simple, many scientists implement ESNs
+from scratch, leading to questions about computational performance.
 Xesn offers a straightforward, standard implementation of ESNs that operates
 efficiently on CPU and GPU hardware.
 The package leverages optimization tools to automate the parameter selection
 process, so that scientists can reduce the time finding a good architecture and
 focus on using ESNs for their domain application.
-Importantly, the package flexibly handles forecasting tasks for multi-dimensional datasets,
+Importantly, the package flexibly handles forecasting tasks for out-of-core,
+multi-dimensional datasets,
 eliminating the need to write parallel programming code.
-Xesn was initially develoepd to handle the problem of forecasting weather
+Xesn was initially developed to handle the problem of forecasting weather
 dynamics, and so it integrates naturally with Python packages that have become
 familiar to weather and climate scientists.
 However, the software is ultimately general enough to be utilized in other
@@ -98,7 +104,8 @@ Moreover, the interaction of these parameters is often not straightforward, and
 it is therefore advantageous to optimize these parameter values
 [@platt_systematic_2022].
 Xesn enables parameter optimization by integrating with the Surrogate Modeling
-Toolbox [@bouhlel_scalable_2020].
+Toolbox [@bouhlel_scalable_2020], which has a Bayesian Optimization
+implementation.
 
 The parameter optimization process is somewhat complex, requiring the user to
 specify a variety of hyperparameters (e.g., the optimization bounds for each
@@ -126,12 +133,12 @@ as the basis for xesn.
 
 Xesn enables prediction for multi dimensional systems by integrating its high
 level operations with xarray CITE.
-As with xarray, users refer to dimensions based on their named axis (e.g., "x",
+As with xarray, users refer to dimensions based on their named axes (e.g., "x",
 "y", or "time" instead of logical indices 0, 1, 2).
 Xesn parallelizes the core array based operations by using dask [@dask_2016]
 to map them across available resources, which can include a multi threaded
 environment on a laptop or single node, or a distributed computing resource
-(either traditional HPC or in the cloud).
+such as traditional on-premises HPC or in the cloud.
 
 
 ## Existing Reservoir Computing Software
@@ -145,7 +152,7 @@ underlying the reservoir, and allowing for delayed connections.
 On the other hand, xesn is focused specifically on implementing ESN
 architectures that can scale to high dimensional forecasting tasks.
 Additionally, while reservoirpy enables hyperparameter grid search capabilities,
-xesn enables parameter optimization as noted above.
+xesn enables Bayesian Optimization as noted above.
 
 Finally, we note the code base for CITE Arcomano, which implements ESNs in
 Fortran, which can be used for hybrid physics-ML modeling.
@@ -167,40 +174,35 @@ Where to put this stuff?
 ## Standard ESN Architecture
 
 The basic ESN architecture that is implemented by the `xesn.ESN` class
-is defined as follows:
+is defined via the discrete timestepping equations:
 
 \begin{equation}
-    \mathbf{r}(n + 1) = (1 - \alpha) \mathbf{r}(n) +
-    \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
-   \mathbf{b})
-\end{equation}
-
-**TODO** Align these two eqns
-
-\begin{equation}
-   \hat{\mathbf{v}}(n + 1) = \mathbf{W}_\text{out} \mathbf{r}(n+1)
+    \begin{aligned}
+        \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+            \mathbf{b}) \\
+        \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
+    \end{aligned}
 \end{equation}
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
 $u(n)\in\mathbb{R}^{N_\text{in}}$ is the input system state, and
 $\hat{\mathbf{v}}(n)\in\mathbb{R}^{N_\text{out}}$ is the estimated target or output system state, all at
 timestep $n$.
+During training, $\mathbf{u}$ is the input data, but for inference mode the
+prediction $\hat{\mathbf{v}} \rightarrow $\mathbf{u}$ takes its place.
 
 The input matrix, adjacency matrix, and bias vector are generally defined as
 follows:
 
 \begin{equation}
-   \mathbf{W} = \dfrac{\rho}{f(\hat{\mathbf{W}})}
-   \hat{\mathbf{W}}
-\end{equation}
-
-\begin{equation}
-   \mathbf{W}_\text{in} = \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
-   \hat{\mathbf{W}}_\text{in}
-\end{equation}
-
-\begin{equation}
-   \mathbf{b} = \sigma_b\hat{\mathbf{b}}
+    \begin{aligned}
+        \mathbf{W} &= \dfrac{\rho}{f(\hat{\mathbf{W}})}
+            \hat{\mathbf{W}} \\
+        \mathbf{W}_\text{in} &= \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
+            \hat{\mathbf{W}}_\text{in} \\
+        \mathbf{b} &= \sigma_b\hat{\mathbf{b}}
+    \end{aligned}
 \end{equation}
 
 where $\rho$, $\sigma$, and $\sigma_b$ are scaling factors that are chosen or
