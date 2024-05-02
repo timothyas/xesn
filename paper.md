@@ -292,12 +292,31 @@ $\mathbf{W}_\text{out}^k$.
 
 ## Parameter optimization
 
+From our experience, the most important macro-scale parameters aside from the
+size of the reservoir that must be specified are:
+
+- input matrix scaling, $\sigma$
+- adjacency matrix scaling, $\rho$
+- bias vector scaling, $\sigma_b$
+- Tikhonov parameter, $\beta$
+- leak rate, $\alpha$
+
+These can be optimized via the Bayesian Optimization algorithm in the Surrogate
+Modeling Toolbox [@bouhlel_scalable_2020].
+The parameters can be constrained using a combination of Root Mean Squared Error
+and Power Spectral Density cost function terms, where the latter was used
+by @smith_temporal_2023.
+
 * Use smt
 * can constrain MSE and PSD as in Smith et al
-* can't be on GPUs
+
 
 # Potential Scaling Results
 
+
+# Conclusions
+
+* can't use smt on GPUs
 
 
 # Citations
