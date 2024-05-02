@@ -176,14 +176,14 @@ Where to put this stuff?
 The basic ESN architecture that is implemented by the `xesn.ESN` class
 is defined via the discrete timestepping equations:
 
-\begin{equation}
-    \begin{aligned}
-        \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
-            \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
-            \mathbf{b}) \\
-        \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
-    \end{aligned}
-\end{equation}
+[comment]: \begin{equation}
+[comment]:     \begin{aligned}
+[comment]:         \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
+[comment]:             \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+[comment]:             \mathbf{b}) \\
+[comment]:         \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
+[comment]:     \end{aligned}
+[comment]: \end{equation}
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
 $u(n)\in\mathbb{R}^{N_\text{in}}$ is the input system state, and
@@ -195,15 +195,15 @@ prediction $\hat{\mathbf{v}} \rightarrow $\mathbf{u}$ takes its place.
 The input matrix, adjacency matrix, and bias vector are generally defined as
 follows:
 
-\begin{equation}
-    \begin{aligned}
-        \mathbf{W} &= \dfrac{\rho}{f(\hat{\mathbf{W}})}
-            \hat{\mathbf{W}} \\
-        \mathbf{W}_\text{in} &= \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
-            \hat{\mathbf{W}}_\text{in} \\
-        \mathbf{b} &= \sigma_b\hat{\mathbf{b}}
-    \end{aligned}
-\end{equation}
+[comment]: \begin{equation}
+[comment]:     \begin{aligned}
+[comment]:         \mathbf{W} &= \dfrac{\rho}{f(\hat{\mathbf{W}})}
+[comment]:             \hat{\mathbf{W}} \\
+[comment]:         \mathbf{W}_\text{in} &= \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
+[comment]:             \hat{\mathbf{W}}_\text{in} \\
+[comment]:         \mathbf{b} &= \sigma_b\hat{\mathbf{b}}
+[comment]:     \end{aligned}
+[comment]: \end{equation}
 
 where $\rho$, $\sigma$, and $\sigma_b$ are scaling factors that are chosen or
 optimized by the user.
@@ -214,8 +214,9 @@ $\hat{\mathbf{b}}$ are generated randomly, and the user can specify the
 underlying distribution used.
 
 We note that this ESN definition assumes a linear readout, and xesn specifically does
-not employ more complicated readout operators because it was shown to not matter
-when the ESN parameters in Section XX are optimized in [@platt_systematic_2022]
+not employ more complicated readout operators because @platt_systematic_2022
+showed that this does not matter
+when the ESN parameters in Section XX are optimized.
 
 ## Training
 
