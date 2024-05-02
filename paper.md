@@ -177,12 +177,12 @@ The basic ESN architecture that is implemented by the `xesn.ESN` class
 is defined via the discrete timestepping equations:
 
 \begin{equation}
-        \mathbf{r}(n + 1) = (1 - \alpha) \mathbf{r}(n) +
+    \begin{aligned}
+        \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
             \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
-            \mathbf{b})
-\end{equation}
-\begin{equation}
-        \hat{\mathbf{v}}(n + 1) = \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
+            \mathbf{b}) \\
+        \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
+    \end{aligned}
 \end{equation}
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
