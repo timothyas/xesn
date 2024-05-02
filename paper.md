@@ -176,14 +176,14 @@ Where to put this stuff?
 The basic ESN architecture that is implemented by the `xesn.ESN` class
 is defined via the discrete timestepping equations:
 
-[comment]: \begin{equation}
-[comment]:     \begin{aligned}
-[comment]:         \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
-[comment]:             \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
-[comment]:             \mathbf{b}) \\
-[comment]:         \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
-[comment]:     \end{aligned}
-[comment]: \end{equation}
+\begin{equation}
+        \mathbf{r}(n + 1) = (1 - \alpha) \mathbf{r}(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+            \mathbf{b})
+\end{equation}
+\begin{equation}
+        \hat{\mathbf{v}}(n + 1) = \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
+\end{equation}
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
 $u(n)\in\mathbb{R}^{N_\text{in}}$ is the input system state, and
@@ -195,15 +195,17 @@ prediction $\hat{\mathbf{v}} \rightarrow $\mathbf{u}$ takes its place.
 The input matrix, adjacency matrix, and bias vector are generally defined as
 follows:
 
-[comment]: \begin{equation}
-[comment]:     \begin{aligned}
-[comment]:         \mathbf{W} &= \dfrac{\rho}{f(\hat{\mathbf{W}})}
-[comment]:             \hat{\mathbf{W}} \\
-[comment]:         \mathbf{W}_\text{in} &= \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
-[comment]:             \hat{\mathbf{W}}_\text{in} \\
-[comment]:         \mathbf{b} &= \sigma_b\hat{\mathbf{b}}
-[comment]:     \end{aligned}
-[comment]: \end{equation}
+\begin{equation}
+        \mathbf{W} = \dfrac{\rho}{f(\hat{\mathbf{W}})}
+            \hat{\mathbf{W}}
+\end{equation}
+\begin{equation}
+        \mathbf{W}_\text{in} = \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
+            \hat{\mathbf{W}}_\text{in}
+\end{equation}
+\begin{equation}
+        \mathbf{b} = \sigma_b\hat{\mathbf{b}}
+\end{equation}
 
 where $\rho$, $\sigma$, and $\sigma_b$ are scaling factors that are chosen or
 optimized by the user.
