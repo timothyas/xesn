@@ -108,7 +108,7 @@ class XData():
             elif isinstance(myslice.start, float) or isinstance(myslice.stop, float):
                 xda = xda.sel({dim: myslice})
 
-            else:
+            elif not (myslice.start is None and myslice.stop is None):
                 raise TypeError(f"XData.subsample: unrecognized slice type, only ints or floats allowed")
 
             print(f"XData.subsample: Subsampled/sliced {dim}: {xda[dim]}")

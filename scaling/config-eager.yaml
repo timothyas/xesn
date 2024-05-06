@@ -1,0 +1,44 @@
+xdata:
+    dimensions            : ['x', 'time']
+#
+    zstore_path           : lorenz96-016d/trainer.zarr
+    field_name            : 'trajectory'
+    subsampling:
+        time:
+            training        : [ null, null, null]
+
+    normalization:
+        bias            : 0.
+        scale           : 1.
+
+esn:
+    n_input             : 10
+    n_output            : 10
+    n_reservoir         : 500
+#
+    leak_rate           : 0.5
+    tikhonov_parameter  : 1.e-6
+#
+    input_kwargs:
+        factor          : 1.0
+        distribution    : uniform
+        normalization   : svd
+        is_sparse       : False
+        random_seed     : 0
+#
+    adjacency_kwargs:
+        factor          : 1.0
+        distribution    : uniform
+        normalization   : svd
+        is_sparse       : True
+        connectedness   : 5
+        random_seed     : 1
+#
+    bias_kwargs:
+        factor          : 1.0
+        distribution    : uniform
+        random_seed     : 2
+
+training:
+    n_spinup            : 0
+    batch_size          : 20_000
