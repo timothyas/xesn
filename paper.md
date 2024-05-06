@@ -73,7 +73,7 @@ signal processing [@jaeger_harnessing_2004].
 # Statement of Need
 
 ESNs are a conceptually simple recurrent neural network architecture.
-As shown in section [Architectures Implemented](#architectures-implemented),
+As shown in the [Implemented Architectures](#implemented-architectures) section,
 they are defined by a simple set of equations, a single hidden layer, and a
 handful of parameters.
 Because of the architecture's simplicity, many scientists who use ESNs implement
@@ -95,7 +95,7 @@ design impact study shown by @platt_systematic_2022.
 
 At its core, `xesn` uses NumPy [@harris_array_2020] and SciPy [@scipy_2020] to perform array based
 operations on CPUs.
-The package then harnesses the CPU/GPU agnostic code capabilities affored by CuPy [@cupy_learningsys2017]
+The package then harnesses the CPU/GPU agnostic code capabilities afforded by CuPy [@cupy_learningsys2017]
 to operate on GPUs.
 
 ## Parameter Optimization
@@ -106,12 +106,24 @@ their behavior and performance is highly sensitive to a set of
 5 scalar parameters
 (see [Macro-Scale Parameters](#macro-scale-parameters)).
 Moreover, the interaction of these parameters is often not straightforward, and
-it is therefore advantageous to optimize these parameter values
-[@platt_systematic_2022].
+it is therefore advantageous to optimize these parameter values.
+The advantages to using Bayesian Optimization with ESNs is shown by
+@platt_systematic_2022.
+Additionally @platt_constraining_2023 showed that by adding invariant metrics to
+a loss function, such as the Lyapunov exponent spectrum or simply its leading element,
+results in networks that generalize better to unseen test data.
+@smith_temporal_2023 showed similar results by constraining the Kinetic Energy
+Spectrum when developing ESN based emulators of Surface Quasi-Geostrophic
+Turbulence.
+As a somewhat generic and efficient implementation of these metrics,
+`xesn` offers the capability to constrain the
+system's Power Spectral Density during parameter optimization, in addition to a
+more traditional
+Normalized Root Mean Squared Error loss function.
+
 `Xesn` enables parameter optimization by integrating with the Surrogate Modeling
 Toolbox [@bouhlel_scalable_2020], which has a Bayesian Optimization
 implementation.
-
 The parameter optimization process is in general somewhat complex, requiring the user to
 specify a variety of hyperparameters (e.g., the optimization bounds for each
 parameter and the maximum number of optimization steps to take).
@@ -157,7 +169,7 @@ underlying the reservoir, and allowing for delayed connections.
 On the other hand, `xesn` is focused specifically on implementing ESN
 architectures that can scale to high dimensional forecasting tasks.
 Additionally, while ReservoirPy enables hyperparameter grid search capabilities
-via @hyperopt, `xesn` enables Bayesian Optimization as noted above.
+via Hyperopt [@hyperopt], `xesn` enables Bayesian Optimization as noted above.
 
 Finally, we note the code base used by [@arcomano_machine_2020;@arcomano_hybrid_2022;@arcomano_hybrid_2023],
 available at [@arcomano_code].
@@ -189,6 +201,7 @@ is defined by the discrete timestepping equations:
             \mathbf{b}) \\
         \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
     \end{aligned}
+    \label{eq:esn}
 \end{equation}
 
 Here $\mathbf{r}(n)\in\mathbb{R}^{N_r}$ is the hidden, or reservoir, state,
@@ -205,15 +218,14 @@ The input matrix, adjacency matrix, and bias vector are generally defined as
 follows:
 
 \begin{equation}
-        \mathbf{W} = \dfrac{\rho}{f(\hat{\mathbf{W}})}
-            \hat{\mathbf{W}}
-\end{equation}
-\begin{equation}
-        \mathbf{W}_\text{in} = \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
-            \hat{\mathbf{W}}_\text{in}
-\end{equation}
-\begin{equation}
-        \mathbf{b} = \sigma_b\hat{\mathbf{b}}
+    \begin{aligned}
+        \mathbf{W} &= \dfrac{\rho}{f(\hat{\mathbf{W}})}
+            \hat{\mathbf{W}} \\
+        \mathbf{W}_\text{in} &= \dfrac{\sigma}{g(\hat{\mathbf{W}}_\text{in})}
+            \hat{\mathbf{W}}_\text{in} \\
+        \mathbf{b} &= \sigma_b\hat{\mathbf{b}}
+    \end{aligned}
+    \label{eq:random}
 \end{equation}
 
 where $\rho$, $\sigma$, and $\sigma_b$ are scaling factors that are chosen or
@@ -242,6 +254,7 @@ which aims to minimize the following loss function
         \mathbf{v}(n)||_2^2
         +
         \dfrac{\beta}{2}||\mathbf{W}_\text{out}||_F^2 \, .
+    \label{eq:loss}
 \end{equation}
 
 Here $\mathbf{v}(n)$ is the training data at timestep $n$,
@@ -257,6 +270,7 @@ solution to the linear ridge regression problem
 \begin{equation}
     \mathbf{W}_\text{out} = \mathbf{V}\mathbf{R}^T
         \left(\mathbf{R}\mathbf{R}^T + \beta\mathbf{I}\right)^{-1}
+    \label{eq:Wout}
 \end{equation}
 
 where we obtain the solution from `scipy.linalg.solve`
@@ -269,36 +283,6 @@ each time step "column-wise":
 $\mathbf{R} = (\mathbf{r}(1) \, \mathbf{r}(2) \, \cdots \, \mathbf{r}(N_{\text{train}}))$
 and similarly
 $\mathbf{V} = (\mathbf{v}(1) \, \mathbf{v}(2) \, \cdots \, \mathbf{v}(N_{\text{train}}))$.
-
-## Parallel ESN Architecture
-
-The parallelization is achieved by subdividing the domain into $N_g$ chunks, and
-assigning individual ESNs to each chunk.
-That is, we generate the sets
-$\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$, and
-where each local input vector $\mathbf{u}_k$ includes the overlap region
-discussed above.
-The distributed ESN equations are
-
-\begin{equation}
-    \begin{aligned}
-        \mathbf{r}_k(n + 1) &= (1 - \alpha) \mathbf{r}_k(n) +
-            \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
-            \mathbf{b}) \\
-        \hat{\mathbf{v}}_k(n + 1) &= \mathbf{W}_\text{out}^k \mathbf{r}_k(n+1)
-    \end{aligned}
-\end{equation}
-
-Here $\mathbf{r}_k, \, \mathbf{u}_k \, \mathbf{W}_\text{out}^k, \, \hat{\mathbf{v}}_k$
-are the hidden state, input state, readout matrix, and estimated output state
-associated with the $k^{th}$ data chunk.
-The local output state $\hat{\mathbf{v}}_k$ does not include the
-overlap region.
-Note that the various macro-scale paramaters
-$\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all chunks.
-Therefore the only components that drive unique hidden states on each chunk are
-the different input states $\mathbf{u}_k$ and the readout matrices
-$\mathbf{W}_\text{out}^k$.
 
 ## Macro-Scale Parameters
 
@@ -321,6 +305,85 @@ by @smith_temporal_2023.
 * can constrain MSE and PSD as in Smith et al
 
 
+## Parallel ESN Architecture
+
+We describe the parallelization strategy based on the dataset used by
+@smith_temporal_2023, which was generated by
+[this model, written by Jeff Whitaker](https://github.com/jswhit/sqgturb),
+for Surface Quasi-Geostrophic turbulence.
+For the purposes of this discussion, all that matters is the size of the
+dataset, which is illustrated below, and more details can be found in Section 2
+of [@smith_temporal_2023].
+
+
+![A snapshot of potential temperature from a model for Surface Quasi-Geostrophic
+Turbulence, with dimensions labelled in order to illustrate the ESN
+parallelization scheme.
+\label{fig:sqg}
+](docs/images/chunked-sqg.jpg){width=50%}
+
+The dataset has 3 spatial dimensions $(x, y, z)$, and evolves in time, so
+that the shape is $(N_x = 64, N_y = 64, N_z = 2, N_{time})$.
+Parallelization is achieved by subdividing the domain into smaller groups
+along the :math:`x` and :math:`y` dimensions, akin to domain decomposition
+techniques in General Circulation Models.
+In the case of our example, each group (or chunk) is defined with size
+```python
+esn_chunks={"x": 16, "y": 16, "z": 2}
+```
+and these groups are denoted by the black lines across the domain in
+\autoref{fig:sqg}.
+Under the hood, `xesn.LazyESN` assigns a local network to each chunk,
+where each chunk becomes a separate dask task.
+Note that unlike `xesn.ESN`, `xesn.LazyESN` does not load all data into memory,
+but instead lazily operates on the data via the `dask.Array` API.
+
+Communication between chunks is enabled by defining an overlap or halo region,
+harnessing Dask's flexible overlap function.
+In our example, the overlap region is shown for a single group by the white box,
+and for instance is defined with size:
+```python
+overlap={"x": 1, "y": 1, "z": 0}
+```
+that is, there is a single grid cell overlap in $x$ and $y$, but no overlap in
+the vertical.
+
+The ESN parallelization is achieved by assigning individual ESNs to each groups.
+That is, we generate the sets
+$\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$, and
+where each local input vector $\mathbf{u}_k$ includes the overlap region
+discussed above.
+The distributed ESN equations are
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{r}_k(n + 1) &= (1 - \alpha) \mathbf{r}_k(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
+            \mathbf{b}) \\
+        \hat{\mathbf{v}}_k(n + 1) &= \mathbf{W}_\text{out}^k \mathbf{r}_k(n+1)
+    \end{aligned}
+    \label{eq:lazyesn}
+\end{equation}
+
+Here $\mathbf{r}_k, \, \mathbf{u}_k \, \mathbf{W}_\text{out}^k, \, \hat{\mathbf{v}}_k$
+are the hidden state, input state, readout matrix, and estimated output state
+associated with the $k^{th}$ data chunk.
+The local output state $\hat{\mathbf{v}}_k$ does not include the
+overlap region.
+Currently, the various macro-scale paramaters
+$\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all chunks.
+Therefore the only components that drive unique hidden states on each chunk are
+the different input states $\mathbf{u}_k$ and the readout matrices
+$\mathbf{W}_\text{out}^k$.
+Additionally, because the solution to \autoref{eq:loss} training is linear, the readout matrices are simply
+\begin{equation}
+    \mathbf{W}^k_\text{out} = \mathbf{V}_k\mathbf{R}_k^T
+        \left(\mathbf{R}_k\mathbf{R}_k^T + \beta\mathbf{I}\right)^{-1} \, ,
+    \label{eq:WoutLazy}
+\end{equation}
+where each readout matrix can be computed independently of one another.
+
+
 # Scaling Results
 
 As discussed in the [Statement of Need](#statement-of-need), one purpose of
@@ -333,7 +396,14 @@ a laptop to HPC platforms, either on premises or in the cloud.
 Here we show brief scaling results in order to give some practical guidance on
 how to best configure Dask when using the parallelized ESN architecture.
 
-For reference, in Figure 1 we show the walltime and memory usage involved for
+![Walltime and memory usage for the standard ESN architecture for two different
+problem sizes ($N_u$)and a variety of reservoir sizes ($N_r$).
+Walltime is captured with Python's time module, and memory is captured with
+memory-profiler 0.16.0 (https://pypi.org/project/memory-profiler/).
+\label{fig:eager}
+](scaling/eager-scaling.pdf){ width=100% }
+
+For reference, in \autoref{fig:eager} we show the walltime and memory usage involved for
 training the
 standard ESN architecture as a function of the input dimension $N_u$ and
 reservoir size $N_r$.
@@ -350,13 +420,6 @@ Clearly, the reservoir size has the biggest impact on both walltime and memory
 usage, as both scale quadratically with $N_r$.
 This result serves as a motivation for our parallelized architecture.
 
-![Walltime and memory usage for the standard ESN architecture for two different
-problem sizes ($N_u$)and a variety of reservoir sizes ($N_r$).
-Walltime is captured with Python's time module, and memory is captured with
-memory-profiler 0.16.0 (https://pypi.org/project/memory-profiler/).
-figure.\label{fig:eager}
-](scaling/eager-scaling.pdf){ width=100% }
-
 In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
 $N_g = \{2, 4, 8, 16, 32\}$ groups.
@@ -368,19 +431,19 @@ ESN results shown in Figure 1.
 We then create 3 different Dask Distributed clusters, testing:
 
 1. Purely threaded mode:
-   ```
+   ```python
    from distributed import Client
    client = Client(processes=False)
    ```
 
 2. The default `LocalCluster` configuration for our resources:
-   ```
+   ```python
    from distributed import Client
    client = Client()
    ```
 
 3. Using 1 Dask worker per group (subdomain):
-   ```
+   ```python
    from distributed import Client
    client = Client(n_workers = n_g)
    ```
@@ -392,21 +455,21 @@ Serial training time is evaluated with $N_u=256$ and $N_r=16,000$ with
 `xesn.ESN` from Figure 1, and parallel training time uses `xesn.LazyESN` with
 the number of groups as shown.
 See text for a description of the different schedulers used.
-figure.\label{fig:lazy}
+\label{fig:lazy}
 ](scaling/lazy-scaling.pdf){ width=40% }
 
-Figure 2 shows the weak scaling results of `xesn.LazyESN` for each of these
+\autoref{fig:lazy} shows the weak scaling results of `xesn.LazyESN` for each of these \
 `dask.distributed.LocalCluster` configurations, where each point shows the ratio of the
 walltime with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
-Generally speaking, using 1 dask worker process per ESN group scales well,
+Generally speaking, using 1 Dask worker process per ESN group scales well,
 which makes sense because each group is trained entirely independently.
-However, the two exceptions to this rule of thumb are:
+However, the two exceptions to this rule of thumb are as follows.
 
-1. when there are only 2 groups, the threaded scheduler does slightly better,
-   presumably because of the lack of overhead involved with multiprocessing, and
+1. When there are only 2 groups, the threaded scheduler does slightly better,
+   presumably because of the lack of overhead involved with multiprocessing.
 
-2. when $N_g$ is close to the default provided by dask, it might be best to
+2. When $N_g$ is close to the default provided by Dask, it might be best to
    use that default.
 
 There are, of course, many more ways to configure a Dask cluster, but the three
