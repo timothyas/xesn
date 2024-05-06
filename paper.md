@@ -337,7 +337,7 @@ For reference, in Figure 1 we show the walltime and memory usage involved for
 training the
 standard ESN architecture as a function of the input dimension $N_u$ and
 reservoir size $N_r$.
-Each data point in Figure 1 involved running the following commands:
+Each data point in \autoref{fig:eager} involved running the following commands:
 ```python
 from xesn import Driver
 driver = Driver(config="scaling/config-eager.yaml")
@@ -349,6 +349,13 @@ and 256, with 80,000 total samples in the training dataset.
 Clearly, the reservoir size has the biggest impact on both walltime and memory
 usage, as both scale quadratically with $N_r$.
 This result serves as a motivation for our parallelized architecture.
+
+![Walltime and memory usage for the standard ESN architecture for two different
+problem sizes ($N_u$)and a variety of reservoir sizes ($N_r$).
+Walltime is captured with Python's time module, and memory is captured with
+memory-profiler 0.16.0 (https://pypi.org/project/memory-profiler/).
+figure.\label{fig:eager}
+](scaling/eager-scaling.pdf){ width=100% }
 
 In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
@@ -378,6 +385,16 @@ We then create 3 different Dask Distributed clusters, testing:
    client = Client(n_workers = n_g)
    ```
 
+![Weak scaling results, showing speedup as a ratio of serial training time to
+parallel training time as a function of number of groups or subdomains of the
+Lorenz96 system.
+Serial training time is evaluated with $N_u=256$ and $N_r=16,000$ with
+`xesn.ESN` from Figure 1, and parallel training time uses `xesn.LazyESN` with
+the number of groups as shown.
+See text for a description of the different schedulers used.
+figure.\label{fig:lazy}
+](scaling/lazy-scaling.pdf){ width=40% }
+
 Figure 2 shows the weak scaling results of `xesn.LazyESN` for each of these
 `dask.distributed.LocalCluster` configurations, where each point shows the ratio of the
 walltime with the standard (serial) architecture to the lazy (parallel)
@@ -400,33 +417,7 @@ e.g., dask-jobqueue or dask-cloudprovider.
 
 * can't use smt on GPUs
 
-
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
-# Figures
-
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](docs/images/chunked-sqg.jpg)
-and referenced from text using \autoref{fig:example}.
-
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](docs/images/chunked-sqg.jpg){ width=20% }
-
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
 
 # References
