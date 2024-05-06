@@ -37,6 +37,10 @@ bibliography: docs/references.bib
 
 ---
 
+# TODO:
+- [ ] eager plot Ni -> Nu
+- [ ] eager plot add markers, thicken the lines
+
 # Summary
 
 `Xesn` is a python package that allows scientists to easily design
@@ -58,7 +62,7 @@ multi-dimensional datasets,
 eliminating the need to write parallel programming code.
 `Xesn` was initially developed to handle the problem of forecasting weather
 dynamics, and so it integrates naturally with Python packages that have become
-familiar to weather and climate scientists such as xarray [@hoyer_xarray_2017].
+familiar to weather and climate scientists such as `xarray` [@hoyer_xarray_2017].
 However, the software is ultimately general enough to be utilized in other
 domains where ESNs have been useful, such as in
 signal processing [@jaeger_harnessing_2004].
@@ -100,15 +104,14 @@ their behavior and performance is highly sensitive to a set of
 5 scalar parameters
 (see [Macro-Scale Parameters](#macro-scale-parameters)).
 Moreover, the interaction of these parameters is often not straightforward, and
-it is therefore advantageous to optimize these parameter values.
-The advantages to using Bayesian Optimization with ESNs is shown by
-@platt_systematic_2022.
-Additionally @platt_constraining_2023 showed that by adding invariant metrics to
+it is therefore advantageous to optimize these parameter values, as is shown by
+@platt_systematic_2022 with an extensive set of experimental results.
+Additionally, @platt_constraining_2023 showed that by adding invariant metrics to
 a loss function, such as the Lyapunov exponent spectrum or simply its leading element,
 results in networks that generalize better to unseen test data.
-@smith_temporal_2023 showed similar results by constraining the Kinetic Energy
+@smith_temporal_2023 showed similar results, highlighting that constraining the Kinetic Energy
 Spectrum when developing ESN based emulators of Surface Quasi-Geostrophic
-Turbulence.
+Turbulence helps to preserve small scale features in the flow.
 As a somewhat generic and efficient implementation of these metrics,
 `xesn` offers the capability to constrain the
 system's Power Spectral Density during parameter optimization, in addition to a
@@ -124,7 +127,7 @@ parameter and the maximum number of optimization steps to take).
 Additionally, for large problems, the process can have heavy compute
 requirements and therefore necessitate HPC or cloud resources.
 `Xesn` provides a simple interface so that the user can specify all of the
-settings for training, parameter optimization, and testing with a single yaml
+settings for training, parameter optimization, and testing with a single YAML
 file.
 By doing so, all parts of the experiment are more easily reproducible and easier to manage
 with scheduling systems like SLURM on HPC environments or in the cloud.
@@ -136,17 +139,17 @@ larger than the input and target space.
 Forecasting large target spaces (e.g., $>\mathcal{O}(10^6)$ in weather and
 climate modeling) quickly becomes intractable with a single reservoir.
 To address this, @pathak_model-free_2018 developed a parallelization strategy
-so that multiple semi-independent reservoirs make predictions of a single, high dimensional
+so that multiple, semi-independent reservoirs make predictions of a single, high dimensional
 system.
 This parallelization was generalized for multi dimensions by
 @arcomano_machine_2020 and @smith_temporal_2023, the latter of which serves
 as the basis for `xesn`.
 
 `Xesn` enables prediction for multi dimensional systems by integrating its high
-level operations with xarray [@hoyer_xarray_2017].
-As with xarray, users refer to dimensions based on their named axes (e.g., "x",
+level operations with `xarray` [@hoyer_xarray_2017].
+As with `xarray`, users refer to dimensions based on their named axes (e.g., "x",
 "y", or "time" instead of logical indices 0, 1, 2).
-`Xesn` parallelizes the core array based operations by using Dask [@dask_2016]
+`Xesn` parallelizes the core array based operations by using `dask` [@dask_2016]
 to map them across available resources, which can include a multi-threaded
 environment on a laptop or single node, or a distributed computing resource
 such as traditional on-premises HPC or in the cloud.
@@ -269,7 +272,7 @@ $\mathbf{V} = (\mathbf{v}(1) \, \mathbf{v}(2) \, \cdots \, \mathbf{v}(N_{\text{t
 
 ## Macro-Scale Parameters
 
-From our experience, the most important macro-scale parameters aside from the
+Some of the most important macro-scale parameters aside from the
 size of the reservoir that must be specified are:
 
 - input matrix scaling, $\sigma$
@@ -278,22 +281,18 @@ size of the reservoir that must be specified are:
 - Tikhonov parameter, $\beta$
 - leak rate, $\alpha$
 
-These can be optimized via the Bayesian Optimization algorithm in the Surrogate
-Modeling Toolbox [@bouhlel_scalable_2020].
-The parameters can be constrained using a combination of Root Mean Squared Error
-and Power Spectral Density cost function terms, where the latter was used
-by @smith_temporal_2023.
-
-* Use smt
-* can constrain MSE and PSD as in Smith et al
-
+As noted in the [Parameter Optimization](#parameter-optimization) section,
+these can be optimized via the Bayesian Optimization algorithm in the Surrogate
+Modeling Toolbox [@bouhlel_scalable_2020]
+by minimizing a combination of Normalization Root Mean Squared Error and Power
+Spectral Density Error terms.
 
 ## Parallel ESN Architecture
 
-We describe the parallelization strategy based on the dataset used by
-@smith_temporal_2023, which was generated by
+We describe the parallelization strategy with an explicit example, using the dataset
+from @smith_temporal_2023, which was generated by
 [this model, written by Jeff Whitaker](https://github.com/jswhit/sqgturb),
-for Surface Quasi-Geostrophic turbulence.
+for Surface Quasi-Geostrophic Turbulence.
 For the purposes of this discussion, all that matters is the size of the
 dataset, which is illustrated below, and more details can be found in Section 2
 of [@smith_temporal_2023].
@@ -317,12 +316,12 @@ esn_chunks={"x": 16, "y": 16, "z": 2}
 and these groups are denoted by the black lines across the domain in
 \autoref{fig:sqg}.
 Under the hood, `xesn.LazyESN` assigns a local network to each chunk,
-where each chunk becomes a separate dask task.
+where each chunk becomes a separate `dask` task.
 Note that unlike `xesn.ESN`, `xesn.LazyESN` does not load all data into memory,
 but instead lazily operates on the data via the `dask.Array` API.
 
 Communication between chunks is enabled by defining an overlap or halo region,
-harnessing Dask's flexible overlap function.
+harnessing `dask`'s flexible overlap function.
 In our example, the overlap region is shown for a single group by the white box,
 and for instance is defined with size:
 ```python
@@ -333,7 +332,7 @@ the vertical.
 
 The ESN parallelization is achieved by assigning individual ESNs to each groups.
 That is, we generate the sets
-$\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$, and
+$\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$,
 where each local input vector $\mathbf{u}_k$ includes the overlap region
 discussed above.
 The distributed ESN equations are
@@ -355,7 +354,7 @@ The local output state $\hat{\mathbf{v}}_k$ does not include the
 overlap region.
 Currently, the various macro-scale paramaters
 $\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all chunks.
-Therefore the only components that drive unique hidden states on each chunk are
+Therefore, the only components that drive unique hidden states on each chunk are
 the different input states $\mathbf{u}_k$ and the readout matrices
 $\mathbf{W}_\text{out}^k$.
 Additionally, because the solution to \autoref{eq:loss} training is linear, the readout matrices are simply
@@ -371,18 +370,18 @@ where each readout matrix can be computed independently of one another.
 
 As discussed in the [Statement of Need](#statement-of-need), one purpose of
 `xesn` is to provide a parallelized ESN implementation, which we achieve using
-Dask [@dask_2016].
-One advantage of Dask is that it provides a highly flexible, task-based
+`dask` [@dask_2016].
+One advantage of `dask` is that it provides a highly flexible, task-based
 parallelization framework such that the same code can be parallelized using a
 combination of threads and processes, and deployed in a variety of settings from
 a laptop to HPC platforms, either on premises or in the cloud.
 Here we show brief scaling results in order to give some practical guidance on
-how to best configure Dask when using the parallelized ESN architecture.
+how to best configure `dask` when using the parallelized ESN architecture.
 
 ![Walltime and memory usage for the standard ESN architecture for two different
-problem sizes ($N_u$)and a variety of reservoir sizes ($N_r$).
+system sizes ($N_u$) and a variety of reservoir sizes ($N_r$).
 Walltime is captured with Python's time module, and memory is captured with
-memory-profiler 0.16.0 (https://pypi.org/project/memory-profiler/).
+[memory-profiler 0.16.0](https://pypi.org/project/memory-profiler/).
 \label{fig:eager}
 ](scaling/eager-scaling.pdf){ width=100% }
 
@@ -411,7 +410,7 @@ size is more or less fixed and the timing results reflect weak computational
 scaling.
 The training task and resources used are otherwise the same as for the standard
 ESN results shown in Figure 1.
-We then create 3 different Dask Distributed clusters, testing:
+We then create 3 different `dask.distributed` Clusters, testing:
 
 1. Purely threaded mode:
    ```python
@@ -419,13 +418,13 @@ We then create 3 different Dask Distributed clusters, testing:
    client = Client(processes=False)
    ```
 
-2. The default `LocalCluster` configuration for our resources:
+2. The default `dask.distributed.LocalCluster` configuration for our resources:
    ```python
    from distributed import Client
    client = Client()
    ```
 
-3. Using 1 Dask worker per group (subdomain):
+3. Using 1 `dask` worker per group (subdomain):
    ```python
    from distributed import Client
    client = Client(n_workers = n_g)
@@ -445,19 +444,19 @@ See text for a description of the different schedulers used.
 `dask.distributed.LocalCluster` configurations, where each point shows the ratio of the
 walltime with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
-Generally speaking, using 1 Dask worker process per ESN group scales well,
+Generally speaking, using 1 `dask` worker process per ESN group scales well,
 which makes sense because each group is trained entirely independently.
 However, the two exceptions to this rule of thumb are as follows.
 
 1. When there are only 2 groups, the threaded scheduler does slightly better,
    presumably because of the lack of overhead involved with multiprocessing.
 
-2. When $N_g$ is close to the default provided by Dask, it might be best to
+2. When $N_g$ is close to the default provided by `dask`, it might be best to
    use that default.
 
-There are, of course, many more ways to configure a Dask cluster, but the three
+There are, of course, many more ways to configure a `dask` cluster, but the three
 examples shown here should provide some guidance for even larger problems that require
-e.g., dask-jobqueue or dask-cloudprovider.
+e.g., `dask-jobqueue` or `dask-cloudprovider`.
 
 # Conclusions
 
