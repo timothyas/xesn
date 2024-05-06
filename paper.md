@@ -37,12 +37,6 @@ bibliography: docs/references.bib
 
 ---
 
-# TODO
-
-- [ ] methods: discuss overlap region, add training (one line), figure out how
-  to mention PSD at end better than I am now, mention eager vs lazy in
-  architectures
-
 # Summary
 
 `Xesn` is a python package that allows scientists to easily design
@@ -174,17 +168,6 @@ via Hyperopt [@hyperopt], `xesn` enables Bayesian Optimization as noted above.
 Finally, we note the code base used by [@arcomano_machine_2020;@arcomano_hybrid_2022;@arcomano_hybrid_2023],
 available at [@arcomano_code].
 The code implements ESNs in Fortran, and focuses on using ESNs for hybrid physics-ML modeling.
-
-# Background
-
-Where to put this stuff?
-
-* Arcomano: ESNs in multidimensional weather forecasting
-* Penny: ESN in DA
-* Platt: ESNs constrained by LE do really well
-* [@smith_temporal_2023]: ESNs constrained by KE Spectrum (or PSD) preserve
-  small scale features in turbulent GFD
-
 
 # Implemented Architectures
 
