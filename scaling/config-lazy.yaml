@@ -11,13 +11,19 @@ xdata:
         bias            : 0.
         scale           : 1.
 
-esn:
-    n_input             : 10
-    n_output            : 10
+lazyesn:
+    boundary            : periodic
     n_reservoir         : 500
-#
     leak_rate           : 0.5
     tikhonov_parameter  : 1.e-6
+    persist             : True
+#
+    esn_chunks:
+        x               : 2
+        time            : -1
+    overlap:
+        x               : 1
+        time            : 0
 #
     input_kwargs:
         factor          : 1.0
@@ -35,10 +41,10 @@ esn:
         random_seed     : 1
 #
     bias_kwargs:
-        factor          : 1.0
+        factor          : 0.5
         distribution    : uniform
         random_seed     : 2
 
 training:
     n_spinup            : 0
-    batch_size          : 20_000
+    batch_size          : null
