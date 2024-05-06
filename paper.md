@@ -35,6 +35,9 @@ bibliography: docs/references.bib
 
 # TODO
 
+- [ ] methods: discuss overlap region, add training (one line), figure out how
+  to mention PSD at end better than I am now, mention eager vs lazy in
+  architectures
 - [ ] add missing citations
 - [ ] change parenthetical citations to inline
 
@@ -65,7 +68,7 @@ domains where ESNs have been useful, such as in economics, signal processing,
 and biological applications.
 
 
-# Statement of need
+# 2. Statement of Need
 
 ESNs are a conceptually simple recurrent neural network architecture.
 As shown in section ??
@@ -135,7 +138,7 @@ Xesn enables prediction for multi dimensional systems by integrating its high
 level operations with xarray CITE.
 As with xarray, users refer to dimensions based on their named axes (e.g., "x",
 "y", or "time" instead of logical indices 0, 1, 2).
-Xesn parallelizes the core array based operations by using dask [@dask_2016]
+Xesn parallelizes the core array based operations by using Dask [@dask_2016]
 to map them across available resources, which can include a multi threaded
 environment on a laptop or single node, or a distributed computing resource
 such as traditional on-premises HPC or in the cloud.
@@ -311,8 +314,75 @@ by @smith_temporal_2023.
 * can constrain MSE and PSD as in Smith et al
 
 
-# Potential Scaling Results
+# Scaling Results
 
+As discussed in the [Statement of Need](#Statement-of-Need), one purpose of
+`xesn` is to provide a parallelized ESN implementation, which we achieve using
+Dask [@dask_2016].
+One advantage of Dask is that it provides a highly flexible, task-based
+parallelization framework such that the same code can be parallelized using a
+combination of threads and processes, and deployed in a variety of settings from
+a laptop to HPC platforms, either on premises or in the cloud.
+Here we show brief scaling results in order to give some practical guidance on
+how to best configure Dask when using the parallelized ESN architecture.
+
+For reference, in Figure 1 we show the walltime and memory usage involved for
+training the
+standard ESN architecture as a function of the input dimension $N_u$ and
+reservoir size $N_r$.
+Each data point in Figure 1 involved running the following commands:
+```python
+from xesn import Driver
+driver = Driver(config="scaling/config-eager.yaml")
+driver.run_training()
+```
+which was launched on a single `c2-standard-60` instance on Google Cloud Platform.
+The training data was generated from the Lorenz96 model with dimensions 16
+and 256, with 80,000 total samples in the training dataset.
+Clearly the reservoir size has the biggest impact on both walltime and memory
+usage, as both scale quadratically with $N_r$.
+This result serves as a motivation for our parallelized architecture.
+
+In order to evaluate the performance of the parallelized architecture, we take
+the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
+$N_g = \{2, 4, 8, 16, 32\}$ groups.
+We then fixed the reservoir size so that $N_r*N_g = 16,000$, so that the problem
+size is more or less fixed and the timing results reflect weak computational
+scaling.
+The training task and resources used are otherwise the same as before.
+We then create 3 different Dask Distributed clusters, testing:
+1. Purely threaded mode:
+   ```
+   from distributed import Client
+   client = Client(processes=False)
+   ```
+2. The default `LocalCluster` configuration for our resources:
+   ```
+   from distributed import Client
+   client = Client()
+   ```
+3. Using 1 Dask worker per group (subdomain):
+   ```
+   from distributed import Client
+   client = Client(n_workers = n_g)
+   ```
+
+Figure 2 shows the weak scaling results of `xesn.LazyESN` for each of these
+`dask.distributed.LocalCluster`, where each point shows the ratio of the
+walltime with the standard (serial) architecture to the lazy (parallel)
+architecture with $N_g$ groups.
+Generally speaking, using 1 dask worker process per ESN group scales well,
+which  makes sense because each group can be trained entirely
+independently.
+However, the two exceptions to this rule of thumb are
+(1) when there are only 2 groups, the threaded scheduler does slightly better
+presumably because of the lack of overhead involved with multiprocessing,
+and (2) when $N_g$ is close to the default provided by dask, it might be best to
+use that default.
+
+There are, of course, many more ways to configure a Dask cluster, but the three
+shown here should provide some guidance for even larger problems that require
+e.g., dask_jobqueue CITE or dask-cloudprovider CITE.
 
 # Conclusions
 
