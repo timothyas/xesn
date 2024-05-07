@@ -37,10 +37,6 @@ bibliography: docs/references.bib
 
 ---
 
-# TODO:
-- [ ] eager plot Ni -> Nu
-- [ ] eager plot add markers, thicken the lines
-
 # Summary
 
 `Xesn` is a python package that allows scientists to easily design
@@ -381,7 +377,13 @@ how to best configure `dask` when using the parallelized ESN architecture.
 ![Walltime and memory usage for the standard ESN architecture for two different
 system sizes ($N_u$) and a variety of reservoir sizes ($N_r$).
 Walltime is captured with Python's time module, and memory is captured with
-[memory-profiler 0.16.0](https://pypi.org/project/memory-profiler/).
+[memory-profiler](https://pypi.org/project/memory-profiler/)
+for the CPU runs and with
+[NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems)
+for the GPU runs.
+The dotted lines indicate theoretical scaling of memory, where
+$a=250,000$ and $b=20,000$ are empirically derived constants, and
+$c=8\cdot10^9$ is a conversion to GB.
 \label{fig:eager}
 ](scaling/eager-scaling.pdf){ width=100% }
 
@@ -398,8 +400,15 @@ driver.run_training()
 which was launched on a single `c2-standard-60` instance on Google Cloud Platform.
 The training data was generated from the Lorenz96 model with dimensions 16
 and 256, with 80,000 total samples in the training dataset.
-Clearly, the reservoir size has the biggest impact on both walltime and memory
-usage, as both scale quadratically with $N_r$.
+In the CPU tests, walltime scales quadratically with the reservoir size, while
+it is mostly constant on GPUs.
+For this problem, it becomes advantageous to use GPUs once the reservoir size is
+approximately $N_r=8,000$.
+Notably, for very large reservoirs e.g., $N_r=16,000$, the speedup attained by
+using a GPU is a factor of 2.5-3.
+In both the CPU and GPU tests, memory scales quadratically with reservoir size,
+although the increasing memory usage with reservoir size is more dramatic on the
+CPU than GPU.
 This result serves as a motivation for our parallelized architecture.
 
 In order to evaluate the performance of the parallelized architecture, we take
@@ -424,10 +433,16 @@ We then create 3 different `dask.distributed` Clusters, testing:
    client = Client()
    ```
 
-3. Using 1 `dask` worker per group (subdomain):
+3. Using 1 `dask` worker per group (more details for GPU version see repo):
    ```python
+   # On CPUs
    from distributed import Client
    client = Client(n_workers = n_g)
+
+   # On GPUs
+   from dask_cuda import LocalCUDACluster
+   cluster = Cluster(CUDA_VISIBLE_DEVICES="0,1") # for n_procs=2 case
+   client = Client(cluster)
    ```
 
 ![Weak scaling results, showing speedup as a ratio of serial training time to
