@@ -53,15 +53,15 @@ class XData():
         ds = xr.open_zarr(self.zstore_path)
         xda = ds[self.field_name]
 
-        if _use_cupy:
-            xda = xda.as_cupy()
-
         dims = self.dimensions if self.dimensions is not None else xda.dims
         if tuple(dims) != xda.dims:
             xda = xda.transpose(*dims)
 
         xda = self.subsample(xda, mode=mode)
         xda = self.normalize(xda)
+
+        if _use_cupy:
+            xda = xda.as_cupy()
 
         # TODO: other preprocessing, like adding noise
         return xda

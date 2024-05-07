@@ -34,6 +34,7 @@ lazyesn:
 #
     adjacency_kwargs:
         factor          : 1.0
+        format          : csr
         distribution    : uniform
         normalization   : svd
         is_sparse       : True
