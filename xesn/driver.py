@@ -127,6 +127,8 @@ class Driver():
 
         self.localtime.start(f"Storing {self.esn_name} Weights")
         ds = esn.to_xds()
+        if _use_cupy:
+            ds = ds.as_numpy()
         ds.to_zarr(join(self.output_directory, f"{self.esn_name}-weights.zarr"), mode="w")
         self.localtime.stop()
 

@@ -64,7 +64,7 @@ their installation instructions
 `here <https://docs.cupy.dev/en/stable/install.html>`_
 and 
 `there <https://cupy-xarray.readthedocs.io/>`_
-An appropriate conda environment can also be created by uncommenting the following two lines of
+An appropriate conda environment can also be created by uncommenting the bottom 3 lines of
 `this environment file
 <https://github.com/timothyas/xesn/blob/main/ci/environment.yaml>`_
 and creating the environment as follows::
