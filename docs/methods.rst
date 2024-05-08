@@ -23,7 +23,7 @@ is defined as follows:
 
 .. math::
    \mathbf{r}(n + 1) = (1 - \alpha) \mathbf{r}(n) +
-    \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+    \alpha \tanh( \mathbf{W}\mathbf{r}(n) + \mathbf{W}_\text{in}\mathbf{u}(n) +
    \mathbf{b})
 
 .. math::
@@ -327,7 +327,7 @@ The distributed ESN equations are
 
 .. math::
    \mathbf{r}_k(n + 1) = (1 - \alpha) \mathbf{r}_k(n) +
-    \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
+    \alpha \tanh( \mathbf{W}\mathbf{r}_k(n) + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
    \mathbf{b})
 
 .. math::

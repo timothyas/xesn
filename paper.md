@@ -66,7 +66,7 @@ signal processing [@jaeger_harnessing_2004].
 
 # Statement of Need
 
-ESNs are a conceptually simple recurrent neural network architecture.
+ESNs are a conceptually simple Recurrent Neural Network architecture.
 As shown in the [Implemented Architectures](#implemented-architectures) section,
 they are defined by a simple set of equations, a single hidden layer, and a
 handful of parameters.
@@ -95,19 +95,19 @@ to operate on GPUs.
 ## Parameter Optimization
 
 Although ESNs do not employ backpropagation to train the internal weights of the
-input matrix, adjacency matrix, or bias vector
+input matrix, adjacency matrix, or bias vector,
 their behavior and performance is highly sensitive to a set of
 5 scalar parameters
 (see [Macro-Scale Parameters](#macro-scale-parameters)).
 Moreover, the interaction of these parameters is often not straightforward, and
 it is therefore advantageous to optimize these parameter values, as is shown by
 @platt_systematic_2022 with an extensive set of experimental results.
-Additionally, @platt_constraining_2023 showed that by adding invariant metrics to
-a loss function, such as the Lyapunov exponent spectrum or simply its leading element,
-results in networks that generalize better to unseen test data.
+Additionally, @platt_constraining_2023 showed that adding invariant metrics to
+the loss function, such as the Lyapunov exponent spectrum or simply its leading element,
+resulted in networks that generalize better to unseen test data.
 @smith_temporal_2023 showed similar results, highlighting that constraining the Kinetic Energy
-Spectrum when developing ESN based emulators of Surface Quasi-Geostrophic
-Turbulence helps to preserve small scale features in the flow.
+spectrum when developing ESN based emulators of Surface Quasi-Geostrophic
+Turbulence helped to preserve small scale features in the flow.
 As a somewhat generic and efficient implementation of these metrics,
 `xesn` offers the capability to constrain the
 system's Power Spectral Density during parameter optimization, in addition to a
@@ -137,11 +137,11 @@ climate modeling) quickly becomes intractable with a single reservoir.
 To address this, @pathak_model-free_2018 developed a parallelization strategy
 so that multiple, semi-independent reservoirs make predictions of a single, high dimensional
 system.
-This parallelization was generalized for multi dimensions by
+This parallelization was generalized for multiple dimensions by
 @arcomano_machine_2020 and @smith_temporal_2023, the latter of which serves
 as the basis for `xesn`.
 
-`Xesn` enables prediction for multi dimensional systems by integrating its high
+`Xesn` enables prediction for multi-dimensional systems by integrating its high
 level operations with `xarray` [@hoyer_xarray_2017].
 As with `xarray`, users refer to dimensions based on their named axes (e.g., "x",
 "y", or "time" instead of logical indices 0, 1, 2).
@@ -154,14 +154,14 @@ such as traditional on-premises HPC or in the cloud.
 ## Existing Reservoir Computing Software
 
 It is important to note that there is already an existing software package in
-Python for Reservor Computing, called `ReservoirPy` [@Trouvain2020].
+Python for Reservoir Computing, called `ReservoirPy` [@Trouvain2020].
 To our knowledge, the purpose of this package is distinctly different.
-The focus of ReservoirPy is to develop a highly generic framework for Reservoir
+The focus of `ReservoirPy` is to develop a highly generic framework for Reservoir
 Computing, for example, allowing one to change the network node type and graph structure
 underlying the reservoir, and allowing for delayed connections.
 On the other hand, `xesn` is focused specifically on implementing ESN
-architectures that can scale to high dimensional forecasting tasks.
-Additionally, while ReservoirPy enables hyperparameter grid search capabilities
+architectures that can scale to multi-dimensional forecasting tasks.
+Additionally, while `ReservoirPy` enables hyperparameter grid search capabilities
 via Hyperopt [@hyperopt], `xesn` enables Bayesian Optimization as noted above.
 
 Finally, we note the code base used by [@arcomano_machine_2020;@arcomano_hybrid_2022;@arcomano_hybrid_2023],
@@ -179,7 +179,7 @@ is defined by the discrete timestepping equations:
 \begin{equation}
     \begin{aligned}
         \mathbf{r}(n + 1) &= (1 - \alpha) \mathbf{r}(n) +
-            \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r}(n) + \mathbf{W}_\text{in}\mathbf{u}(n) +
             \mathbf{b}) \\
         \hat{\mathbf{v}}(n + 1) &= \mathbf{W}_\text{out} \mathbf{r}(n+1) \, .
     \end{aligned}
@@ -294,16 +294,17 @@ dataset, which is illustrated below, and more details can be found in Section 2
 of [@smith_temporal_2023].
 
 
-![A snapshot of potential temperature from a model for Surface Quasi-Geostrophic
-Turbulence, with dimensions labelled in order to illustrate the ESN
-parallelization scheme.
+![A snapshot of potential temperature from
+[this model](https://github.com/jswhit/sqgturb)
+for Surface Quasi-Geostrophic Turbulence,
+with dimensions labelled in order to illustrate the ESN parallelization scheme.
 \label{fig:sqg}
 ](docs/images/chunked-sqg.jpg){width=50%}
 
 The dataset has 3 spatial dimensions $(x, y, z)$, and evolves in time, so
 that the shape is $(N_x = 64, N_y = 64, N_z = 2, N_{time})$.
-Parallelization is achieved by subdividing the domain into smaller groups
-along the :math:`x` and :math:`y` dimensions, akin to domain decomposition
+Parallelization is achieved in this case by subdividing the domain into smaller groups
+along the $x$ and $y$ dimensions, akin to domain decomposition
 techniques in General Circulation Models.
 In the case of our example, each group (or chunk) is defined with size
 ```python
@@ -316,7 +317,7 @@ where each chunk becomes a separate `dask` task.
 Note that unlike `xesn.ESN`, `xesn.LazyESN` does not load all data into memory,
 but instead lazily operates on the data via the `dask.Array` API.
 
-Communication between chunks is enabled by defining an overlap or halo region,
+Communication between groups is enabled by defining an overlap or halo region,
 harnessing `dask`'s flexible overlap function.
 In our example, the overlap region is shown for a single group by the white box,
 and for instance is defined with size:
@@ -326,7 +327,7 @@ overlap={"x": 1, "y": 1, "z": 0}
 that is, there is a single grid cell overlap in $x$ and $y$, but no overlap in
 the vertical.
 
-The ESN parallelization is achieved by assigning individual ESNs to each groups.
+The ESN parallelization is achieved by assigning individual ESNs to each group.
 That is, we generate the sets
 $\{\mathbf{u}_k \subset \mathbf{u} | k = \{1, 2, ..., N_g\}\}$,
 where each local input vector $\mathbf{u}_k$ includes the overlap region
@@ -336,7 +337,7 @@ The distributed ESN equations are
 \begin{equation}
     \begin{aligned}
         \mathbf{r}_k(n + 1) &= (1 - \alpha) \mathbf{r}_k(n) +
-            \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
+            \alpha \tanh( \mathbf{W}\mathbf{r}_k(n) + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
             \mathbf{b}) \\
         \hat{\mathbf{v}}_k(n + 1) &= \mathbf{W}_\text{out}^k \mathbf{r}_k(n+1)
     \end{aligned}
@@ -345,15 +346,15 @@ The distributed ESN equations are
 
 Here $\mathbf{r}_k, \, \mathbf{u}_k \, \mathbf{W}_\text{out}^k, \, \hat{\mathbf{v}}_k$
 are the hidden state, input state, readout matrix, and estimated output state
-associated with the $k^{th}$ data chunk.
-The local output state $\hat{\mathbf{v}}_k$ does not include the
+associated with the $k^{th}$ group.
+Note that the local output state $\hat{\mathbf{v}}_k$ does not include the
 overlap region.
 Currently, the various macro-scale paramaters
-$\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all chunks.
+$\{\alpha, \rho, \sigma, \sigma_b, \beta\}$ are fixed for all groups.
 Therefore, the only components that drive unique hidden states on each chunk are
 the different input states $\mathbf{u}_k$ and the readout matrices
 $\mathbf{W}_\text{out}^k$.
-Additionally, because the solution to \autoref{eq:loss} training is linear, the readout matrices are simply
+Additionally, because the solution to \autoref{eq:loss} is linear, the readout matrices are simply
 \begin{equation}
     \mathbf{W}^k_\text{out} = \mathbf{V}_k\mathbf{R}_k^T
         \left(\mathbf{R}_k\mathbf{R}_k^T + \beta\mathbf{I}\right)^{-1} \, ,
@@ -378,7 +379,7 @@ how to best configure `dask` when using the parallelized `LazyESN` architecture.
 
 ![Walltime and memory usage for the standard ESN architecture for two different
 system sizes ($N_u$) and a variety of reservoir sizes ($N_r$).
-Walltime is captured with Python's time module, and memory is captured with
+Walltime is captured with Python's `time` module, and memory is captured with
 [memory-profiler](https://pypi.org/project/memory-profiler/)
 for the CPU runs and with
 [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems)
@@ -397,6 +398,13 @@ Each data point in \autoref{fig:eager} involved running the following commands:
 ```python
 from xesn import Driver
 driver = Driver(config="scaling/config-eager.yaml")
+driver.overwrite_config(
+    {"esn": {
+        "n_input": N_u,
+        "n_output": N_u,
+        "n_reservoir": N_r,
+    }
+)
 driver.run_training()
 ```
 We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform, using
@@ -405,12 +413,13 @@ and a single `a2-highgpu-8g` (i.e., with 8 A100 cards) instance to test the GPU
 (CuPy) implementation.
 The training data was generated from the Lorenz96 model
 [@lorenz_predictability_1996] with dimensions
-$N_u=\{16,256\}$, and generating 80,000 total samples in the training dataset.
+$N_u=\{16,256\}$,
+and we generated 80,000 total samples in the training dataset.
 
 In the CPU tests, walltime scales quadratically with the reservoir size, while
 it is mostly constant on a GPU.
 For this problem, it becomes advantageous to use GPUs once the reservoir size is
-approximately $N_r=8,000$ or greater, and we notably achieve a speedup factor of
+approximately $N_r=8,000$ or greater, and we notably achieve a CPU/GPU speedup factor of
 2.5-3 for the large reservoir case of $N_r=16,000$.
 In both the CPU and GPU tests, memory scales quadratically with reservoir size,
 although the increasing memory usage with reservoir size is more dramatic on the
@@ -422,20 +431,20 @@ This result serves as a motivation for our parallelized architecture.
 In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
 $N_g = \{2, 4, 8, 16, 32\}$ groups.
-We then fixed the reservoir size so that $N_r*N_g = 16,000$, so that the problem
+We then fix the reservoir size so that $N_r*N_g = 16,000$, so that the problem
 size is more or less fixed and the timing results reflect strong scaling.
 The training task and resources used are otherwise the same as for the standard
-ESN results shown in Figure 1.
+ESN results shown in \autoref{fig:eager}.
 We then create 3 different `dask.distributed` Clusters, testing:
 
-1. Purely threaded mode:
+1. Purely threaded mode.
    ```python
    # CPUs only
    from distributed import Client
    client = Client(processes=False)
    ```
 
-2. The relevant default "LocalCluster" (i.e., single node) configuration for our resources:
+2. The relevant default "LocalCluster" (i.e., single node) configuration for our resources.
    ```python
    # On CPU
    from distributed import Client
@@ -447,8 +456,8 @@ We then create 3 different `dask.distributed` Clusters, testing:
    client = Client(cluster)
    ```
 
-3. A `LocalCluster` with 1 `dask` worker per group (on GPUs, this assumes 1 GPU per worker
-   and we are able to use a maximum of 8 workers due to our available resources):
+3. A `LocalCluster` with 1 `dask` worker per group. On GPUs, this assumes 1 GPU per worker
+   and we are able to use a maximum of 8 workers due to our available resources.
    ```python
    # On CPUs
    from distributed import Client
@@ -468,11 +477,11 @@ e.g., `dask-jobqueue` or `dask-cloudprovider`.
 parallel training time as a function of number of groups or subdomains of the
 Lorenz96 system.
 Serial training time is evaluated with $N_u=256$ and $N_r=16,000$ with
-`xesn.ESN` from Figure 1, and parallel training time uses `xesn.LazyESN` with
+`xesn.ESN` from \autoref{fig:eager}, and parallel training time uses `xesn.LazyESN` with
 the number of groups as shown.
 See text for a description of the different schedulers used.
 \label{fig:lazy}
-](scaling/lazy-scaling.pdf){ width=40% }
+](scaling/lazy-scaling.pdf){ width=100% }
 
 \autoref{fig:lazy} shows the strong scaling results of `xesn.LazyESN` for each of these
 cluster configurations, where each point shows the ratio of the
@@ -497,7 +506,8 @@ same as for the single worker case, only improving performance by 10-20%.
 While the strong scaling is somewhat muted, the invariance of walltime to
 reservoir size in \autoref{fig:eager} and number of groups in
 \autoref{fig:lazy} means that the distributed GPU
-implementation is able to tackle larger problems at roughly the same cost.
+implementation is able to tackle larger problems at roughly the same
+computational cost.
 
 
 
@@ -508,7 +518,7 @@ for a variety of forecasting problems.
 The package relies on a software stack that is already familiar to weather and
 climate scientists, and allows users to
 (1) easily deploy on GPUs,
-(2) easily use Bayesian Optimization to easily design skillful networks, and
+(2) use Bayesian Optimization to easily design skillful networks, and
 (3) scale to high dimensional, multivariate problems.
 We have additionally provided performance results in order to help scientists
 scale their networks to large problems.
@@ -521,7 +531,8 @@ integrate with `Ray Tune` [@liaw2018tune].
 
 # Acknowledgements
 
-
-
+T.A. Smith and S.G. Penny acknowledge support from NOAA Grant NA20OAR4600277.
+S.G. Penny and J.A. Platt acknowledge support from the Office of Naval Research (ONR) Grants
+N00014-19-1-2522 and N00014-20-1- 2580.
 
 # References
