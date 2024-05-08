@@ -404,7 +404,7 @@ driver.overwrite_config(
         "n_output": N_u,
         "n_reservoir": N_r,
     }
-)
+})
 driver.run_training()
 ```
 We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform, using
