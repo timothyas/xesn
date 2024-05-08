@@ -362,7 +362,7 @@ Additionally, because the solution to \autoref{eq:loss} training is linear, the 
 where each readout matrix can be computed independently of one another.
 
 
-# Scaling Results
+# Computational Performance
 
 As discussed in the [Statement of Need](#statement-of-need), one purpose of
 `xesn` is to provide a parallelized ESN implementation, which we achieve using
@@ -372,7 +372,9 @@ parallelization framework such that the same code can be parallelized using a
 combination of threads and processes, and deployed in a variety of settings from
 a laptop to HPC platforms, either on premises or in the cloud.
 Here we show brief scaling results in order to give some practical guidance on
-how to best configure `dask` when using the parallelized ESN architecture.
+how to best configure `dask` when using the parallelized `LazyESN` architecture.
+
+## Standard (Eager) ESN Performance
 
 ![Walltime and memory usage for the standard ESN architecture for two different
 system sizes ($N_u$) and a variety of reservoir sizes ($N_r$).
@@ -389,7 +391,7 @@ $c=8\cdot10^9$ is a conversion to GB.
 
 For reference, in \autoref{fig:eager} we show the walltime and memory usage involved for
 training the
-standard ESN architecture as a function of the input dimension $N_u$ and
+standard (eager) `ESN` architecture as a function of the input dimension $N_u$ and
 reservoir size $N_r$.
 Each data point in \autoref{fig:eager} involved running the following commands:
 ```python
@@ -397,43 +399,56 @@ from xesn import Driver
 driver = Driver(config="scaling/config-eager.yaml")
 driver.run_training()
 ```
-which was launched on a single `c2-standard-60` instance on Google Cloud Platform.
-The training data was generated from the Lorenz96 model with dimensions 16
-and 256, with 80,000 total samples in the training dataset.
+We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform, using
+a single `c2-standard-60` instance to test the CPU (NumPy) implementation
+and a single `a2-highgpu-8g` (i.e., with 8 A100 cards) instance to test the GPU
+(CuPy) implementation.
+The training data was generated from the Lorenz96 model
+[@lorenz_predictability_1996] with dimensions
+$N_u=\{16,256\}$, and generating 80,000 total samples in the training dataset.
+
 In the CPU tests, walltime scales quadratically with the reservoir size, while
-it is mostly constant on GPUs.
+it is mostly constant on a GPU.
 For this problem, it becomes advantageous to use GPUs once the reservoir size is
-approximately $N_r=8,000$.
-Notably, for very large reservoirs e.g., $N_r=16,000$, the speedup attained by
-using a GPU is a factor of 2.5-3.
+approximately $N_r=8,000$ or greater, and we notably achieve a speedup factor of
+2.5-3 for the large reservoir case of $N_r=16,000$.
 In both the CPU and GPU tests, memory scales quadratically with reservoir size,
 although the increasing memory usage with reservoir size is more dramatic on the
 CPU than GPU.
 This result serves as a motivation for our parallelized architecture.
 
+## Parallel (Lazy) Architecture Strong Scaling Results
+
 In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
 $N_g = \{2, 4, 8, 16, 32\}$ groups.
 We then fixed the reservoir size so that $N_r*N_g = 16,000$, so that the problem
-size is more or less fixed and the timing results reflect weak computational
-scaling.
+size is more or less fixed and the timing results reflect strong scaling.
 The training task and resources used are otherwise the same as for the standard
 ESN results shown in Figure 1.
 We then create 3 different `dask.distributed` Clusters, testing:
 
 1. Purely threaded mode:
    ```python
+   # CPUs only
    from distributed import Client
    client = Client(processes=False)
    ```
 
-2. The default `dask.distributed.LocalCluster` configuration for our resources:
+2. The relevant default "LocalCluster" (i.e., single node) configuration for our resources:
    ```python
+   # On CPU
    from distributed import Client
    client = Client()
+
+   # On GPU
+   from dask_cuda import LocalCUDACluster
+   cluster = LocalCUDACluster()
+   client = Client(cluster)
    ```
 
-3. Using 1 `dask` worker per group (more details for GPU version see repo):
+3. A `LocalCluster` with 1 `dask` worker per group (on GPUs, this assumes 1 GPU per worker
+   and we are able to use a maximum of 8 workers due to our available resources):
    ```python
    # On CPUs
    from distributed import Client
@@ -441,11 +456,15 @@ We then create 3 different `dask.distributed` Clusters, testing:
 
    # On GPUs
    from dask_cuda import LocalCUDACluster
-   cluster = Cluster(CUDA_VISIBLE_DEVICES="0,1") # for n_procs=2 case
+   cluster = Cluster(CUDA_VISIBLE_DEVICES="0,1") # e.g. for N_groups=2
    client = Client(cluster)
    ```
 
-![Weak scaling results, showing speedup as a ratio of serial training time to
+There are, of course, many more ways to configure a `dask` cluster, but these
+three examples should provide some guidance for even larger problems that require
+e.g., `dask-jobqueue` or `dask-cloudprovider`.
+
+![Strong scaling results, showing speedup as a ratio of serial training time to
 parallel training time as a function of number of groups or subdomains of the
 Lorenz96 system.
 Serial training time is evaluated with $N_u=256$ and $N_r=16,000$ with
@@ -455,11 +474,11 @@ See text for a description of the different schedulers used.
 \label{fig:lazy}
 ](scaling/lazy-scaling.pdf){ width=40% }
 
-\autoref{fig:lazy} shows the weak scaling results of `xesn.LazyESN` for each of these \
-`dask.distributed.LocalCluster` configurations, where each point shows the ratio of the
+\autoref{fig:lazy} shows the strong scaling results of `xesn.LazyESN` for each of these
+cluster configurations, where each point shows the ratio of the
 walltime with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
-Generally speaking, using 1 `dask` worker process per ESN group scales well,
+On CPUs, using 1 `dask` worker process per ESN group generally scales well,
 which makes sense because each group is trained entirely independently.
 However, the two exceptions to this rule of thumb are as follows.
 
@@ -469,15 +488,40 @@ However, the two exceptions to this rule of thumb are as follows.
 2. When $N_g$ is close to the default provided by `dask`, it might be best to
    use that default.
 
-There are, of course, many more ways to configure a `dask` cluster, but the three
-examples shown here should provide some guidance for even larger problems that require
-e.g., `dask-jobqueue` or `dask-cloudprovider`.
+On GPUs, the timing is largely determined by how many workers (GPUs) there are
+relative to the number of groups.
+When the number of workers is less than the number of groups, performance is
+detrimental.
+However, when there is at least one worker per group, the timing is almost the
+same as for the single worker case, only improving performance by 10-20%.
+While the strong scaling is somewhat muted, the invariance of walltime to
+reservoir size in \autoref{fig:eager} and number of groups in
+\autoref{fig:lazy} means that the distributed GPU
+implementation is able to tackle larger problems at roughly the same cost.
+
+
 
 # Conclusions
 
-* can't use smt on GPUs
+We have presented `xesn`, a Python package that allows scientists to implement ESNs
+for a variety of forecasting problems.
+The package relies on a software stack that is already familiar to weather and
+climate scientists, and allows users to
+(1) easily deploy on GPUs,
+(2) easily use Bayesian Optimization to easily design skillful networks, and
+(3) scale to high dimensional, multivariate problems.
+We have additionally provided performance results in order to help scientists
+scale their networks to large problems.
+The main current limitation of `xesn` is that it does not enable Bayesian
+Optimization on GPUs, due to the Surrogate Modeling Toolbox's current lack of GPU
+integration.
+Future versions could address this by implementing Bayesian Optimization in the source code, or
+integrate with `Ray Tune` [@liaw2018tune].
+
 
 # Acknowledgements
+
+
 
 
 # References
