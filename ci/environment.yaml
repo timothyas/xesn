@@ -22,3 +22,4 @@ dependencies:
 # GPUs
 #    - cupy
 #    - cupy-xarray
+#    - dask_cuda
