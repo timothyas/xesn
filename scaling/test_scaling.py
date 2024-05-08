@@ -25,7 +25,7 @@ def sampler_to_xarray(ms, name):
         name=name,
     )
 
-#@profile
+@profile
 def run_scaling_test(mode, n_input, n_reservoir, n_x):
 
 
@@ -33,7 +33,11 @@ def run_scaling_test(mode, n_input, n_reservoir, n_x):
         if "threaded" in mode:
             client = Client(processes=False)
         elif "worker-default" in mode:
-            client = Client()
+            if _use_cupy:
+                cluster = LocalCUDACluster()
+                client = Client(cluster)
+            else:
+                client = Client()
 
         else:
             n_workers = n_input // n_x
