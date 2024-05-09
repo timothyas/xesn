@@ -527,6 +527,8 @@ Optimization on GPUs, due to the Surrogate Modeling Toolbox's current lack of GP
 integration.
 Future versions could address this by implementing Bayesian Optimization in the source code, or
 integrate with `Ray Tune` [@liaw2018tune].
+Additionally, future versions could incorporate JAX [@jax2018github] in order to
+speed up the CPU implementation and deploy on GPU or TPU hardware.
 
 
 # Acknowledgements
