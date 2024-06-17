@@ -10,11 +10,11 @@ tags:
 authors:
   - name: Timothy A. Smith
     orcid: 0000-0003-4463-6126
-    affiliation: "1, 2"
+    affiliation: "1"
     corresponding: true
   - name: Stephen G. Penny
     orcid: 0000-0002-5223-8307
-    affiliation: "1, 3"
+    affiliation: "2, 3"
   - name: Jason A. Platt
 	orcid: 0000-0001-6579-6546
     affiliation: 4
@@ -22,11 +22,11 @@ authors:
 	orcid: 0000-0001-6300-5659
     affiliation: 5
 affiliations:
- - name: Cooperative Institute for Research in Environmental Sciences (CIRES) at the University of Colorado Boulder, Boulder, CO, USA
-   index: 1
  - name: Physical Sciences Laboratory (PSL), National Oceanic and Atmospheric Administration (NOAA), Boulder, CO, USA
-   index: 2
+   index: 1
  - name: Sofar Ocean, San Francisco, CA, USA
+   index: 2
+ - name: Cooperative Institute for Research in Environmental Sciences (CIRES) at the University of Colorado Boulder, Boulder, CO, USA
    index: 3
  - name: University of California San Diego (UCSD), La Jolla, CA, USA
    index: 4
@@ -536,5 +536,8 @@ speed up the CPU implementation and deploy on GPU or TPU hardware.
 T.A. Smith and S.G. Penny acknowledge support from NOAA Grant NA20OAR4600277.
 S.G. Penny and J.A. Platt acknowledge support from the Office of Naval Research (ONR) Grants
 N00014-19-1-2522 and N00014-20-1- 2580.
+T.A. Smith acknowledges support from
+the Cooperative Institute for Research in Environmental Sciences (CIRES) at the
+University of Colorado Boulder.
 
 # References
