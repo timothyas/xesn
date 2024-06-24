@@ -291,7 +291,7 @@ a Surface Quasi-Geostrophic Turbulence model [written by Jeff Whitaker](https://
 following [@blumen_uniform_1978; @held_surface_1995].
 For the purposes of this discussion, all that matters is the size of the
 dataset, which is illustrated below, and more details can be found in Section 2
-of [@smith_temporal_2023].
+of @smith_temporal_2023.
 
 
 ![A snapshot of potential temperature from
@@ -419,8 +419,9 @@ and we generated 80,000 total samples in the training dataset.
 In the CPU tests, walltime scales quadratically with the reservoir size, while
 it is mostly constant on a GPU.
 For this problem, it becomes advantageous to use GPUs once the reservoir size is
-approximately $N_r=8,000$ or greater, and we notably achieve a CPU/GPU speedup factor of
-2.5-3 for the large reservoir case of $N_r=16,000$.
+approximately $N_r=8,000$ or greater.
+Notably, we achieve a speedup factor of 2.5-3
+for the large reservoir case ($N_r=16,000$), when comparing GPU to CPU walltime.
 In both the CPU and GPU tests, memory scales quadratically with reservoir size,
 although the increasing memory usage with reservoir size is more dramatic on the
 CPU than GPU.
@@ -471,7 +472,10 @@ We then create 3 different `dask.distributed` Clusters, testing:
 
 There are, of course, many more ways to configure a `dask` cluster, but these
 three examples should provide some guidance for even larger problems that require
-e.g., `dask-jobqueue` or `dask-cloudprovider`.
+e.g.,
+[`dask-jobqueue`](https://jobqueue.dask.org/en/latest/)
+or
+[`dask-cloudprovider`](https://cloudprovider.dask.org/en/latest/).
 
 ![Strong scaling results, showing speedup as a ratio of serial training time to
 parallel training time as a function of number of groups or subdomains of the
@@ -519,13 +523,13 @@ The package relies on a software stack that is already familiar to weather and
 climate scientists, and allows users to
 (1) easily deploy on GPUs,
 (2) use Bayesian Optimization to easily design skillful networks, and
-(3) scale to high dimensional, multivariate problems.
+(3) scale the workflow, including Bayesian Optimization, to high dimensional, multivariate problems.
 We have additionally provided performance results in order to help scientists
 scale their networks to large problems.
 The main current limitation of `xesn` is that it does not enable Bayesian
 Optimization on GPUs, due to the Surrogate Modeling Toolbox's current lack of GPU
 integration.
-Future versions could address this by implementing Bayesian Optimization in the source code, or
+Future versions could address this limitation by implementing Bayesian Optimization in the source code, or
 integrate with `Ray Tune` [@liaw2018tune].
 Additionally, future versions could incorporate JAX [@jax2018github] in order to
 speed up the CPU implementation and deploy on GPU or TPU hardware.
