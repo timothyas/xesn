@@ -23,7 +23,7 @@ is defined as follows:
 
 .. math::
    \mathbf{r}(n + 1) = (1 - \alpha) \mathbf{r}(n) +
-    \alpha \tanh( \mathbf{W}\mathbf{r} + \mathbf{W}_\text{in}\mathbf{u}(n) +
+    \alpha \tanh( \mathbf{W}\mathbf{r}(n) + \mathbf{W}_\text{in}\mathbf{u}(n) +
    \mathbf{b})
 
 .. math::
@@ -38,6 +38,8 @@ The sizes of each of these vectors is specified to :class:`xesn.ESN` via the
 This form of the ESN has a "leaky" reservoir,
 where the ``leak_rate`` parameter :math:`\alpha`
 determines how much of the previous hidden state to propagate forward in time.
+This ESN implementation is *eager*, in the sense that all of the inputs, network
+parameters, targets (during training), and predictions are held in memory.
 
 Also, this form of the ESN assumes a linear readout, i.e., we do not transform
 the hidden state nonlinearly or augment it with the input or output state
@@ -185,8 +187,10 @@ The :class:`xesn.LazyESN` architecture inherits most of its functionality from
 :class:`xesn.ESN`.
 The key difference between the two is how they interact with the underlying data
 they're working with.
-While the standard ESN had a single network, :class:`xesn.LazyESN` distributes
-multiple networks to different subdomains of a single dataset.
+While the standard ESN had a single network that is eagerly operated on in
+memory, :class:`xesn.LazyESN` distributes
+multiple networks to different subdomains of a single dataset and invokes *lazy*
+operations via the `dask.Array` API.
 This process is described with an example below.
 
 Example: SQG Turbulence Dataset
@@ -323,7 +327,7 @@ The distributed ESN equations are
 
 .. math::
    \mathbf{r}_k(n + 1) = (1 - \alpha) \mathbf{r}_k(n) +
-    \alpha \tanh( \mathbf{W}\mathbf{r}_k + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
+    \alpha \tanh( \mathbf{W}\mathbf{r}_k(n) + \mathbf{W}_\text{in}\mathbf{u}_k(n) +
    \mathbf{b})
 
 .. math::
