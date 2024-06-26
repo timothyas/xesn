@@ -16,10 +16,10 @@ authors:
     orcid: 0000-0002-5223-8307
     affiliation: "2, 3"
   - name: Jason A. Platt
-	orcid: 0000-0001-6579-6546
+    orcid: 0000-0001-6579-6546
     affiliation: 4
   - name: Tse-Chun Chen
-	orcid: 0000-0001-6300-5659
+    orcid: 0000-0001-6300-5659
     affiliation: 5
 affiliations:
  - name: Physical Sciences Laboratory (PSL), National Oceanic and Atmospheric Administration (NOAA), Boulder, CO, USA
