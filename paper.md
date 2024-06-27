@@ -91,34 +91,22 @@ to operate on GPUs.
 
 ## Parameter Optimization
 
-Although ESNs do not employ backpropagation to train the internal weights of the
-input matrix, adjacency matrix, or bias vector,
+Although ESNs do not employ backpropagation to train internal weights,
 their behavior and performance is highly sensitive to a set of
 5 scalar parameters.
 Moreover, the interaction of these parameters is often not straightforward, and
 it is therefore advantageous to optimize these parameter values, as is shown by
 @platt_systematic_2022 with an extensive set of experimental results.
-Additionally, @platt_constraining_2023 showed that adding invariant metrics to
-the loss function, such as the Lyapunov exponent spectrum or simply its leading element,
-resulted in networks that generalize better to unseen test data.
-@smith_temporal_2023 showed similar results in a higher dimensional system using `xesn`'s
-parallelized (lazy) architecture, highlighting that constraining the Kinetic Energy
-spectrum when developing ESN based emulators of turbulent flows helped to
-preserve small scale features.
+Additionally, @platt_constraining_2023 and @smith_temporal_2023 showed that
+adding invariant metrics to the loss function, improved generalizability.
 As a somewhat generic and efficient implementation of these metrics,
 `xesn` offers the capability to constrain the
 system's Power Spectral Density during parameter optimization, in addition to a
-more traditional
-Normalized Root Mean Squared Error loss function.
+more traditional mean squared error loss function.
 
 `Xesn` enables parameter optimization by integrating with the Surrogate Modeling
 Toolbox [@bouhlel_scalable_2020], which has a Bayesian Optimization
 implementation.
-The parameter optimization process is in general somewhat complex, requiring the user to
-specify a variety of hyperparameters (e.g., the optimization bounds for each
-parameter and the maximum number of optimization steps to take).
-Additionally, for large problems, the process can have heavy compute
-requirements and therefore necessitate HPC or cloud resources.
 `Xesn` provides a simple interface so that the user can specify all of the
 settings for training, parameter optimization, and testing with a single YAML
 file.
@@ -139,8 +127,7 @@ as the basis for `xesn`.
 
 `Xesn` enables prediction for multi-dimensional systems by integrating its high
 level operations with `xarray` [@hoyer_xarray_2017].
-As with `xarray`, users refer to dimensions based on their named axes (e.g., "x",
-"latitude", or "time" instead of logical indices 0, 1, 2).
+As with `xarray`, users refer to dimensions based on their named axes.
 `Xesn` parallelizes the core array based operations by using `dask` [@dask_2016]
 to map them across available resources, which can include a multi-threaded
 environment on a laptop or single node, or a distributed computing resource
@@ -168,9 +155,6 @@ The code implements ESNs in Fortran, and focuses on using ESNs for hybrid physic
 
 # Computational Performance
 
-As discussed in the [Statement of Need](#statement-of-need), one purpose of
-`xesn` is to provide a parallelized ESN implementation, which we achieve using
-`dask` [@dask_2016].
 Here we show brief scaling results in order to give some practical guidance on
 how to best configure `dask` when using the parallelized `LazyESN` architecture.
 
@@ -206,8 +190,6 @@ In the CPU tests, walltime scales quadratically with the reservoir size, while
 it is mostly constant on a GPU.
 For this problem, it becomes advantageous to use GPUs once the reservoir size is
 approximately $N_r=8,000$ or greater.
-Notably, we achieve a speedup factor of 2.5-3
-for the large reservoir case ($N_r=16,000$), when comparing GPU to CPU walltime.
 In both the CPU and GPU tests, memory scales quadratically with reservoir size,
 although the increasing memory usage with reservoir size is more dramatic on the
 CPU than GPU.
@@ -229,13 +211,6 @@ We then create 3 different `dask.distributed` Clusters, testing:
 3. A `LocalCluster` with 1 `dask` worker per group. On GPUs, this assumes 1 GPU per worker
    and we are able to use a maximum of 8 workers due to our available resources.
 
-There are, of course, many more ways to configure a `dask` cluster, but these
-three examples should provide some guidance for even larger problems that require
-e.g.,
-[`dask-jobqueue`](https://jobqueue.dask.org/en/latest/)
-or
-[`dask-cloudprovider`](https://cloudprovider.dask.org/en/latest/).
-
 ![Strong scaling results, showing speedup as a ratio of serial training time to
 parallel training time as a function of number of groups or subdomains of the
 Lorenz96 system.
@@ -252,13 +227,6 @@ walltime with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
 On CPUs, using 1 `dask` worker process per ESN group generally scales well,
 which makes sense because each group is trained entirely independently.
-However, the two exceptions to this rule of thumb are as follows.
-
-1. When there are only 2 groups, the threaded scheduler does slightly better,
-   presumably because of the lack of overhead involved with multiprocessing.
-
-2. When $N_g$ is close to the default provided by `dask`, it might be best to
-   use that default.
 
 On GPUs, the timing is largely determined by how many workers (GPUs) there are
 relative to the number of groups.
