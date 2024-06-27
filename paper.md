@@ -66,8 +66,8 @@ signal processing [@jaeger_harnessing_2004].
 
 # Statement of Need
 
-ESNs are a conceptually simple Recurrent Neural Network architecture, and
-as a result, many scientists who use ESNs implement them from scratch.
+ESNs are a conceptually simple Recurrent Neural Network architecture,
+leading many scientists who use ESNs implement them from scratch.
 While this approach can work well for low dimensional problems, the situation
 quickly becomes more complicated when:
 
@@ -86,7 +86,6 @@ design impact study shown by @platt_systematic_2022.
 At its core, `xesn` uses NumPy [@harris_array_2020] and SciPy [@scipy_2020] to perform array based
 operations on CPUs.
 The package then harnesses the CPU/GPU agnostic code capabilities afforded by CuPy [@cupy_learningsys2017]
-and the [`cupy-xarray`](https://cupy-xarray.readthedocs.io/index.html) package
 to operate on GPUs.
 
 ## Parameter Optimization
@@ -95,11 +94,12 @@ Although ESNs do not employ backpropagation to train internal weights,
 their behavior and performance is highly sensitive to a set of
 5 scalar parameters.
 Moreover, the interaction of these parameters is often not straightforward, and
-it is therefore advantageous to optimize these parameter values, as is shown by
-@platt_systematic_2022 with an extensive set of experimental results.
+it is therefore advantageous to optimize these parameter values
+[@platt_systematic_2022].
 Additionally, @platt_constraining_2023 and @smith_temporal_2023 showed that
-adding invariant metrics to the loss function, improved generalizability.
-As a somewhat generic and efficient implementation of these metrics,
+adding invariant metrics to the loss function, like the leading Lyapunov
+exponent or the Kinetic Energy spectrum, improved generalizability.
+As a generic implementation of these metrics,
 `xesn` offers the capability to constrain the
 system's Power Spectral Density during parameter optimization, in addition to a
 more traditional mean squared error loss function.
@@ -155,8 +155,15 @@ The code implements ESNs in Fortran, and focuses on using ESNs for hybrid physic
 
 # Computational Performance
 
-Here we show brief scaling results in order to give some practical guidance on
-how to best configure `dask` when using the parallelized `LazyESN` architecture.
+Here we show brief scaling results in order to show
+how the standard (eager)
+[`xesn.ESN`](https://xesn.readthedocs.io/en/latest/generated/xesn.ESN.html#xesn.ESN)
+scales with increasing hidden and input dimensions.
+Additionally, we provide some baseline results to serve as guidance when
+configuring `dask` to use the parallelized
+[`xesn.LazyESN`](https://xesn.readthedocs.io/en/latest/generated/xesn.LazyESN.html) architecture.
+For methodological details on these two architectures, please refer to
+[this section](https://xesn.readthedocs.io/en/latest/methods.html) of the documentation.
 
 ## Standard (Eager) ESN Performance
 
