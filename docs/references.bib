@@ -21,7 +21,7 @@
 	volume = {11},
 	issn = {1991-959X},
 	url = {https://gmd.copernicus.org/articles/11/3999/2018/},
-	doi = {https://doi.org/10.5194/gmd-11-3999-2018},
+	doi = {10.5194/gmd-11-3999-2018},
 	abstract = {{\textless}p{\textgreater}{\textless}strong class="journal-contentHeaderColor"{\textgreater}Abstract.{\textless}/strong{\textgreater} Can models that are based on deep learning and trained on atmospheric data compete with weather and climate models that are based on physical principles and the basic equations of motion? This question has been asked often recently due to the boom in deep-learning techniques. The question is valid given the huge amount of data that are available, the computational efficiency of deep-learning techniques and the limitations of today's weather and climate models in particular with respect to resolution and complexity.{\textless}/p{\textgreater}{\textless}p{\textgreater}In this paper, the question will be discussed in the context of global weather forecasts. A toy model for global weather predictions will be presented and used to identify challenges and fundamental design choices for a forecast system based on neural networks.{\textless}/p{\textgreater}},
 	language = {English},
 	number = {10},
@@ -41,7 +41,7 @@
 	issn = {1942-2466},
 	shorttitle = {{WeatherBench}},
 	url = {http://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2020MS002203},
-	doi = {https://doi.org/10.1029/2020MS002203},
+	doi = {10.1029/2020MS002203},
 	abstract = {Data-driven approaches, most prominently deep learning, have become powerful tools for prediction in many domains. A natural question to ask is whether data-driven methods could also be used to predict global weather patterns days in advance. First studies show promise but the lack of a common data set and evaluation metrics make intercomparison between studies difficult. Here we present a benchmark data set for data-driven medium-range weather forecasting (specifically 3–5 days), a topic of high scientific interest for atmospheric and computer scientists alike. We provide data derived from the ERA5 archive that has been processed to facilitate the use in machine learning models. We propose simple and clear evaluation metrics which will enable a direct comparison between different methods. Further, we provide baseline scores from simple linear regression techniques, deep learning models, as well as purely physical forecasting models. The data set is publicly available at https://github.com/pangeo-data/WeatherBench and the companion code is reproducible with tutorials for getting started. We hope that this data set will accelerate research in data-driven weather forecasting.},
 	language = {en},
 	number = {11},
@@ -96,6 +96,7 @@
 @article{chen_predicting_2021,
 	title = {Predicting {Shallow} {Water} {Dynamics} using {Echo}-{State} {Networks} with {Transfer} {Learning}},
 	url = {http://arxiv.org/abs/2112.09182},
+    doi = {10.48550/arXiv.2112.09182},
 	abstract = {In this paper we demonstrate that reservoir computing can be used to learn the dynamics of the shallow-water equations. In particular, while most previous applications of reservoir computing have required training on a particular trajectory to further predict the evolution along that trajectory alone, we show the capability of reservoir computing to predict trajectories of the shallow-water equations with initial conditions not seen in the training process. However, in this setting, we find that the performance of the network deteriorates for initial conditions with ambient conditions (such as total water height and average velocity) that are different from those in the training dataset. To circumvent this deficiency, we introduce a transfer learning approach wherein a small additional training step with the relevant ambient conditions is used to improve the predictions.},
 	journal = {arXiv:2112.09182 [physics]},
 	author = {Chen, Xiaoqian and Nadiga, Balasubramanya T. and Timofeyev, Ilya},
@@ -109,6 +110,7 @@
 @article{keisler_forecasting_2022,
 	title = {Forecasting {Global} {Weather} with {Graph} {Neural} {Networks}},
 	url = {http://arxiv.org/abs/2202.07575},
+    doi = {10.48550/arXiv.2202.07575},
 	abstract = {We present a data-driven approach for forecasting global weather using graph neural networks. The system learns to step forward the current 3D atmospheric state by six hours, and multiple steps are chained together to produce skillful forecasts going out several days into the future. The underlying model is trained on reanalysis data from ERA5 or forecast data from GFS. Test performance on metrics such as Z500 (geopotential height) and T850 (temperature) improves upon previous data-driven approaches and is comparable to operational, full-resolution, physical models from GFS and ECMWF, at least when evaluated on 1-degree scales and when using reanalysis initial conditions. We also show results from connecting this data-driven model to live, operational forecasts from GFS.},
 	journal = {arXiv:2202.07575 [physics]},
 	author = {Keisler, Ryan},
@@ -136,6 +138,7 @@
 	title = {{FourCastNet}: {A} {Global} {Data}-driven {High}-resolution {Weather} {Model} using {Adaptive} {Fourier} {Neural} {Operators}},
 	shorttitle = {{FourCastNet}},
 	url = {http://arxiv.org/abs/2202.11214},
+    doi = {10.48550/arXiv.2202.11214},
 	abstract = {FourCastNet, short for Fourier Forecasting Neural Network, is a global data-driven weather forecasting model that provides accurate short to medium-range global predictions at \$0.25{\textasciicircum}\{{\textbackslash}circ\}\$ resolution. FourCastNet accurately forecasts high-resolution, fast-timescale variables such as the surface wind speed, precipitation, and atmospheric water vapor. It has important implications for planning wind energy resources, predicting extreme weather events such as tropical cyclones, extra-tropical cyclones, and atmospheric rivers. FourCastNet matches the forecasting accuracy of the ECMWF Integrated Forecasting System (IFS), a state-of-the-art Numerical Weather Prediction (NWP) model, at short lead times for large-scale variables, while outperforming IFS for variables with complex fine-scale structure, including precipitation. FourCastNet generates a week-long forecast in less than 2 seconds, orders of magnitude faster than IFS. The speed of FourCastNet enables the creation of rapid and inexpensive large-ensemble forecasts with thousands of ensemble-members for improving probabilistic forecasting. We discuss how data-driven deep learning models such as FourCastNet are a valuable addition to the meteorology toolkit to aid and augment NWP models.},
 	journal = {arXiv:2202.11214 [physics]},
 	author = {Pathak, Jaideep and Subramanian, Shashank and Harrington, Peter and Raja, Sanjeev and Chattopadhyay, Ashesh and Mardani, Morteza and Kurth, Thorsten and Hall, David and Li, Zongyi and Azizzadenesheli, Kamyar and Hassanzadeh, Pedram and Kashinath, Karthik and Anandkumar, Animashree},
@@ -235,6 +238,7 @@ Section: Artificial Intelligence for the Earth Systems},
 	title = {Deep spatial transformers for autoregressive data-driven forecasting of geophysical turbulence},
 	copyright = {GNU Lesser General Public License (LGPL) 2.1},
 	url = {https://eartharxiv.org/repository/view/118/},
+    doi = {10.31223/osf.io/cqmb2},
 	abstract = {A deep spatial transformer based encoder-decoder model has been developed to autoregressively predict the time evolution of the upper layers stream function of a two-layered quasi-geostrophic (QG) system without any information about the lower layers stream function. The spatio-temporal complexity of QG flow is comparable to the complexity of 500hPa Geopotential Height (Z500) of fully coupled climate models or even the Z500 which is observed in the atmosphere, based on the instantaneous attractor dimension metric. The ability to predict autoregressively, the turbulent dynamics of QG is the first step towards building data-driven surrogates for more complex climate models. We show that the equivariance preserving properties of modern spatial transformers incorporated within a convolutional encoder-decoder module can predict up to 9 days in a QG system (outperforming a baseline persistence model and a standard convolutional encoder decoder with a custom loss function). The proposed data-driven model remains stable for multiple years thus promising us of a stable and physical data-driven climate model.},
 	language = {en},
 	author = {Chattopadhyay, Ashesh and Mustafa, Mustafa and Hassanzadeh, Pedram and Kashinath, Karthik},
@@ -249,6 +253,7 @@ Section: Artificial Intelligence for the Earth Systems},
 	title = {{FourCastNet}: {Accelerating} {Global} {High}-{Resolution} {Weather} {Forecasting} using {Adaptive} {Fourier} {Neural} {Operators}},
 	shorttitle = {{FourCastNet}},
 	url = {http://arxiv.org/abs/2208.05419},
+    doi = {10.48550/arXiv.2208.05419},
 	abstract = {Extreme weather amplified by climate change is causing increasingly devastating impacts across the globe. The current use of physics-based numerical weather prediction (NWP) limits accuracy due to high computational cost and strict time-to-solution limits. We report that a data-driven deep learning Earth system emulator, FourCastNet, can predict global weather and generate medium-range forecasts five orders-of-magnitude faster than NWP while approaching state-of-the-art accuracy. FourCast-Net is optimized and scales efficiently on three supercomputing systems: Selene, Perlmutter, and JUWELS Booster up to 3,808 NVIDIA A100 GPUs, attaining 140.8 petaFLOPS in mixed precision (11.9\%of peak at that scale). The time-to-solution for training FourCastNet measured on JUWELS Booster on 3,072GPUs is 67.4minutes, resulting in an 80,000times faster time-to-solution relative to state-of-the-art NWP, in inference. FourCastNet produces accurate instantaneous weather predictions for a week in advance, enables enormous ensembles that better capture weather extremes, and supports higher global forecast resolutions.},
 	publisher = {arXiv},
 	author = {Kurth, Thorsten and Subramanian, Shashank and Harrington, Peter and Pathak, Jaideep and Mardani, Morteza and Hall, David and Miele, Andrea and Kashinath, Karthik and Anandkumar, Animashree},
@@ -636,6 +641,7 @@ This article is part of the theme issue ‘Machine learning for weather and clim
   author={Cressie, N},
   year={1993},
   publisher={Wiley Location New York, NY}
+  doi={10.1002/9781119115151},
 }
 @article{penland_random_1989,
 	title = {Random {Forcing} and {Forecasting} {Using} {Principal} {Oscillation} {Pattern} {Analysis}},
@@ -893,20 +899,23 @@ Subject\_term\_id: computational-science;electrical-and-electronic-engineering},
 	file = {Jaeger_The_“echo_state”_approach_to_analysing_and_training_recurrent_neural_networks_–.pdf:/Users/tsmith/Drive/zotero/Jaeger_The_“echo_state”_approach_to_analysing_and_training_recurrent_neural_networks_–.pdf:application/pdf},
 }
 
-@article{barbosa_learning_2022,
-	title = {Learning {Spatiotemporal} {Chaos} {Using} {Next}-{Generation} {Reservoir} {Computing}},
-	url = {http://arxiv.org/abs/2203.13294},
-	abstract = {Forecasting the behavior of high-dimensional dynamical systems using machine learning (ML) requires efficient methods to learn the underlying physical model. We demonstrate spatiotemporal chaos prediction of a heuristic atmospheric weather model using an ML architecture that, when combined with a next-generation reservoir computer, displays state-of-the-art performance with a training time \$10{\textasciicircum}3-10{\textasciicircum}4\$ times faster and training data set \${\textbackslash}sim 10{\textasciicircum}2\$ times smaller than other ML algorithms. We also take advantage of the translational symmetry of the model to further reduce the computational cost and training data, each by a factor of \${\textbackslash}sim\$10.},
-	journal = {arXiv:2203.13294 [nlin]},
-	author = {Barbosa, Wendson A. S. and Gauthier, Daniel J.},
-	month = mar,
-	year = {2022},
-	note = {arXiv: 2203.13294},
-	keywords = {Computer Science - Machine Learning, Nonlinear Sciences - Chaotic Dynamics, Computer Science - Neural and Evolutionary Computing},
-	annote = {Comment: 5 pages, 4 figures},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/C4LAP874/2203.html:text/html;Barbosa_Gauthier_2022_Learning_Spatiotemporal_Chaos_Using_Next-Generation_Reservoir_Computing.pdf:/Users/tsmith/Drive/zotero/Barbosa_Gauthier_2022_Learning_Spatiotemporal_Chaos_Using_Next-Generation_Reservoir_Computing.pdf:application/pdf},
-}
 
+@article{barbosa_learning_2022,
+	title = {Learning spatiotemporal chaos using next-generation reservoir computing},
+	volume = {32},
+	issn = {1054-1500},
+	url = {https://doi.org/10.1063/5.0098707},
+	doi = {10.1063/5.0098707},
+	abstract = {Forecasting the behavior of high-dimensional dynamical systems using machine learning requires efficient methods to learn the underlying physical model. We demonstrate spatiotemporal chaos prediction using a machine learning architecture that, when combined with a next-generation reservoir computer, displays state-of-the-art performance with a computational time 103–104 times faster for training process and training data set ∼102 times smaller than other machine learning algorithms. We also take advantage of the translational symmetry of the model to further reduce the computational cost and training data, each by a factor of ∼10.},
+	number = {9},
+	urldate = {2024-09-26},
+	journal = {Chaos: An Interdisciplinary Journal of Nonlinear Science},
+	author = {Barbosa, Wendson A. S. and Gauthier, Daniel J.},
+	month = sep,
+	year = {2022},
+	pages = {093137},
+	file = {Barbosa_Gauthier_2022_Learning_spatiotemporal_chaos_using_next-generation_reservoir_computing.pdf:/Users/tsmith/Drive/zotero/Barbosa_Gauthier_2022_Learning_spatiotemporal_chaos_using_next-generation_reservoir_computing2.pdf:application/pdf;Snapshot:/Users/tsmith/Zotero/storage/VZ2UVR5K/Learning-spatiotemporal-chaos-using-next.html:text/html},
+}
 
 @article{vlachas_backpropagation_2020,
 	title = {Backpropagation algorithms and {Reservoir} {Computing} in {Recurrent} {Neural} {Networks} for the forecasting of complex spatiotemporal dynamics},
@@ -1051,6 +1060,7 @@ Subject\_term\_id: computational-science;electrical-and-electronic-engineering},
 @misc{zhang_catch-22_2022,
 	title = {A {Catch}-22 of {Reservoir} {Computing}},
 	url = {http://arxiv.org/abs/2210.10211},
+    doi = {10.48550/arXiv.2210.10211},
 	abstract = {Reservoir Computing (RC) is a simple and efficient model-free framework for data-driven predictions of nonlinear dynamical systems. Recently, Next Generation Reservoir Computing (NGRC) has emerged as an especially attractive variant of RC. By shifting the nonlinearity from the reservoir to the readout layer, NGRC requires less data and has fewer hyperparameters to optimize, making it suitable for challenging tasks such as predicting basins of attraction. Here, using paradigmatic multistable systems including magnetic pendulums and coupled Kuramoto oscillators, we show that the performance of NGRC models can be extremely sensitive to the choice of readout nonlinearity. In particular, by incorporating the exact nonlinearity from the original equations, NGRC trained on a single trajectory can predict pseudo-fractal basins with almost perfect accuracy. However, even a small uncertainty on the exact nonlinearity can completely break NGRC, rendering the prediction accuracy no better than chance. This creates a catch-22 for NGRC since it may not be able to make useful predictions unless a key part of the system being predicted (i.e., its nonlinearity) is already known. Our results highlight the challenges faced by data-driven methods in learning complex dynamical systems.},
 	publisher = {arXiv},
 	author = {Zhang, Yuanzhao and Cornelius, Sean P.},
@@ -1252,6 +1262,7 @@ Section: Journal of the Atmospheric Sciences},
 @misc{xu_overview_2022,
 	title = {Overview frequency principle/spectral bias in deep learning},
 	url = {http://arxiv.org/abs/2201.07395},
+    doi = {10.48550/arXiv.2201.07395},
 	abstract = {Understanding deep learning is increasingly emergent as it penetrates more and more into industry and science. In recent years, a research line from Fourier analysis sheds lights into this magical "black box" by showing a Frequency Principle (F-Principle or spectral bias) of the training behavior of deep neural networks (DNNs) -- DNNs often fit functions from low to high frequency during the training. The F-Principle is first demonstrated by one-dimensional synthetic data followed by the verification in high-dimensional real datasets. A series of works subsequently enhance the validity of the F-Principle. This low-frequency implicit bias reveals the strength of neural network in learning low-frequency functions as well as its deficiency in learning high-frequency functions. Such understanding inspires the design of DNN-based algorithms in practical problems, explains experimental phenomena emerging in various scenarios, and further advances the study of deep learning from the frequency perspective. Although incomplete, we provide an overview of F-Principle and propose some open problems for future research.},
 	publisher = {arXiv},
 	author = {Xu, Zhi-Qin John and Zhang, Yaoyu and Luo, Tao},
@@ -1278,47 +1289,6 @@ Section: Journal of the Atmospheric Sciences},
 	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/YQ4PULDK/2212.html:text/html;Lam_et_al_2022_GraphCast.pdf:/Users/tsmith/Drive/zotero/Lam_et_al_2022_GraphCast.pdf:application/pdf},
 }
 
-
-@misc{bi_pangu-weather_2022,
-	title = {Pangu-{Weather}: {A} {3D} {High}-{Resolution} {Model} for {Fast} and {Accurate} {Global} {Weather} {Forecast}},
-	shorttitle = {Pangu-{Weather}},
-	url = {http://arxiv.org/abs/2211.02556},
-	abstract = {In this paper, we present Pangu-Weather, a deep learning based system for fast and accurate global weather forecast. For this purpose, we establish a data-driven environment by downloading \$43\$ years of hourly global weather data from the 5th generation of ECMWF reanalysis (ERA5) data and train a few deep neural networks with about \$256\$ million parameters in total. The spatial resolution of forecast is \$0.25{\textasciicircum}{\textbackslash}circ{\textbackslash}times0.25{\textasciicircum}{\textbackslash}circ\$, comparable to the ECMWF Integrated Forecast Systems (IFS). More importantly, for the first time, an AI-based method outperforms state-of-the-art numerical weather prediction (NWP) methods in terms of accuracy (latitude-weighted RMSE and ACC) of all factors (e.g., geopotential, specific humidity, wind speed, temperature, etc.) and in all time ranges (from one hour to one week). There are two key strategies to improve the prediction accuracy: (i) designing a 3D Earth Specific Transformer (3DEST) architecture that formulates the height (pressure level) information into cubic data, and (ii) applying a hierarchical temporal aggregation algorithm to alleviate cumulative forecast errors. In deterministic forecast, Pangu-Weather shows great advantages for short to medium-range forecast (i.e., forecast time ranges from one hour to one week). Pangu-Weather supports a wide range of downstream forecast scenarios, including extreme weather forecast (e.g., tropical cyclone tracking) and large-member ensemble forecast in real-time. Pangu-Weather not only ends the debate on whether AI-based methods can surpass conventional NWP methods, but also reveals novel directions for improving deep learning weather forecast systems.},
-	publisher = {arXiv},
-	author = {Bi, Kaifeng and Xie, Lingxi and Zhang, Hengheng and Chen, Xin and Gu, Xiaotao and Tian, Qi},
-	month = nov,
-	year = {2022},
-	note = {arXiv:2211.02556 [physics]},
-	keywords = {Physics - Atmospheric and Oceanic Physics, Computer Science - Artificial Intelligence, Computer Science - Machine Learning, Computer Science - Computer Vision and Pattern Recognition},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/RMRJC5YC/2211.html:text/html;Bi_et_al_2022_Pangu-Weather.pdf:/Users/tsmith/Drive/zotero/Bi_et_al_2022_Pangu-Weather.pdf:application/pdf},
-}
-
-
-@misc{dosovitskiy_image_2021,
-	title = {An {Image} is {Worth} 16x16 {Words}: {Transformers} for {Image} {Recognition} at {Scale}},
-	shorttitle = {An {Image} is {Worth} 16x16 {Words}},
-	url = {http://arxiv.org/abs/2010.11929},
-	abstract = {While the Transformer architecture has become the de-facto standard for natural language processing tasks, its applications to computer vision remain limited. In vision, attention is either applied in conjunction with convolutional networks, or used to replace certain components of convolutional networks while keeping their overall structure in place. We show that this reliance on CNNs is not necessary and a pure transformer applied directly to sequences of image patches can perform very well on image classification tasks. When pre-trained on large amounts of data and transferred to multiple mid-sized or small image recognition benchmarks (ImageNet, CIFAR-100, VTAB, etc.), Vision Transformer (ViT) attains excellent results compared to state-of-the-art convolutional networks while requiring substantially fewer computational resources to train.},
-	publisher = {arXiv},
-	author = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
-	month = jun,
-	year = {2021},
-	note = {arXiv:2010.11929 [cs]},
-	keywords = {Computer Science - Artificial Intelligence, Computer Science - Machine Learning, Computer Science - Computer Vision and Pattern Recognition},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/ZFYMNYLF/2010.html:text/html;Dosovitskiy_et_al_2021_An_Image_is_Worth_16x16_Words.pdf:/Users/tsmith/Drive/zotero/Dosovitskiy_et_al_2021_An_Image_is_Worth_16x16_Words.pdf:application/pdf},
-}
-
-@inproceedings{vaswani_attention_2017,
-	title = {Attention is {All} you {Need}},
-	volume = {30},
-	url = {https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html},
-	abstract = {The dominant sequence transduction models are based on complex recurrent orconvolutional neural networks in an encoder and decoder configuration. The best performing such models also connect the encoder and decoder through an attentionm echanisms.  We propose a novel, simple network architecture based solely onan attention mechanism, dispensing with recurrence and convolutions entirely.Experiments on two machine translation tasks show these models to be superiorin quality while being more parallelizable and requiring significantly less timeto train. Our single model with 165 million parameters, achieves 27.5 BLEU onEnglish-to-German translation, improving over the existing best ensemble result by over 1 BLEU. On English-to-French translation, we outperform the previoussingle state-of-the-art with model by 0.7 BLEU, achieving a BLEU score of 41.1.},
-	booktitle = {Advances in {Neural} {Information} {Processing} {Systems}},
-	publisher = {Curran Associates, Inc.},
-	author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and Kaiser, Łukasz and Polosukhin, Illia},
-	year = {2017},
-	file = {Vaswani_et_al_2017_Attention_is_All_you_Need.pdf:/Users/tsmith/Drive/zotero/Vaswani_et_al_2017_Attention_is_All_you_Need.pdf:application/pdf},
-}
 
 
 @misc{duncan_generative_2022,
@@ -1368,18 +1338,6 @@ Section: Journal of the Atmospheric Sciences},
 }
 
 
-@misc{jordanou_investigation_2022,
-	title = {Investigation of {Proper} {Orthogonal} {Decomposition} for {Echo} {State} {Networks}},
-	url = {http://arxiv.org/abs/2211.17179},
-	abstract = {Echo State Networks (ESN) are a type of Recurrent Neural Networks that yields promising results in representing time series and nonlinear dynamic systems. Although they are equipped with a very efficient training procedure, Reservoir Computing strategies, such as the ESN, require the use of high order networks, i.e. large number of layers, resulting in number of states that is magnitudes higher than the number of model inputs and outputs. This not only makes the computation of a time step more costly, but also may pose robustness issues when applying ESNs to problems such as Model Predictive Control (MPC) and other optimal control problems. One such way to circumvent this is through Model Order Reduction strategies such as the Proper Orthogonal Decomposition (POD) and its variants (POD-DEIM), whereby we find an equivalent lower order representation to an already trained high dimension ESN. The objective of this work is to investigate and analyze the performance of POD methods in Echo State Networks, evaluating their effectiveness. To this end, we evaluate the Memory Capacity (MC) of the POD-reduced network in comparison to the original (full order) ENS. We also perform experiments on two different numerical case studies: a NARMA10 difference equation and an oil platform containing two wells and one riser. The results show that there is little loss of performance comparing the original ESN to a POD-reduced counterpart, and also that the performance of a POD-reduced ESN tend to be superior to a normal ESN of the same size. Also we attain speedups of around \$80{\textbackslash}\%\$ in comparison to the original ESN.},
-	publisher = {arXiv},
-	author = {Jordanou, Jean Panaioti and Antonelo, Eric Aislan and Camponogara, Eduardo and Gildin, Eduardo},
-	month = dec,
-	year = {2022},
-	note = {arXiv:2211.17179 [cs, eess]},
-	keywords = {Computer Science - Machine Learning, Computer Science - Neural and Evolutionary Computing, Electrical Engineering and Systems Science - Systems and Control},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/VQ2KX46Q/2211.html:text/html;Jordanou_et_al_2022_Investigation_of_Proper_Orthogonal_Decomposition_for_Echo_State_Networks.pdf:/Users/tsmith/Drive/zotero/Jordanou_et_al_2022_Investigation_of_Proper_Orthogonal_Decomposition_for_Echo_State_Networks.pdf:application/pdf},
-}
 
 
 @article{whiteaker_reducing_2022,
@@ -1499,14 +1457,6 @@ Section: Journal of the Atmospheric Sciences},
   url          = "http://learningsys.org/nips17/assets/papers/paper_16.pdf"
 }
 
-@misc{gom_dataset,
-    author  = "{HYCOM}",
-    title   = "{HYCOM} + {NCODA} {Gulf} of {Mexico} {1/25°} {Reanalysis}, ({GOM}u0.04/expt{\_}50.1)",
-    year    = "2016",
-    note    = "Data retrieved from HYCOM, \url{https://www.hycom.org/data/gomu0pt04/expt-50pt1}",
-}
-
-
 @incollection{rossa_overview_2008,
 	address = {Berlin, Heidelberg},
 	title = {Overview of methods for the verification of quantitative precipitation forecasts},
@@ -1585,17 +1535,24 @@ Section: Journal of the Atmospheric Sciences},
 }
 
 
-@misc{perezhogin_generative_2023,
-	title = {Generative data-driven approaches for stochastic subgrid parameterizations in an idealized ocean model},
-	url = {http://arxiv.org/abs/2302.07984},
-	abstract = {Subgrid parameterizations of mesoscale eddies continue to be in demand for climate simulations. These subgrid parameterizations can be powerfully designed using physics and/or data-driven methods, with uncertainty quantification. For example, Guillaumin and Zanna (2021) proposed a Machine Learning (ML) model that predicts subgrid forcing and its local uncertainty. The major assumption and potential drawback of this model is the statistical independence of stochastic residuals between grid points. Here, we aim to improve the simulation of stochastic forcing with generative models of ML, such as Generative adversarial network (GAN) and Variational autoencoder (VAE). Generative models learn the distribution of subgrid forcing conditioned on the resolved flow directly from data and they can produce new samples from this distribution. Generative models can potentially capture not only the spatial correlation but any statistically significant property of subgrid forcing. We test the proposed stochastic parameterizations offline and online in an idealized ocean model. We show that generative models are able to predict subgrid forcing and its uncertainty with spatially correlated stochastic forcing. Online simulations for a range of resolutions demonstrated that generative models are superior to the baseline ML model at the coarsest resolution.},
-	publisher = {arXiv},
+@article{perezhogin_generative_2023,
+	title = {Generative {Data}-{Driven} {Approaches} for {Stochastic} {Subgrid} {Parameterizations} in an {Idealized} {Ocean} {Model}},
+	volume = {15},
+	copyright = {© 2023 The Authors. Journal of Advances in Modeling Earth Systems published by Wiley Periodicals LLC on behalf of American Geophysical Union.},
+	issn = {1942-2466},
+	url = {https://onlinelibrary.wiley.com/doi/abs/10.1029/2023MS003681},
+	doi = {10.1029/2023MS003681},
+	abstract = {Subgrid parameterizations of mesoscale eddies continue to be in demand for climate simulations. These subgrid parameterizations can be powerfully designed using physics and/or data-driven methods, with uncertainty quantification. For example, Guillaumin and Zanna (2021, https://doi.org/10.1029/2021ms002534) proposed a Machine Learning (ML) model that predicts subgrid forcing and its local uncertainty. The major assumption and potential drawback of this model is the statistical independence of stochastic residuals between grid points. Here, we aim to improve the simulation of stochastic forcing with generative models of ML, such as Generative adversarial network (GAN) and Variational autoencoder (VAE). Generative models learn the distribution of subgrid forcing conditioned on the resolved flow directly from data and they can produce new samples from this distribution. Generative models can potentially capture not only the spatial correlation but any statistically significant property of subgrid forcing. We test the proposed stochastic parameterizations offline and online in an idealized ocean model. We show that generative models are able to predict subgrid forcing and its uncertainty with spatially correlated stochastic forcing. Online simulations for a range of resolutions demonstrated that generative models are superior to the baseline ML model at the coarsest resolution.},
+	language = {en},
+	number = {10},
+	urldate = {2024-09-26},
+	journal = {Journal of Advances in Modeling Earth Systems},
 	author = {Perezhogin, Pavel and Zanna, Laure and Fernandez-Granda, Carlos},
-	month = feb,
 	year = {2023},
-	note = {arXiv:2302.07984 [physics]},
-	keywords = {Physics - Atmospheric and Oceanic Physics},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/JACT3NSC/2302.html:text/html;Perezhogin_et_al_2023_Generative_data-driven_approaches_for_stochastic_subgrid_parameterizations_in.pdf:/Users/tsmith/Drive/zotero/Perezhogin_et_al_2023_Generative_data-driven_approaches_for_stochastic_subgrid_parameterizations_in.pdf:application/pdf},
+	note = {\_eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1029/2023MS003681},
+	keywords = {deep learning, generative model, ocean, stochastic parameterization, turbulence},
+	pages = {e2023MS003681},
+	file = {Perezhogin_et_al_2023_Generative_Data-Driven_Approaches_for_Stochastic_Subgrid_Parameterizations_in.pdf:/Users/tsmith/Drive/zotero/Perezhogin_et_al_2023_Generative_Data-Driven_Approaches_for_Stochastic_Subgrid_Parameterizations_in2.pdf:application/pdf;Snapshot:/Users/tsmith/Zotero/storage/5APEG6ZW/2023MS003681.html:text/html},
 }
 
 @article{kalnay_ensemble_2006,
@@ -1606,22 +1563,7 @@ Section: Journal of the Atmospheric Sciences},
   pages={180},
   year={2006},
   publisher={Citeseer}
-}
-
-
-@article{orlanski_rational_1975,
-	title = {A {Rational} {Subdivision} of {Scales} for {Atmospheric} {Processes}},
-	volume = {56},
-	issn = {0003-0007},
-	url = {https://www.jstor.org/stable/26216020},
-	abstract = {Some atmospheric scale definitions are reviewed and a proposed new subdivision of scales that covers the entire spectrum is described.},
-	number = {5},
-	journal = {Bulletin of the American Meteorological Society},
-	author = {Orlanski, Isidoro},
-	year = {1975},
-	note = {Publisher: American Meteorological Society},
-	pages = {527--530},
-	file = {Orlanski_1975_A_Rational_Subdivision_of_Scales_for_Atmospheric_Processes.pdf:/Users/tsmith/Drive/zotero/Orlanski_1975_A_Rational_Subdivision_of_Scales_for_Atmospheric_Processes.pdf:application/pdf},
+  doi={10.1017/CBO9780511617652.008},
 }
 
 
@@ -1653,20 +1595,6 @@ Section: Journal of the Atmospheric Sciences},
 }
 
 
-@misc{chattopadhyay_long-term_2023,
-	title = {Long-term instabilities of deep learning-based digital twins of the climate system: {The} cause and a solution},
-	shorttitle = {Long-term instabilities of deep learning-based digital twins of the climate system},
-	url = {http://arxiv.org/abs/2304.07029},
-	publisher = {arXiv},
-	author = {Chattopadhyay, Ashesh and Hassanzadeh, Pedram},
-	month = apr,
-	year = {2023},
-	note = {arXiv:2304.07029 [physics]},
-	keywords = {Physics - Atmospheric and Oceanic Physics, Mathematics - Numerical Analysis, Computer Science - Artificial Intelligence, Computer Science - Machine Learning, Physics - Fluid Dynamics},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/49SYASFH/2304.html:text/html;Chattopadhyay_Hassanzadeh_2023_Long-term_instabilities_of_deep_learning-based_digital_twins_of_the_climate.pdf:/Users/tsmith/Drive/zotero/Chattopadhyay_Hassanzadeh_2023_Long-term_instabilities_of_deep_learning-based_digital_twins_of_the_climate.pdf:application/pdf},
-}
-
-
 @article{bi_accurate_2023,
 	title = {Accurate medium-range global weather forecasting with {3D} neural networks},
 	volume = {619},
@@ -1683,18 +1611,6 @@ Section: Journal of the Atmospheric Sciences},
 	keywords = {Atmospheric dynamics, Computer science},
 	pages = {533--538},
 	file = {Bi_et_al_2023_Accurate_medium-range_global_weather_forecasting_with_3D_neural_networks.pdf:/Users/tsmith/Drive/zotero/Bi_et_al_2023_Accurate_medium-range_global_weather_forecasting_with_3D_neural_networks.pdf:application/pdf},
-}
-
-
-@misc{sitzmann_implicit_2020,
-	title = {Implicit {Neural} {Representations} with {Periodic} {Activation} {Functions}},
-	url = {http://arxiv.org/abs/2006.09661},
-	publisher = {arXiv},
-	author = {Sitzmann, Vincent and Martel, Julien N. P. and Bergman, Alexander W. and Lindell, David B. and Wetzstein, Gordon},
-	month = jun,
-	year = {2020},
-	keywords = {Computer Science - Machine Learning, Computer Science - Computer Vision and Pattern Recognition, Electrical Engineering and Systems Science - Image and Video Processing},
-	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/2K9TJG6C/2006.html:text/html;Sitzmann_et_al_2020_Implicit_Neural_Representations_with_Periodic_Activation_Functions.pdf:/Users/tsmith/Drive/zotero/Sitzmann_et_al_2020_Implicit_Neural_Representations_with_Periodic_Activation_Functions.pdf:application/pdf},
 }
 
 
@@ -1787,12 +1703,23 @@ Section: Journal of the Atmospheric Sciences},
   booktitle = {Artificial Neural Networks and Machine Learning {\textendash} {ICANN} 2020}
 }
 
-@inproceedings{hyperopt,
-    author={J. Bergstra and D. Yamins and D. D. Cox},
-    title={Making a Science of Model Search: Hyperparameter Optimization in Hundreds of Dimensions for Vision Architectures},
-    year={2013},
-    pages={I-115--I-23},
-    booktitle={TProc. of the 30th International Conference on Machine Learning (ICML 2013)},
+
+@InProceedings{hyperopt,
+  title = 	 {Making a Science of Model Search: Hyperparameter Optimization in Hundreds of Dimensions for Vision Architectures},
+  author = 	 {Bergstra, James and Yamins, Daniel and Cox, David},
+  booktitle = 	 {Proceedings of the 30th International Conference on Machine Learning},
+  pages = 	 {115--123},
+  year = 	 {2013},
+  editor = 	 {Dasgupta, Sanjoy and McAllester, David},
+  volume = 	 {28},
+  number =       {1},
+  series = 	 {Proceedings of Machine Learning Research},
+  address = 	 {Atlanta, Georgia, USA},
+  month = 	 {17--19 Jun},
+  publisher =    {PMLR},
+  pdf = 	 {http://proceedings.mlr.press/v28/bergstra13.pdf},
+  url = 	 {https://proceedings.mlr.press/v28/bergstra13.html},
+  abstract = 	 {Many computer vision algorithms depend on configuration settings that are typically hand-tuned in the course of evaluating the algorithm for a particular data set. While such parameter tuning is often presented as being incidental to the algorithm, correctly setting these parameter choices is frequently critical to realizing a method’s full potential. Compounding matters, these parameters often must be re-tuned when the algorithm is applied to a new problem domain, and the tuning process itself often depends on personal experience and intuition in ways that are hard to quantify or describe. Since the performance of a given technique depends on both the fundamental quality of the algorithm and the details of its tuning, it is sometimes difficult to know whether a given technique is genuinely better, or simply better tuned.     In this work, we propose a meta-modeling approach to support automated hyperparameter optimization, with the goal of providing practical tools that replace hand-tuning with a reproducible and unbiased optimization process. Our approach is to expose the underlying expression graph of how a performance metric (e.g. classification accuracy on validation examples) is computed from hyperparameters that govern not only how individual processing steps are applied, but even which processing steps are included.  A hyperparameter optimization algorithm transforms this graph into a program for optimizing that performance metric.  Our approach yields state of the art results on three disparate computer vision problems: a face-matching verification task (LFW), a face identification task (PubFig83) and an object recognition task (CIFAR-10), using a single broad class of feed-forward vision architectures.  }
 }
 
 
@@ -1846,11 +1773,19 @@ Section: Journal of the Atmospheric Sciences},
 }
 
 @article{liaw2018tune,
-    title={Tune: A Research Platform for Distributed Model Selection and Training},
-    author={Liaw, Richard and Liang, Eric and Nishihara, Robert
-            and Moritz, Philipp and Gonzalez, Joseph E and Stoica, Ion},
-    journal={arXiv preprint arXiv:1807.05118},
-    year={2018}
+	title = {Tune: {A} {Research} {Platform} for {Distributed} {Model} {Selection} and {Training}},
+	shorttitle = {Tune},
+	url = {http://arxiv.org/abs/1807.05118},
+	doi = {10.48550/arXiv.1807.05118},
+	abstract = {Modern machine learning algorithms are increasingly computationally demanding, requiring specialized hardware and distributed computation to achieve high performance in a reasonable time frame. Many hyperparameter search algorithms have been proposed for improving the efficiency of model selection, however their adaptation to the distributed compute environment is often ad-hoc. We propose Tune, a unified framework for model selection and training that provides a narrow-waist interface between training scripts and search algorithms. We show that this interface meets the requirements for a broad range of hyperparameter search algorithms, allows straightforward scaling of search to large clusters, and simplifies algorithm implementation. We demonstrate the implementation of several state-of-the-art hyperparameter search algorithms in Tune. Tune is available at http://ray.readthedocs.io/en/latest/tune.html.},
+	urldate = {2024-09-26},
+	publisher = {arXiv},
+	author = {Liaw, Richard and Liang, Eric and Nishihara, Robert and Moritz, Philipp and Gonzalez, Joseph E. and Stoica, Ion},
+	month = jul,
+	year = {2018},
+	note = {arXiv:1807.05118 [cs, stat]},
+	keywords = {Computer Science - Distributed, Parallel, and Cluster Computing, Computer Science - Machine Learning, Statistics - Machine Learning},
+	file = {arXiv.org Snapshot:/Users/tsmith/Zotero/storage/7A3BMH64/1807.html:text/html;Liaw_et_al_2018_Tune.pdf:/Users/tsmith/Drive/zotero/Liaw_et_al_2018_Tune.pdf:application/pdf},
 }
 
 @software{jax2018github,
