@@ -179,7 +179,7 @@ Note that the peak memory usage for the GPU runs indicates GPU memory usage
 only, since this is a typical bottleneck.
 The gray and black lines indicate the general trend in
 memory usage during each simulation, as a function of the problem size, and
-are provided so users can estimate a minimum of how much memory might be
+are provided so users can estimate how much memory might be
 required for their applications.
 The empirically derived constants are as follows:
 $a=250,000$ is 2.5 times the number of samples used,
