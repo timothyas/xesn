@@ -128,7 +128,8 @@ as the basis for `xesn`.
 `Xesn` enables prediction for multi-dimensional systems by integrating its high
 level operations with `xarray` [@hoyer_xarray_2017].
 As with `xarray`, users refer to dimensions based on their named axes.
-`Xesn` parallelizes the core array based operations by using `dask` [@dask_2016]
+`Xesn` parallelizes the core array based operations by using `dask`
+[@dask_2016,@rocklin_scipy_2015]
 to map them across available resources, from a laptop to a distributed HPC or
 cloud cluster.
 
