@@ -67,7 +67,7 @@ signal processing [@jaeger_harnessing_2004].
 # Statement of Need
 
 ESNs are a conceptually simple Recurrent Neural Network architecture,
-leading many scientists who use ESNs implement them from scratch.
+leading many scientists who use ESNs to implement them from scratch.
 While this approach can work well for low dimensional problems, the situation
 quickly becomes more complicated when:
 
@@ -78,7 +78,7 @@ quickly becomes more complicated when:
 
 `Xesn` is designed to address all of these points.
 Additionally, while there are some design flexibilities for the ESN
-architectures, the overall interface is streamlined, based on the parameter and
+architectures, the overall interface is streamlined based on the parameter and
 design impact study shown by @platt_systematic_2022.
 
 ## GPU Deployment
@@ -101,11 +101,11 @@ adding invariant metrics to the loss function, like the leading Lyapunov
 exponent or the Kinetic Energy spectrum, improved generalizability.
 As a generic implementation of these metrics,
 `xesn` offers the capability to constrain the
-system's Power Spectral Density during parameter optimization, in addition to a
+system's Power Spectral Density during parameter optimization in addition to a
 more traditional mean squared error loss function.
 
 `Xesn` enables parameter optimization by integrating with the Surrogate Modeling
-Toolbox [@bouhlel_scalable_2020], which has a Bayesian Optimization
+Toolbox [@bouhlel_scalable_2020], which has a Bayesian optimization
 implementation.
 `Xesn` provides a simple interface so that the user can specify all of the
 settings for training, parameter optimization, and testing with a single YAML
@@ -129,9 +129,8 @@ as the basis for `xesn`.
 level operations with `xarray` [@hoyer_xarray_2017].
 As with `xarray`, users refer to dimensions based on their named axes.
 `Xesn` parallelizes the core array based operations by using `dask` [@dask_2016]
-to map them across available resources, which can include a multi-threaded
-environment on a laptop or single node, or a distributed computing resource
-such as traditional on-premises HPC or in the cloud.
+to map them across available resources, from a laptop to a distributed HPC or
+cloud cluster.
 
 
 ## Existing Reservoir Computing Software
@@ -145,12 +144,11 @@ underlying the reservoir, and allowing for delayed connections.
 On the other hand, `xesn` is focused specifically on implementing ESN
 architectures that can scale to multi-dimensional forecasting tasks.
 Additionally, while `ReservoirPy` enables hyperparameter grid search capabilities
-via Hyperopt [@hyperopt], `xesn` enables Bayesian Optimization as noted above.
+via Hyperopt [@hyperopt], `xesn` enables Bayesian optimization as noted above.
 
-Finally, we note the code base used by [@arcomano_machine_2020;@arcomano_hybrid_2022;@arcomano_hybrid_2023],
+Another ESN implementation is that of [@arcomano_machine_2020;@arcomano_hybrid_2022;@arcomano_hybrid_2023],
 available at [@arcomano_code].
 The code implements ESNs in Fortran, and focuses on using ESNs for hybrid physics-ML modeling.
-
 
 
 # Computational Performance
@@ -162,29 +160,39 @@ scales with increasing hidden and input dimensions.
 Additionally, we provide some baseline results to serve as guidance when
 configuring `dask` to use the parallelized
 [`xesn.LazyESN`](https://xesn.readthedocs.io/en/latest/generated/xesn.LazyESN.html) architecture.
+The scripts used to setup, execute, and visualize these scaling tests can be
+found
+[here](https://github.com/timothyas/xesn/tree/1524713149efa38a0fd52ecdeb32ca5aacb62693/scaling).
 For methodological details on these two architectures, please refer to
-[this section](https://xesn.readthedocs.io/en/latest/methods.html) of the documentation.
+[the methods section of the documentation](https://xesn.readthedocs.io/en/latest/methods.html).
 
 ## Standard (Eager) ESN Performance
 
-![Walltime and memory usage for the standard ESN architecture for two different
+![Wall time and peak memory usage for the standard ESN architecture for two different
 system sizes ($N_u$) and a variety of reservoir sizes ($N_r$).
-Walltime is captured with Python's `time` module, and memory is captured with
+Wall time is captured with Python's `time` module, and peak memory usage is captured with
 [memory-profiler](https://pypi.org/project/memory-profiler/)
 for the CPU runs and with
 [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems)
 for the GPU runs.
-The dotted lines indicate theoretical scaling of memory, where
-$a=250,000$ and $b=20,000$ are empirically derived constants, and
+Note that the peak memory usage for the GPU runs indicates GPU memory usage
+only, since this is a typical bottleneck.
+The gray and black lines indicate the general trend in
+memory usage during each simulation, as a function of the problem size, and
+are provided so users can estimate a minimum of how much memory might be
+required for their applications.
+The empirically derived constants are as follows:
+$a=250,000$ is 2.5 times the number of samples used,
+$b=20,000$ is the batch size, and
 $c=8\cdot10^9$ is a conversion to GB.
 \label{fig:eager}
 ](scaling/eager-scaling.pdf){ width=100% }
 
-For reference, in \autoref{fig:eager} we show the walltime and memory usage involved for
+For reference, in \autoref{fig:eager} we show the wall time and memory usage involved for
 training the
 standard (eager) `ESN` architecture as a function of the input dimension $N_u$ and
 reservoir size $N_r$.
-We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform, using
+We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform (GCP), using
 a single `c2-standard-60` instance to test the CPU (NumPy) implementation
 and a single `a2-highgpu-8g` (i.e., with 8 A100 cards) instance to test the GPU
 (CuPy) implementation.
@@ -193,7 +201,7 @@ The training data was generated from the Lorenz96 model
 $N_u=\{16,256\}$,
 and we generated 80,000 total samples in the training dataset.
 
-In the CPU tests, walltime scales quadratically with the reservoir size, while
+In the CPU tests, wall time scales quadratically with the reservoir size, while
 it is mostly constant on a GPU.
 For this problem, it becomes advantageous to use GPUs once the reservoir size is
 approximately $N_r=8,000$ or greater.
@@ -208,13 +216,20 @@ In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
 $N_g = \{2, 4, 8, 16, 32\}$ groups.
 We then fix the reservoir size so that $N_r*N_g = 16,000$, so that the problem
-size is more or less fixed and the timing results reflect strong scaling.
+size is fixed and the timing results reflect strong scaling, i.e.,
+as determined by Amdahl's Law [@amdahl_1967].
 The training task and resources used are otherwise the same as for the standard
 ESN results shown in \autoref{fig:eager}.
 We then create 3 different `dask.distributed` Clusters, testing:
 
 1. Purely threaded mode (CPU only).
 2. The relevant default "LocalCluster" (i.e., single node) configuration for our resources.
+   On the CPU resource, a GCP `c2-standard-60` instance,
+   the default
+   `dask.distributed.LocalCluster` has 6 workers, each with 5 threads.
+   On the GPU resource, a GCP `a2-highgpu-8g` instance, the default
+   `dask_cuda.LocalCUDACluster` has 8 workers, each
+   with 1 thread.
 3. A `LocalCluster` with 1 `dask` worker per group. On GPUs, this assumes 1 GPU per worker
    and we are able to use a maximum of 8 workers due to our available resources.
 
@@ -230,7 +245,7 @@ See text for a description of the different schedulers used.
 
 \autoref{fig:lazy} shows the strong scaling results of `xesn.LazyESN` for each of these
 cluster configurations, where each point shows the ratio of the
-walltime with the standard (serial) architecture to the lazy (parallel)
+wall time with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
 On CPUs, using 1 `dask` worker process per ESN group generally scales well,
 which makes sense because each group is trained entirely independently.
@@ -241,7 +256,7 @@ When the number of workers is less than the number of groups, performance is
 detrimental.
 However, when there is at least one worker per group, the timing is almost the
 same as for the single worker case, only improving performance by 10-20%.
-While the strong scaling is somewhat muted, the invariance of walltime to
+While the strong scaling is somewhat muted, the invariance of wall time to
 reservoir size in \autoref{fig:eager} and number of groups in
 \autoref{fig:lazy} means that the distributed GPU
 implementation is able to tackle larger problems at roughly the same
