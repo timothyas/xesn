@@ -217,8 +217,9 @@ In order to evaluate the performance of the parallelized architecture, we take
 the Lorenz96 system with dimension $N_u=256$ and subdivide the domain into
 $N_g = \{2, 4, 8, 16, 32\}$ groups.
 We then fix the problem size such that $N_r*N_g = 16,000$, so that
-the timing results reflect strong scaling, i.e.,
-as determined by Amdahl's Law [@amdahl_1967].
+the timing results reflect strong scaling.
+That is, the results show how the code performs with increasing resources on a fixed problem
+size, which in theory correspond to Amdahl's Law [@amdahl_1967].
 The training task and resources used are otherwise the same as for the standard
 ESN results shown in \autoref{fig:eager}.
 We then create 3 different `dask.distributed` Clusters, testing:
@@ -272,5 +273,8 @@ N00014-19-1-2522 and N00014-20-1- 2580.
 T.A. Smith acknowledges support from
 the Cooperative Institute for Research in Environmental Sciences (CIRES) at the
 University of Colorado Boulder.
+The authors thank the editor Jonny Saunders for comments that
+significantly improved the manuscript, and the reviewers Troy Arcomano and
+William Nicholas.
 
 # References
