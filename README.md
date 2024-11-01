@@ -74,6 +74,6 @@ Report bugs, suggest features, or view the source code
 
 ## License and Copyright
 
-xesn is licensed under version 3 of the GNU Lesser General Public License.
+xesn is licensed under the Apache-2.0 License.
 
 Development occurs on GitHub at <https://github.com/timothyas/xesn>.
