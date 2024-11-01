@@ -180,18 +180,18 @@ Note that the peak memory usage for the GPU runs indicates GPU memory usage
 only, since this is a typical bottleneck.
 The gray and black lines indicate the general trend in
 memory usage during the CPU and GPU simulations, respectively.
-The curves are a function of the problem size, and
+The empirically derived gray and black curves are a function of the problem size, and
 are provided so users can estimate how much memory might be
 required for their applications.
-The empirically derived constants are as follows:
-$a=250,000$ is 2.5 times the number of samples used,
+The constants are as follows:
+$a=250,000$ is ~3 times the total number of samples used,
 $b=20,000$ is the batch size, and
 $c=8\cdot10^9$ is a conversion to GB.
 \label{fig:eager}
 ](scaling/eager-scaling.pdf){ width=100% }
 
-For reference, in \autoref{fig:eager} we show the wall time and memory usage involved for
-training the
+For reference, in \autoref{fig:eager} we show the wall time and peak memory usage required to
+train the
 standard (eager) `ESN` architecture as a function of the input dimension $N_u$ and
 reservoir size $N_r$.
 We ran the scaling tests in the `us-central-1c` zone on Google Cloud Platform (GCP), using
