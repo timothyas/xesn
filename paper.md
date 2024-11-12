@@ -1,5 +1,5 @@
 ---
-title: 'xesn: Echo state networks powered by xarray and dask'
+title: 'xesn: Echo state networks powered by Xarray and Dask'
 tags:
   - Python
   - echo state networks
@@ -39,7 +39,7 @@ bibliography: docs/references.bib
 
 # Summary
 
-`Xesn` is a python package that allows scientists to easily design
+`Xesn` is a Python package that allows scientists to easily design
 Echo State Networks (ESNs) for forecasting problems.
 ESNs are a Recurrent Neural Network architecture introduced by @jaeger_echo_2001
 that are part of a class of techniques termed Reservoir Computing.
@@ -58,7 +58,7 @@ multi-dimensional datasets,
 eliminating the need to write parallel programming code.
 `Xesn` was initially developed to handle the problem of forecasting weather
 dynamics, and so it integrates naturally with Python packages that have become
-familiar to weather and climate scientists such as `xarray` [@hoyer_xarray_2017].
+familiar to weather and climate scientists such as `Xarray` [@hoyer_xarray_2017].
 However, the software is ultimately general enough to be utilized in other
 domains where ESNs have been useful, such as in
 signal processing [@jaeger_harnessing_2004].
@@ -126,9 +126,9 @@ This parallelization was generalized for multiple dimensions by
 as the basis for `xesn`.
 
 `Xesn` enables prediction for multi-dimensional systems by integrating its high
-level operations with `xarray` [@hoyer_xarray_2017].
-As with `xarray`, users refer to dimensions based on their named axes.
-`Xesn` parallelizes the core array based operations by using `dask`
+level operations with `Xarray` [@hoyer_xarray_2017].
+As with `Xarray`, users refer to dimensions based on their named axes.
+`Xesn` parallelizes the core array based operations by using `Dask`
 [@dask_2016; @rocklin_scipy_2015]
 to map them across available resources, from a laptop to a distributed HPC or
 cloud cluster.
@@ -159,7 +159,7 @@ how the standard (eager)
 [`xesn.ESN`](https://xesn.readthedocs.io/en/latest/generated/xesn.ESN.html#xesn.ESN)
 scales with increasing hidden and input dimensions.
 Additionally, we provide some baseline results to serve as guidance when
-configuring `dask` to use the parallelized
+configuring `Dask` to use the parallelized
 [`xesn.LazyESN`](https://xesn.readthedocs.io/en/latest/generated/xesn.LazyESN.html) architecture.
 The scripts used to setup, execute, and visualize these scaling tests can be
 found
@@ -233,7 +233,7 @@ We then create 3 different `dask.distributed` Clusters, testing:
    On the GPU resource, a GCP `a2-highgpu-8g` instance, the default
    `dask_cuda.LocalCUDACluster` has 8 workers, each
    with 1 thread.
-3. A `LocalCluster` with 1 `dask` worker per group. On GPUs, this assumes 1 GPU per worker
+3. A `LocalCluster` with 1 `Dask` worker per group. On GPUs, this assumes 1 GPU per worker
    and we are able to use a maximum of 8 workers due to our available resources.
 
 ![Strong scaling results, showing speedup as a ratio of serial training time to
@@ -250,7 +250,7 @@ See text for a description of the different schedulers used.
 cluster configurations, where each point shows the ratio of the
 wall time with the standard (serial) architecture to the lazy (parallel)
 architecture with $N_g$ groups.
-On CPUs, using 1 `dask` worker process per ESN group generally scales well,
+On CPUs, using 1 `Dask` worker process per ESN group generally scales well,
 which makes sense because each group is trained entirely independently.
 
 On GPUs, the timing is largely determined by how many workers (GPUs) there are

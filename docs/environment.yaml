@@ -14,7 +14,7 @@ dependencies:
     - dask[complete]
     - zarr
 # surrogate modeling toolbox
-    - smt>=2.2.1
+    - smt>=2.2.1,<2.8.0
 # jupyter etc
     - jupyter
 # Testing
