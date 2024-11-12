@@ -3,7 +3,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from smt.utils.design_space import DesignSpace
+try:
+    from smt.utils.design_space import DesignSpace
+except ModuleNotFoundError:
+    from smt.design_space import DesignSpace
 
 from xesn.cost import CostFunction
 from xesn.xdata import XData

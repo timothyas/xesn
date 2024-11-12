@@ -7,7 +7,10 @@ else:
 
 from smt.applications import EGO
 from smt.surrogate_models import KRG
-from smt.utils.design_space import DesignSpace
+try:
+    from smt.utils.design_space import DesignSpace
+except ModuleNotFoundError:
+    from smt.design_space import DesignSpace
 
 def optimize(cost_function, **kwargs):
     """A simple interface with `EGO <https://smt.readthedocs.io/en/latest/_src_docs/applications/ego.html>`_ to perform Bayesian Optimization and solve for an optimal parameter set.
