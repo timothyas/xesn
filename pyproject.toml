@@ -1,6 +1,6 @@
 [project]
 name = "xesn"
-version = "0.2.0"
+version = "0.2.1"
 description = "Echo State Networks powered by xarray"
 authors = [
     {name="Timothy Smith", email="smith.timothy.andrew@gmail.com"},
@@ -9,7 +9,7 @@ license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "numpy", "scipy", "xarray", "dask[complete]", "zarr", "smt>=2.2.1", "matplotlib"
+    "numpy", "scipy", "xarray", "dask[complete]", "zarr", "smt>=2.2.1,<2.8.0", "matplotlib"
 ]
 
 [project.optional-dependencies]
