@@ -9,7 +9,7 @@ from smt.applications import EGO
 from smt.surrogate_models import KRG
 try:
     from smt.utils.design_space import DesignSpace
-except ImportError
+except ImportError:
     from smt.design_space import DesignSpace
 
 def optimize(cost_function, **kwargs):
