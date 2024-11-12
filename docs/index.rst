@@ -51,6 +51,7 @@ for efficient CPU and GPU deployment.
 
    contributing
    support
+   citation
 
 .. toctree::
    :maxdepth: 1

@@ -5,6 +5,8 @@
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/xesn.svg)](https://anaconda.org/conda-forge/xesn)
 [![PyPI version](https://badge.fury.io/py/xesn.svg)](https://badge.fury.io/py/xesn)
 
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.07286/status.svg)](https://doi.org/10.21105/joss.07286)
+
 Echo State Networks powered by
 [xarray](https://docs.xarray.dev/en/stable/)
 and
@@ -77,3 +79,29 @@ Report bugs, suggest features, or view the source code
 xesn is licensed under the Apache-2.0 License.
 
 Development occurs on GitHub at <https://github.com/timothyas/xesn>.
+
+## Citation
+
+If you find xesn useful, we would appreciate it if you cite the package as
+follows:
+
+Smith et al., (2024). xesn: Echo state networks powered by Xarray and Dask.
+Journal of Open Source Software, 9(103), 7286,
+https://doi.org/10.21105/joss.07286
+
+Here's a sample bibtex entry:
+
+```tex
+@article{
+    Smith2024,
+    doi = {10.21105/joss.07286},
+    url = {https://doi.org/10.21105/joss.07286},
+    year = {2024}, publisher = {The Open Journal},
+    volume = {9},
+    number = {103},
+    pages = {7286},
+    author = {Timothy A. Smith and Stephen G. Penny and Jason A. Platt and Tse-Chun Chen},
+    title = {xesn: Echo state networks powered by Xarray and Dask},
+    journal = {Journal of Open Source Software}
+}
+```
